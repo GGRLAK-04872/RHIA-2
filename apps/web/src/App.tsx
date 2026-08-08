@@ -1,12 +1,13 @@
 import { appStatusSchema, type AppStatus } from "@rhia/contracts";
 import { RHIA_PRODUCT_NAME, RHIA_RUNTIME, RHIA_STAGE, RHIA_VERSION } from "@rhia/domain";
-import { STAGE_ZERO_SECURITY } from "@rhia/security";
+import { RHIA_SECURITY_POLICY } from "@rhia/security";
+import { StageOneDataPanel } from "./components/StageOneDataPanel";
 import styles from "./App.module.css";
 
 const status: AppStatus = appStatusSchema.parse({
   version: RHIA_VERSION,
   stage: RHIA_STAGE,
-  mode: "local-only",
+  mode: "local-first",
   apiEnabled: RHIA_RUNTIME.externalAi,
   persistenceEnabled: RHIA_RUNTIME.persistence,
 });
@@ -14,7 +15,7 @@ const status: AppStatus = appStatusSchema.parse({
 const checks = [
   {
     label: "Betriebsart",
-    value: "Nur lokal",
+    value: "Local-first",
   },
   {
     label: "OpenAI API",
@@ -26,7 +27,7 @@ const checks = [
   },
   {
     label: "Datenbank",
-    value: status.persistenceEnabled ? "Aktiv" : "Ab Stufe 1",
+    value: status.persistenceEnabled ? "IndexedDB" : "Deaktiviert",
   },
 ] as const;
 
@@ -45,46 +46,50 @@ export function App() {
         <div className={styles.copy}>
           <p className={styles.eyebrow}>RH Produktion · Stufe {RHIA_STAGE}</p>
           <h1 id="rhia-title">{RHIA_PRODUCT_NAME}</h1>
-          <p className={styles.lead}>Die lokale Neustartbasis ist bereit.</p>
+          <p className={styles.lead}>Das lokale Datenfundament wird aufgebaut.</p>
           <p className={styles.explanation}>
-            Noch werden keine persönlichen Daten gespeichert, keine Cloud-Dienste angesprochen und
-            keine kostenpflichtigen KI-Aufrufe ausgeführt.
+            RHIA erhält eine lokale Browserdatenbank. Cloud-Dienste und kostenpflichtige KI-Aufrufe
+            bleiben deaktiviert.
           </p>
         </div>
       </section>
 
-      <section className={styles.statusCard} aria-labelledby="system-status-title">
-        <div className={styles.statusHeader}>
-          <div>
-            <p className={styles.statusOverline}>Systemstatus</p>
-            <h2 id="system-status-title">Kontrollierter Start</h2>
-          </div>
-          <span className={styles.readyBadge}>
-            <span className={styles.readyDot} aria-hidden="true" />
-            Basis bereit
-          </span>
-        </div>
-
-        <dl className={styles.statusGrid}>
-          {checks.map((check) => (
-            <div key={check.label}>
-              <dt>{check.label}</dt>
-              <dd>{check.value}</dd>
+      <div className={styles.sideColumn}>
+        <section className={styles.statusCard} aria-labelledby="system-status-title">
+          <div className={styles.statusHeader}>
+            <div>
+              <p className={styles.statusOverline}>Systemstatus</p>
+              <h2 id="system-status-title">Kontrollierter Start</h2>
             </div>
-          ))}
-        </dl>
+            <span className={styles.readyBadge}>
+              <span className={styles.readyDot} aria-hidden="true" />
+              Stufe 1 aktiv
+            </span>
+          </div>
 
-        <p className={styles.safetyNote} role="status">
-          {STAGE_ZERO_SECURITY.cloudFallbackAllowed
-            ? "Cloud-Fallback aktiv"
-            : "Kein stiller Rückfall auf alte RHIA- oder Cloud-Datenquellen."}
-        </p>
-      </section>
+          <dl className={styles.statusGrid}>
+            {checks.map((check) => (
+              <div key={check.label}>
+                <dt>{check.label}</dt>
+                <dd>{check.value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <p className={styles.safetyNote} role="status">
+            {RHIA_SECURITY_POLICY.cloudFallbackAllowed
+              ? "Cloud-Fallback aktiv"
+              : "Kein stiller Rückfall auf alte RHIA- oder Cloud-Datenquellen."}
+          </p>
+        </section>
+
+        <StageOneDataPanel />
+      </div>
 
       <footer className={styles.footer}>
         <span>Version {status.version}</span>
         <span aria-hidden="true">·</span>
-        <span>Nächster Schritt: Stufe 0 im Android-Browser prüfen</span>
+        <span>Aktueller Schritt: Local-first Datenfundament</span>
       </footer>
     </main>
   );

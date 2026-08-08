@@ -40,9 +40,9 @@ Voraussetzung: getrennte GitHub-Pages-Adresse von `GGRLAK-04872/RHIA-2`, niemals
 - [x] Öffentlicher Build unter getrennter RHIA-2-Testadresse erreichbar
 - [x] Android-Tablet oder -Handy bestanden
 - [x] Ergebnis und Testdatum von Sir bestätigt: 08.08.2026
-- [ ] Stufe 1 ausdrücklich freigegeben
+- [x] Stufe 1 ausdrücklich freigegeben: 08.08.2026
 
 ## Ergebnis
 
-Stufe 0 ist technisch und im realen Android-Browser abgenommen. Stufe 1 wurde noch nicht begonnen
-und wartet gemäß Masterplan auf die ausdrückliche Freigabe durch Sir.
+Stufe 0 ist technisch und im realen Android-Browser abgenommen. Sir hat Stufe 1 am 08.08.2026
+ausdrücklich freigegeben.

@@ -5,9 +5,11 @@ Dieses Repository ist der saubere Neustart ohne Cloudflare-, KV- oder Durable-Ob
 
 ## Aktueller Stand
 
-- Stufe 0: Neustartbasis
-- Betriebsart: lokal, ohne API und ohne persistente Nutzerdaten
+- Stufe 0: abgeschlossen und abgenommen
+- Stufe 1: Local-first-Datenfundament implementiert; realer Geräte-Praxistest ausstehend
+- Betriebsart: lokale IndexedDB als einzige Datenquelle, ohne Cloud-Sync
 - Web/PWA: React, Vite und TypeScript Strict
+- Daten: Dexie, Zod, versionierte Migration, Export/Import und 30-Tage-Papierkorb
 - Qualität: Biome, Vitest, Playwright, Build- und Secret-Audit
 - OpenAI API: deaktiviert; ein vorhandener Schlüssel wird erst später sicher und ausschließlich
   serverseitig eingebunden
@@ -24,8 +26,9 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Anschließend die angezeigte lokale Adresse im Browser öffnen. RHIA speichert in Stufe 0 keine
-persönlichen Daten.
+Anschließend die angezeigte lokale Adresse im Browser öffnen. In Stufe 1 speichert RHIA bewusst
+eingegebene Notizen ausschließlich in der IndexedDB dieses Browsers. Andere Geräte erhalten diese
+Daten erst durch einen kontrollierten Export und Import.
 
 ## Prüfung
 
@@ -45,6 +48,7 @@ pnpm test:e2e
 - Keine Secrets, Datenbanken, Exporte, Backups, Audioaufnahmen oder personenbezogenen Daten in Git.
 - Keine API-Schlüssel oder Besitzer-Tokens im Browser.
 - Kein stiller Rückfall auf alte RHIA-, Cloudflare- oder Browserdatenquellen.
+- Sicherungen können persönliche Daten enthalten und gehören nicht in Git oder öffentliche Ordner.
 - Keine externe Aktion und kein kostenpflichtiger Aufruf ohne die definierte Freigabe.
 - Das alte Repository `GGRLAK-04872/RHIA` bleibt unverändert als Referenz erhalten.
 

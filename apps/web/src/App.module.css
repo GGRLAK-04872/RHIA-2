@@ -2,10 +2,10 @@
   position: relative;
   isolation: isolate;
   min-height: 100dvh;
-  overflow: hidden;
+  overflow-x: hidden;
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
-  align-items: center;
+  align-items: start;
   gap: clamp(28px, 7vw, 96px);
   padding: max(28px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right))
     max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
@@ -136,6 +136,13 @@
   backdrop-filter: blur(24px);
 }
 
+.sideColumn {
+  display: grid;
+  width: min(100%, 560px);
+  justify-self: end;
+  gap: 18px;
+}
+
 .statusHeader {
   display: flex;
   align-items: flex-start;
@@ -214,10 +221,7 @@
 }
 
 .footer {
-  position: absolute;
-  right: max(24px, env(safe-area-inset-right));
-  bottom: max(18px, env(safe-area-inset-bottom));
-  left: max(24px, env(safe-area-inset-left));
+  grid-column: 1 / -1;
   display: flex;
   justify-content: center;
   gap: 8px;
@@ -261,6 +265,11 @@
   }
 
   .statusCard {
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .sideColumn {
     width: 100%;
     justify-self: stretch;
   }
@@ -312,7 +321,6 @@
   }
 
   .footer {
-    position: static;
     flex-wrap: wrap;
     text-align: center;
   }

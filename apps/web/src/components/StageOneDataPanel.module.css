@@ -1,0 +1,291 @@
+.panel {
+  width: 100%;
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 26px;
+  background: linear-gradient(145deg, rgb(36 17 28 / 88%), rgb(13 9 13 / 88%));
+  box-shadow: 0 28px 70px rgb(0 0 0 / 28%);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.overline {
+  margin: 0 0 7px;
+  color: #d985a6;
+  font-size: 0.68rem;
+  font-weight: 760;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.storageState {
+  padding: 7px 10px;
+  border: 1px solid rgb(235 165 190 / 16%);
+  border-radius: 999px;
+  color: #f0c8d7;
+  font-size: 0.72rem;
+  font-weight: 680;
+}
+
+.storageState[data-state="error"] {
+  border-color: rgb(255 99 123 / 38%);
+  color: #ffb1bd;
+}
+
+.counts {
+  margin: 15px 0;
+  color: #a9949d;
+  font-size: 0.78rem;
+}
+
+.error {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border: 1px solid rgb(255 99 123 / 28%);
+  border-radius: 12px;
+  background: rgb(116 22 43 / 20%);
+  color: #ffc0ca;
+  font-size: 0.82rem;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+  gap: 11px;
+}
+
+.form label,
+.dangerZone label {
+  display: grid;
+  gap: 6px;
+  color: #b9a3ad;
+  font-size: 0.73rem;
+}
+
+.form label:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+.form input,
+.form textarea,
+.dangerZone input {
+  width: 100%;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 11px;
+  outline: none;
+  background: rgb(5 4 6 / 58%);
+  color: #fff8fb;
+  font: inherit;
+}
+
+.form input,
+.dangerZone input {
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.form textarea {
+  resize: vertical;
+  min-height: 76px;
+  padding: 11px 12px;
+}
+
+.form input:focus,
+.form textarea:focus,
+.dangerZone input:focus {
+  border-color: rgb(219 92 139 / 55%);
+  box-shadow: 0 0 0 3px rgb(143 41 78 / 16%);
+}
+
+.form button,
+.tools button,
+.fileLabel {
+  min-height: 42px;
+  border: 1px solid rgb(221 106 148 / 24%);
+  border-radius: 11px;
+  background: linear-gradient(135deg, #7c2148, #4e1731);
+  color: #fff5f9;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 680;
+  cursor: pointer;
+}
+
+.form > button {
+  grid-column: 1 / -1;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.noteGroup {
+  margin-top: 18px;
+}
+
+.noteGroup h3 {
+  margin: 0 0 9px;
+  color: #d8c1ca;
+  font-size: 0.8rem;
+}
+
+.noteList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.noteList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid rgb(255 255 255 / 7%);
+  border-radius: 12px;
+  background: rgb(7 5 8 / 46%);
+}
+
+.noteList div {
+  min-width: 0;
+}
+
+.noteList span,
+.noteList strong,
+.noteList p {
+  display: block;
+}
+
+.noteList span {
+  color: #a88794;
+  font-size: 0.65rem;
+}
+
+.noteList strong {
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+}
+
+.noteList p {
+  margin: 5px 0 0;
+  color: #a9949d;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.tools button.quietButton,
+.noteList button.quietButton {
+  flex: none;
+  min-height: 34px;
+  padding: 0 10px;
+  background: transparent;
+}
+
+.tools {
+  margin-top: 18px;
+  border-top: 1px solid rgb(255 255 255 / 7%);
+  padding-top: 14px;
+}
+
+.tools summary {
+  color: #bda7b0;
+  font-size: 0.76rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.toolGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.fileLabel {
+  display: grid;
+  place-items: center;
+}
+
+.fileLabel input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.importPreview,
+.dangerZone {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 12px;
+  background: rgb(5 4 6 / 42%);
+}
+
+.importPreview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.importPreview p {
+  margin: 0;
+  color: #b9a3ad;
+  font-size: 0.73rem;
+}
+
+.importPreview button,
+.dangerZone button {
+  padding: 0 12px;
+}
+
+.dangerZone {
+  display: grid;
+  gap: 10px;
+  border-color: rgb(255 99 123 / 16%);
+}
+
+.dangerZone code {
+  color: #e6b5c7;
+  font-size: 0.7rem;
+}
+
+.dangerZone button {
+  border-color: rgb(255 99 123 / 25%);
+  background: rgb(105 21 42 / 64%);
+}
+
+@media (max-width: 620px) {
+  .form,
+  .toolGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .form label:nth-child(3),
+  .form > button {
+    grid-column: auto;
+  }
+
+  .noteList li,
+  .importPreview {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
