@@ -4,7 +4,9 @@ Stand: 08.08.2026
 
 ## Aktuelle Stufe
 
-Stufe 0 – Neustartbasis und Repository.
+Stufe 0 – abgeschlossen und am 08.08.2026 im realen Android-Browser abgenommen.
+
+Freigabepunkt vor Stufe 1 – Local-first Datenfundament.
 
 ## Umgesetzt
 
@@ -18,17 +20,20 @@ Stufe 0 – Neustartbasis und Repository.
 - ADRs für Architektur, Quelle der Wahrheit und Cloud-Abgrenzung.
 - lokale Kernprüfung bestanden: 6 Tests, Build, PWA, HTTP-Smoke und 0 bekannte
   Produktionsabhängigkeitslücken.
+- öffentlicher Codebestand ausschließlich in `GGRLAK-04872/RHIA-2` veröffentlicht;
+- GitHub CI einschließlich Chromium-Browser-Smoke bestanden;
+- getrennte GitHub-Pages-Testadresse erfolgreich bereitgestellt;
+- Android-Praxistest durch Sir bestanden;
+- OpenAI API weiterhin deaktiviert; keine API-Aufrufe oder API-Kosten;
+- altes Repository `RHIA` unverändert.
 
-## Offen vor Abschluss von Stufe 0
+## Nächster notwendiger Schritt
 
-1. Öffentliches Repository `GGRLAK-04872/RHIA-2` einmalig anlegen.
-2. Lokalen geprüften Stand auf `main` veröffentlichen.
-3. GitHub CI und getrennte GitHub-Pages-Testadresse bestätigen.
-4. Android-Browser-Praxistest auf Tablet oder Handy durch Sir.
-5. Ergebnis und Datum im Abnahmeprotokoll eintragen.
+1. Sir gibt Stufe 1 ausdrücklich frei.
+2. Danach beginnt ausschließlich das Local-first Datenfundament mit Dexie/IndexedDB.
+3. OpenAI API, Sprache, Android-App und Cloud-Sync bleiben in Stufe 1 deaktiviert.
 
-Der lokale Playwright-Test konnte in Work nicht ausgeführt werden, weil die Umgebung den
-Chromium-Download blockiert und keinen Systembrowser enthält. Die identischen Tests sind in GitHub
-CI eingerichtet und werden nach der ersten Veröffentlichung automatisch ausgeführt.
+Geplanter Aufwand für Stufe 1: ungefähr 8–16 Stunden Work-Zeit und etwa 20–40 Minuten Testzeit
+durch Sir, aufgeteilt in klar abgegrenzte Umsetzungsschritte.
 
-Stufe 1 beginnt erst nach diesen fünf Punkten.
+Stufe 1 beginnt erst nach ausdrücklicher Freigabe.
