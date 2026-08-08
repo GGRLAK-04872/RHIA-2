@@ -50,8 +50,9 @@ pnpm test:e2e
 
 ## Veröffentlichung
 
-Der statische Testbuild ist für GitHub Pages vorbereitet. Er enthält ausschließlich die App-Shell
-und keine persönlichen Daten. `rhia.pages.dev` und produktive Cloudflare-Ressourcen werden nicht
-verwendet oder verändert.
+Die getrennte Testadresse lautet: https://ggrlak-04872.github.io/RHIA-2/
+
+Der statische Testbuild enthält ausschließlich die App-Shell und keine persönlichen Daten.
+`rhia.pages.dev` und produktive Cloudflare-Ressourcen werden nicht verwendet oder verändert.
 
 Copyright © 2026 RH Produktion. Es wird derzeit keine Nutzungslizenz eingeräumt.
