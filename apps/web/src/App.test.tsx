@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { App } from "./App";
 
 describe("RHIA stage 1 shell", () => {
-  it("stores, deletes and restores a note through the local data view", async () => {
+  it("stores, edits, deletes and restores a note through the local data view", async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -22,6 +22,13 @@ describe("RHIA stage 1 shell", () => {
     await user.click(screen.getByRole("button", { name: "Lokal speichern" }));
 
     expect(await screen.findByText("Lokaler UI-Test")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Bearbeiten" }));
+    const title = screen.getByRole("textbox", { name: "Titel bearbeiten" });
+    await user.clear(title);
+    await user.type(title, "Bearbeiteter UI-Test");
+    await user.click(screen.getByRole("button", { name: "Änderung speichern" }));
+    expect(await screen.findByText("Bearbeiteter UI-Test")).toBeInTheDocument();
+
     await user.click(screen.getByRole("button", { name: "Löschen" }));
     expect(await screen.findByRole("button", { name: "Wiederherstellen" })).toBeInTheDocument();
 

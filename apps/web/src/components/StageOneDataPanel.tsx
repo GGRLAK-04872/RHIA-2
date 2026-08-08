@@ -20,6 +20,7 @@ export function StageOneDataPanel() {
   const [error, setError] = useState<string | null>(null);
   const [pendingImport, setPendingImport] = useState<ImportPreview | null>(null);
   const [confirmation, setConfirmation] = useState("");
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -46,8 +47,10 @@ export function StageOneDataPanel() {
     setError(null);
     try {
       setSnapshot(await operation());
+      return true;
     } catch (reason) {
       setError(errorMessage(reason));
+      return false;
     }
   }
 
@@ -63,6 +66,22 @@ export function StageOneDataPanel() {
       }),
     );
     form.reset();
+  }
+
+  async function handleUpdateNote(
+    event: FormEvent<HTMLFormElement>,
+    noteId: string,
+    revision: number,
+  ) {
+    event.preventDefault();
+    const values = new FormData(event.currentTarget);
+    const updated = await run(() =>
+      localDataService.updateNote(noteId, revision, {
+        title: String(values.get("title") ?? ""),
+        body: String(values.get("body") ?? ""),
+      }),
+    );
+    if (updated) setEditingNoteId(null);
   }
 
   async function handleExport() {
@@ -143,20 +162,57 @@ export function StageOneDataPanel() {
           <ul className={styles.noteList}>
             {snapshot.activeNotes.map(({ note, areaName }) => (
               <li key={note.id}>
-                <div>
+                <div className={styles.noteContent}>
                   <span>{areaName}</span>
                   <strong>{note.title}</strong>
                   {note.body && <p>{note.body}</p>}
+                  {editingNoteId === note.id && (
+                    <form
+                      className={styles.editForm}
+                      onSubmit={(event) => handleUpdateNote(event, note.id, note.revision)}
+                    >
+                      <label>
+                        Titel bearbeiten
+                        <input name="title" required maxLength={240} defaultValue={note.title} />
+                      </label>
+                      <label>
+                        Notiz bearbeiten
+                        <textarea
+                          name="body"
+                          maxLength={100_000}
+                          rows={3}
+                          defaultValue={note.body}
+                        />
+                      </label>
+                      <button type="submit">Änderung speichern</button>
+                      <button
+                        type="button"
+                        className={styles.quietButton}
+                        onClick={() => setEditingNoteId(null)}
+                      >
+                        Abbrechen
+                      </button>
+                    </form>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  className={styles.quietButton}
-                  onClick={() =>
-                    run(() => localDataService.moveNoteToTrash(note.id, note.revision))
-                  }
-                >
-                  Löschen
-                </button>
+                <div className={styles.noteActions}>
+                  <button
+                    type="button"
+                    className={styles.quietButton}
+                    onClick={() => setEditingNoteId(note.id)}
+                  >
+                    Bearbeiten
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.quietButton}
+                    onClick={() =>
+                      run(() => localDataService.moveNoteToTrash(note.id, note.revision))
+                    }
+                  >
+                    Löschen
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

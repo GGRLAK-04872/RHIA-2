@@ -66,6 +66,7 @@
 }
 
 .form label,
+.editForm label,
 .dangerZone label {
   display: grid;
   gap: 6px;
@@ -79,6 +80,8 @@
 
 .form input,
 .form textarea,
+.editForm input,
+.editForm textarea,
 .dangerZone input {
   width: 100%;
   border: 1px solid rgb(255 255 255 / 10%);
@@ -90,12 +93,14 @@
 }
 
 .form input,
+.editForm input,
 .dangerZone input {
   min-height: 42px;
   padding: 0 12px;
 }
 
-.form textarea {
+.form textarea,
+.editForm textarea {
   resize: vertical;
   min-height: 76px;
   padding: 11px 12px;
@@ -103,12 +108,15 @@
 
 .form input:focus,
 .form textarea:focus,
+.editForm input:focus,
+.editForm textarea:focus,
 .dangerZone input:focus {
   border-color: rgb(219 92 139 / 55%);
   box-shadow: 0 0 0 3px rgb(143 41 78 / 16%);
 }
 
 .form button,
+.editForm button,
 .tools button,
 .fileLabel {
   min-height: 42px;
@@ -151,7 +159,7 @@ button:disabled {
 
 .noteList li {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   padding: 11px 12px;
@@ -160,7 +168,8 @@ button:disabled {
   background: rgb(7 5 8 / 46%);
 }
 
-.noteList div {
+.noteContent {
+  flex: 1;
   min-width: 0;
 }
 
@@ -186,6 +195,23 @@ button:disabled {
   color: #a9949d;
   font-size: 0.72rem;
   line-height: 1.45;
+}
+
+.noteActions {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+
+.editForm {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.editForm label {
+  grid-column: 1 / -1;
 }
 
 .tools button.quietButton,
@@ -287,5 +313,13 @@ button:disabled {
   .importPreview {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .noteActions {
+    width: 100%;
+  }
+
+  .noteActions button {
+    flex: 1;
   }
 }

@@ -1,4 +1,11 @@
-import { createArea, createAuditEntry, createNote, createSource, type Note } from "@rhia/domain";
+import {
+  createArea,
+  createAuditEntry,
+  createNote,
+  createSource,
+  type Note,
+  RepositoryError,
+} from "@rhia/domain";
 import {
   DELETE_ALL_CONFIRMATION,
   createRhiaBrowserStorage,
@@ -26,6 +33,11 @@ export interface LocalDataSnapshot {
 
 export interface NewLocalNote {
   areaName: string;
+  title: string;
+  body: string;
+}
+
+export interface UpdateLocalNote {
   title: string;
   body: string;
 }
@@ -116,6 +128,33 @@ export class LocalDataService {
           entityId: deleted.id,
           entityRevision: deleted.revision,
           action: "delete",
+        }),
+      );
+    });
+    return this.getSnapshot();
+  }
+
+  async updateNote(
+    noteId: string,
+    revision: number,
+    input: UpdateLocalNote,
+  ): Promise<LocalDataSnapshot> {
+    await this.storage.transaction(async (repositories) => {
+      const current = await repositories.notes.getById(noteId);
+      if (!current) {
+        throw new RepositoryError("RECORD_NOT_FOUND", "Die Notiz wurde nicht gefunden.");
+      }
+
+      const updated = await repositories.notes.replace(
+        { ...current, title: input.title, body: input.body },
+        revision,
+      );
+      await repositories.auditEntries.create(
+        createAuditEntry({
+          entityType: updated.type,
+          entityId: updated.id,
+          entityRevision: updated.revision,
+          action: "update",
         }),
       );
     });

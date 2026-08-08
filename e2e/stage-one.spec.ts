@@ -19,7 +19,9 @@ test("stage 1 starts locally without old cloud dependencies", async ({ page }) =
   expect(foreignTargets).toEqual([]);
 });
 
-test("local note survives reload, trash and restore without reanimation", async ({ page }) => {
+test("local note survives edit, reload, trash and restore without reanimation", async ({
+  page,
+}) => {
   await page.goto("/");
   await expect(page.getByText("Bereit", { exact: true })).toBeVisible();
 
@@ -29,8 +31,13 @@ test("local note survives reload, trash and restore without reanimation", async 
   await page.getByRole("button", { name: "Lokal speichern" }).click();
   await expect(page.getByText("Bordeaux 47")).toBeVisible();
 
+  await page.getByRole("button", { name: "Bearbeiten" }).click();
+  await page.getByRole("textbox", { name: "Titel bearbeiten" }).fill("Bordeaux 47 geändert");
+  await page.getByRole("button", { name: "Änderung speichern" }).click();
+  await expect(page.getByText("Bordeaux 47 geändert")).toBeVisible();
+
   await page.reload();
-  await expect(page.getByText("Bordeaux 47")).toBeVisible();
+  await expect(page.getByText("Bordeaux 47 geändert")).toBeVisible();
   await page.getByRole("button", { name: "Löschen" }).click();
   await expect(page.getByRole("button", { name: "Wiederherstellen" })).toBeVisible();
 
@@ -47,9 +54,9 @@ test("local note survives reload, trash and restore without reanimation", async 
 
   await page.locator("details input:not([type=file])").fill("RHIA LOKALDATEN LÖSCHEN");
   await page.getByRole("button", { name: "Alle lokalen Daten löschen" }).click();
-  await expect(page.getByText("Bordeaux 47")).not.toBeVisible();
+  await expect(page.getByText("Bordeaux 47 geändert")).not.toBeVisible();
 
   await page.reload();
-  await expect(page.getByText("Bordeaux 47")).not.toBeVisible();
+  await expect(page.getByText("Bordeaux 47 geändert")).not.toBeVisible();
   await expect(page.getByText("0 aktiv", { exact: false })).toBeVisible();
 });
