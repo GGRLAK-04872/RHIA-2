@@ -1,6 +1,8 @@
 name: RHIA-2 Testseite
 
 on:
+  push:
+    branches: [feat/stufe-1-local-first-datenfundament]
   workflow_run:
     workflows: [CI]
     types: [completed]
