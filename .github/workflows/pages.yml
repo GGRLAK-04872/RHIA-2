@@ -1,0 +1,68 @@
+name: RHIA-2 Testseite
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: pnpm einrichten
+        uses: pnpm/action-setup@v6
+
+      - name: Node.js 24 einrichten
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Abhängigkeiten installieren
+        run: pnpm install --frozen-lockfile
+
+      - name: Getrennten Pages-Build erstellen
+        env:
+          VITE_BASE_PATH: /RHIA-2/
+        run: pnpm build
+
+      - name: Öffentlichen Build prüfen
+        run: pnpm audit:public
+
+      - name: Pages konfigurieren
+        uses: actions/configure-pages@v6
+
+      - name: Pages-Artefakt hochladen
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: apps/web/dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: RHIA-2 Testseite bereitstellen
+        id: deployment
+        uses: actions/deploy-pages@v5

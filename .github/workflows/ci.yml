@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Qualität und Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v7
+
+      - name: pnpm einrichten
+        uses: pnpm/action-setup@v6
+
+      - name: Node.js 24 einrichten
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Abhängigkeiten installieren
+        run: pnpm install --frozen-lockfile
+
+      - name: Vollständige Prüfung
+        run: pnpm check
+
+  browser-smoke:
+    name: Browser-Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v7
+
+      - name: pnpm einrichten
+        uses: pnpm/action-setup@v6
+
+      - name: Node.js 24 einrichten
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Abhängigkeiten installieren
+        run: pnpm install --frozen-lockfile
+
+      - name: Chromium installieren
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Responsive Smoke-Tests
+        run: pnpm test:e2e

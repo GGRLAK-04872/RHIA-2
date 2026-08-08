@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="RHIA">
+  <defs>
+    <radialGradient id="core" cx="47%" cy="42%" r="58%">
+      <stop offset="0" stop-color="#ffd6e8"/>
+      <stop offset="0.2" stop-color="#ee8aae"/>
+      <stop offset="0.54" stop-color="#9b294f"/>
+      <stop offset="0.82" stop-color="#3c1025"/>
+      <stop offset="1" stop-color="#130710"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="#09060a"/>
+  <circle cx="256" cy="256" r="158" fill="#6d1839" opacity=".3" filter="url(#glow)"/>
+  <path d="M256 87c88 0 165 73 165 169s-77 169-165 169S91 352 91 256 168 87 256 87Z" fill="url(#core)"/>
+  <path d="M178 245c36-77 118-104 174-54-56-14-111 14-137 72-17 38-7 82 25 116-68-22-96-81-62-134Z" fill="#fff" opacity=".16"/>
+  <circle cx="218" cy="193" r="31" fill="#fff" opacity=".35" filter="url(#glow)"/>
+</svg>
