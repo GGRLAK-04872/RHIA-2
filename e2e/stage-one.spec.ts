@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test("stage 2 starts locally without old cloud dependencies", async ({ page }) => {
+test("stage 3 starts locally without old cloud dependencies", async ({ page }) => {
   const networkTargets: string[] = [];
   page.on("request", (request) => networkTargets.push(request.url()));
 
   await page.goto("/");
 
   await expect(page.getByRole("heading", { name: "RHIA 2.0" })).toBeVisible();
-  await expect(page.getByText("Bestätigtes Wissen bleibt unter deiner Kontrolle.")).toBeVisible();
+  await expect(page.getByText("Wissen und Arbeit bleiben unter deiner Kontrolle.")).toBeVisible();
   await expect(page.getByText("IndexedDB")).toBeVisible();
   await expect(page.getByRole("status")).toContainText("Kein stiller Rückfall");
 

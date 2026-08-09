@@ -1,10 +1,10 @@
 import {
-  ENTITY_TYPES,
-  RHIA_SCHEMA_VERSION,
-  TASK_STATUSES,
   type Area,
   type AuditEntry,
   type Decision,
+  ENTITY_TYPES,
+  type ExplicitTaskInputConfirmation,
+  type ExplicitTaskPriorityDecision,
   type Goal,
   type ManualTaskPriority,
   type MemoryConflict,
@@ -12,9 +12,12 @@ import {
   type Note,
   type PersistedEntity,
   type Project,
+  RHIA_SCHEMA_VERSION,
   type Source,
+  TASK_STATUSES,
   type Task,
   type TaskDependency,
+  WORK_HUB_AREA_NAMES,
 } from "@rhia/domain";
 import { z } from "zod";
 
@@ -156,6 +159,25 @@ export const areaSchema: z.ZodType<Area> = z
   })
   .strict()
   .superRefine(validateTimeline);
+
+export const workHubAreaNameSchema = z.enum(WORK_HUB_AREA_NAMES);
+
+export const activeWorkHubAreaSchema = areaSchema.superRefine((area, context) => {
+  if (!workHubAreaNameSchema.safeParse(area.name).success) {
+    context.addIssue({
+      code: "custom",
+      path: ["name"],
+      message: "Der Bereich gehört nicht zu den verbindlichen RHIA-Arbeitsbereichen.",
+    });
+  }
+  if (area.status !== "active" || area.deletedAt !== null) {
+    context.addIssue({
+      code: "custom",
+      path: ["status"],
+      message: "Ein RHIA-Arbeitsbereich muss aktiv sein und darf nicht gelöscht sein.",
+    });
+  }
+});
 
 export const sourceSchema: z.ZodType<Source> = z
   .object({
@@ -393,6 +415,23 @@ export const manualTaskPrioritySchema: z.ZodType<ManualTaskPriority> = z
   })
   .strict();
 
+export const explicitTaskPriorityDecisionSchema: z.ZodType<ExplicitTaskPriorityDecision> = z
+  .object({
+    actor: z.literal("sir"),
+    explicitlyConfirmed: z.literal(true),
+    decidedAt: timestampSchema,
+    rationale: z.string().trim().max(2_000).nullable(),
+  })
+  .strict();
+
+export const explicitTaskInputConfirmationSchema: z.ZodType<ExplicitTaskInputConfirmation> = z
+  .object({
+    actor: z.literal("sir"),
+    explicitlyConfirmed: z.literal(true),
+    confirmedAt: timestampSchema,
+  })
+  .strict();
+
 export const taskSchema: z.ZodType<Task> = z
   .object({
     ...entityBaseShape,
@@ -520,10 +559,19 @@ export const stageTwoAppStatusSchema = z.object({
   persistenceEnabled: z.literal(true),
 });
 
+export const stageThreeAppStatusSchema = z.object({
+  version: z.string().min(1),
+  stage: z.literal(3),
+  mode: z.literal("local-first"),
+  apiEnabled: z.literal(false),
+  persistenceEnabled: z.literal(true),
+});
+
 export const appStatusSchema = z.discriminatedUnion("stage", [
   stageZeroAppStatusSchema,
   stageOneAppStatusSchema,
   stageTwoAppStatusSchema,
+  stageThreeAppStatusSchema,
 ]);
 
 export type AppStatus = z.infer<typeof appStatusSchema>;
@@ -638,16 +686,93 @@ export const rhiaBackupPackageV2Schema = z
     }
   });
 
-export const backupDataSchema = backupDataV2Schema;
-export const backupRecordCountsSchema = backupRecordCountsV2Schema;
-export const backupManifestSchema = backupManifestV2Schema;
+export const backupDataV3Schema = z
+  .object({
+    areas: z.array(areaSchema),
+    sources: z.array(sourceSchema),
+    notes: z.array(noteSchema),
+    auditEntries: z.array(auditEntrySchema),
+    memoryFacts: z.array(memoryFactSchema),
+    decisions: z.array(decisionSchema),
+    memoryConflicts: z.array(memoryConflictSchema),
+    projects: z.array(projectSchema),
+    goals: z.array(goalSchema),
+    tasks: z.array(taskSchema),
+    taskDependencies: z.array(taskDependencySchema),
+  })
+  .strict();
+
+export const backupRecordCountsV3Schema = z
+  .object({
+    areas: z.number().int().nonnegative(),
+    sources: z.number().int().nonnegative(),
+    notes: z.number().int().nonnegative(),
+    auditEntries: z.number().int().nonnegative(),
+    memoryFacts: z.number().int().nonnegative(),
+    decisions: z.number().int().nonnegative(),
+    memoryConflicts: z.number().int().nonnegative(),
+    projects: z.number().int().nonnegative(),
+    goals: z.number().int().nonnegative(),
+    tasks: z.number().int().nonnegative(),
+    taskDependencies: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export const backupManifestV3Schema = z
+  .object({
+    format: z.literal("rhia-backup"),
+    formatVersion: z.literal(3),
+    schemaVersion: z.literal(RHIA_SCHEMA_VERSION),
+    createdAt: timestampSchema,
+    checksumAlgorithm: z.literal("SHA-256"),
+    checksum: z.string().regex(/^[a-f0-9]{64}$/),
+    recordCounts: backupRecordCountsV3Schema,
+  })
+  .strict();
+
+export const rhiaBackupPackageV3Schema = z
+  .object({
+    manifest: backupManifestV3Schema,
+    data: backupDataV3Schema,
+  })
+  .strict()
+  .superRefine((backup, context) => {
+    for (const key of [
+      "areas",
+      "sources",
+      "notes",
+      "auditEntries",
+      "memoryFacts",
+      "decisions",
+      "memoryConflicts",
+      "projects",
+      "goals",
+      "tasks",
+      "taskDependencies",
+    ] as const) {
+      if (backup.manifest.recordCounts[key] !== backup.data[key].length) {
+        context.addIssue({
+          code: "custom",
+          path: ["manifest", "recordCounts", key],
+          message: `Die Datensatzanzahl für ${key} stimmt nicht.`,
+        });
+      }
+    }
+  });
+
+export const backupDataSchema = backupDataV3Schema;
+export const backupRecordCountsSchema = backupRecordCountsV3Schema;
+export const backupManifestSchema = backupManifestV3Schema;
 export const rhiaBackupPackageSchema = z.union([
   rhiaBackupPackageV1Schema,
   rhiaBackupPackageV2Schema,
+  rhiaBackupPackageV3Schema,
 ]);
 
 export type RhiaBackupDataV1 = z.infer<typeof backupDataV1Schema>;
 export type RhiaBackupPackageV1 = z.infer<typeof rhiaBackupPackageV1Schema>;
-export type RhiaBackupData = z.infer<typeof backupDataV2Schema>;
+export type RhiaBackupDataV2 = z.infer<typeof backupDataV2Schema>;
 export type RhiaBackupPackageV2 = z.infer<typeof rhiaBackupPackageV2Schema>;
+export type RhiaBackupData = z.infer<typeof backupDataV3Schema>;
+export type RhiaBackupPackageV3 = z.infer<typeof rhiaBackupPackageV3Schema>;
 export type RhiaBackupPackage = z.infer<typeof rhiaBackupPackageSchema>;

@@ -2,28 +2,39 @@ import "fake-indexeddb/auto";
 import {
   areaSchema,
   auditEntrySchema,
+  goalSchema,
   noteSchema,
-  rhiaBackupPackageV1Schema,
-  sourceSchema,
+  projectSchema,
   type RhiaBackupPackageV1,
+  type RhiaBackupPackageV2,
+  rhiaBackupPackageV1Schema,
+  rhiaBackupPackageV2Schema,
+  sourceSchema,
+  taskDependencySchema,
+  taskSchema,
 } from "@rhia/contracts";
 import {
   createArea,
   createAuditEntry,
   createDecision,
+  createGoal,
   createMemoryConflict,
   createMemoryFact,
   createNote,
+  createProject,
   createSource,
+  createTask,
+  createTaskDependency,
 } from "@rhia/domain";
 import Dexie from "dexie";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  createRhiaBrowserStorage,
   DELETE_ALL_CONFIRMATION,
   RHIA_BROWSER_DATABASE_VERSION,
   RHIA_STAGE_ONE_BROWSER_DATABASE_VERSION,
+  RHIA_STAGE_TWO_BROWSER_DATABASE_VERSION,
   type RhiaBrowserStorage,
-  createRhiaBrowserStorage,
 } from "./index";
 
 const timestamp = "2026-08-08T16:00:00.000Z";
@@ -38,6 +49,11 @@ const ids = {
   decision: "77777777-7777-4777-8777-777777777777",
   conflict: "88888888-8888-4888-8888-888888888888",
   device: "99999999-9999-4999-8999-999999999999",
+  project: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  goal: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+  taskOne: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+  taskTwo: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+  dependency: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
 } as const;
 
 let storage: RhiaBrowserStorage;
@@ -120,8 +136,59 @@ function createTestMemoryRecords() {
   return { factOne, factTwo, decision, conflict };
 }
 
+function createTestWorkHubRecords() {
+  const project = createProject(
+    { areaId: ids.area, title: "RHIA 2.0" },
+    { id: ids.project, timestamp },
+  );
+  const goal = createGoal(
+    { projectId: project.id, title: "Arbeitszentrale" },
+    { id: ids.goal, timestamp },
+  );
+  const taskOne = createTask(
+    {
+      areaId: ids.area,
+      projectId: project.id,
+      goalId: goal.id,
+      title: "Speicher erweitern",
+      status: "in-progress",
+      importance: "high",
+    },
+    { id: ids.taskOne, timestamp },
+  );
+  const taskTwo = createTask(
+    { areaId: ids.area, projectId: project.id, title: "Import prüfen", status: "planned" },
+    { id: ids.taskTwo, timestamp },
+  );
+  const dependency = createTaskDependency(
+    { taskId: taskTwo.id, dependsOnTaskId: taskOne.id },
+    { id: ids.dependency, timestamp },
+  );
+  return { project, goal, taskOne, taskTwo, dependency };
+}
+
 async function signV1Backup(backup: RhiaBackupPackageV1): Promise<RhiaBackupPackageV1> {
   const normalized = rhiaBackupPackageV1Schema.parse(backup);
+  const checksumContent = JSON.stringify({
+    manifest: {
+      format: normalized.manifest.format,
+      formatVersion: normalized.manifest.formatVersion,
+      schemaVersion: normalized.manifest.schemaVersion,
+      createdAt: normalized.manifest.createdAt,
+      checksumAlgorithm: normalized.manifest.checksumAlgorithm,
+      recordCounts: normalized.manifest.recordCounts,
+    },
+    data: normalized.data,
+  });
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(checksumContent));
+  const checksum = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+  return { ...normalized, manifest: { ...normalized.manifest, checksum } };
+}
+
+async function signV2Backup(backup: RhiaBackupPackageV2): Promise<RhiaBackupPackageV2> {
+  const normalized = rhiaBackupPackageV2Schema.parse(backup);
   const checksumContent = JSON.stringify({
     manifest: {
       format: normalized.manifest.format,
@@ -172,6 +239,35 @@ describe("Dexie repositories", () => {
     expect(memoryFacts).toEqual(expect.arrayContaining([factOne, factTwo]));
     await expect(storage.decisions.getById(decision.id)).resolves.toEqual(decision);
     await expect(storage.memoryConflicts.getById(conflict.id)).resolves.toEqual(conflict);
+  });
+
+  it("stores, updates, deletes and restores all stage 3 work hub entity types", async () => {
+    const { project, goal, taskOne, taskTwo, dependency } = createTestWorkHubRecords();
+
+    await storage.transaction(async (repositories) => {
+      await repositories.projects.create(project);
+      await repositories.goals.create(goal);
+      await repositories.tasks.create(taskOne);
+      await repositories.tasks.create(taskTwo);
+      await repositories.taskDependencies.create(dependency);
+    });
+
+    expect(projectSchema.parse(await storage.projects.getById(project.id))).toEqual(project);
+    expect(goalSchema.parse(await storage.goals.getById(goal.id))).toEqual(goal);
+    expect(taskSchema.parse(await storage.tasks.getById(taskOne.id))).toEqual(taskOne);
+    expect(
+      taskDependencySchema.parse(await storage.taskDependencies.getById(dependency.id)),
+    ).toEqual(dependency);
+
+    const updated = await storage.tasks.replace({ ...taskOne, title: "Speicher geprüft" }, 1);
+    expect(updated).toMatchObject({ title: "Speicher geprüft", revision: 2 });
+    const deleted = await storage.tasks.softDelete(taskTwo.id, 1);
+    expect(deleted).toMatchObject({ revision: 2, deletedAt: changedAt });
+    await expect(storage.tasks.getById(taskTwo.id)).resolves.toBeUndefined();
+    await expect(storage.tasks.restore(taskTwo.id, 2)).resolves.toMatchObject({
+      revision: 3,
+      deletedAt: null,
+    });
   });
 
   it("updates, deletes and safely restores memory records", async () => {
@@ -343,11 +439,60 @@ describe("Dexie repositories", () => {
     await expect(storage.memoryFacts.list()).resolves.toEqual([]);
     await expect(storage.decisions.list()).resolves.toEqual([]);
     await expect(storage.memoryConflicts.list()).resolves.toEqual([]);
+    await expect(storage.projects.list()).resolves.toEqual([]);
+    await expect(storage.goals.list()).resolves.toEqual([]);
+    await expect(storage.tasks.list()).resolves.toEqual([]);
+    await expect(storage.taskDependencies.list()).resolves.toEqual([]);
   });
 
-  it("exports, verifies and restores a complete v2 backup", async () => {
+  it("migrates the complete stage 2 database to stage 3 without data loss", async () => {
+    const databaseName = storage.database.name;
+    const { area, source, note, audit } = createTestRecords();
+    const { factOne, decision, conflict } = createTestMemoryRecords();
+    await storage.deleteDatabase();
+
+    const stageTwo = new Dexie(databaseName);
+    stageTwo.version(RHIA_STAGE_TWO_BROWSER_DATABASE_VERSION).stores({
+      areas: "&id, type, name, status, updatedAt, deletedAt, revision",
+      sources: "&id, type, kind, label, updatedAt, deletedAt, revision",
+      notes:
+        "&id, type, areaId, sourceId, status, updatedAt, deletedAt, revision, [areaId+updatedAt]",
+      auditEntries:
+        "&id, type, entityType, entityId, action, occurredAt, updatedAt, [entityType+entityId]",
+      memoryFacts:
+        "&id, type, areaId, status, conflictKey, updatedAt, deletedAt, revision, [areaId+updatedAt], [conflictKey+status]",
+      decisions: "&id, type, areaId, status, updatedAt, deletedAt, revision, [areaId+updatedAt]",
+      memoryConflicts:
+        "&id, type, areaId, status, conflictKey, detectedAt, updatedAt, deletedAt, revision, [conflictKey+status]",
+    });
+    await stageTwo.open();
+    await stageTwo.table("areas").add(area);
+    await stageTwo.table("sources").add(source);
+    await stageTwo.table("notes").add(note);
+    await stageTwo.table("auditEntries").add(audit);
+    await stageTwo.table("memoryFacts").add(factOne);
+    await stageTwo.table("decisions").add(decision);
+    await stageTwo.table("memoryConflicts").add(conflict);
+    stageTwo.close();
+
+    storage = createRhiaBrowserStorage({ databaseName, now: () => changedAt });
+    await storage.open();
+
+    expect(storage.database.verno).toBe(RHIA_BROWSER_DATABASE_VERSION);
+    await expect(storage.notes.getById(note.id)).resolves.toEqual(note);
+    await expect(storage.memoryFacts.getById(factOne.id)).resolves.toEqual(factOne);
+    await expect(storage.decisions.getById(decision.id)).resolves.toEqual(decision);
+    await expect(storage.memoryConflicts.getById(conflict.id)).resolves.toEqual(conflict);
+    await expect(storage.projects.list()).resolves.toEqual([]);
+    await expect(storage.goals.list()).resolves.toEqual([]);
+    await expect(storage.tasks.list()).resolves.toEqual([]);
+    await expect(storage.taskDependencies.list()).resolves.toEqual([]);
+  });
+
+  it("exports, verifies and restores a complete v3 backup", async () => {
     const { area, source, note, audit } = createTestRecords();
     const { factOne, factTwo, decision, conflict } = createTestMemoryRecords();
+    const { project, goal, taskOne, taskTwo, dependency } = createTestWorkHubRecords();
     await storage.transaction(async (repositories) => {
       await repositories.areas.create(area);
       await repositories.sources.create(source);
@@ -357,6 +502,11 @@ describe("Dexie repositories", () => {
       await repositories.memoryFacts.create(factTwo);
       await repositories.decisions.create(decision);
       await repositories.memoryConflicts.create(conflict);
+      await repositories.projects.create(project);
+      await repositories.goals.create(goal);
+      await repositories.tasks.create(taskOne);
+      await repositories.tasks.create(taskTwo);
+      await repositories.taskDependencies.create(dependency);
     });
 
     const backup = await storage.createBackup();
@@ -364,7 +514,7 @@ describe("Dexie repositories", () => {
     await storage.clearAllData(DELETE_ALL_CONFIRMATION);
 
     const preview = await storage.previewImport(serialized);
-    expect(preview.sourceFormatVersion).toBe(2);
+    expect(preview.sourceFormatVersion).toBe(3);
     expect(preview.recordCounts).toEqual({
       areas: 1,
       sources: 1,
@@ -373,6 +523,10 @@ describe("Dexie repositories", () => {
       memoryFacts: 2,
       decisions: 1,
       memoryConflicts: 1,
+      projects: 1,
+      goals: 1,
+      tasks: 2,
+      taskDependencies: 1,
     });
     expect(preview.conflicts).toEqual([]);
 
@@ -381,9 +535,13 @@ describe("Dexie repositories", () => {
     await expect(storage.memoryFacts.getById(factOne.id)).resolves.toEqual(factOne);
     await expect(storage.decisions.getById(decision.id)).resolves.toEqual(decision);
     await expect(storage.memoryConflicts.getById(conflict.id)).resolves.toEqual(conflict);
+    await expect(storage.projects.getById(project.id)).resolves.toEqual(project);
+    await expect(storage.goals.getById(goal.id)).resolves.toEqual(goal);
+    await expect(storage.tasks.getById(taskOne.id)).resolves.toEqual(taskOne);
+    await expect(storage.taskDependencies.getById(dependency.id)).resolves.toEqual(dependency);
   });
 
-  it("migrates a verified v1 backup to v2 without inventing memory records", async () => {
+  it("migrates a verified v1 backup to v3 without inventing later-stage records", async () => {
     const { area, source, note, audit } = createTestRecords();
     const v1Backup = await signV1Backup({
       manifest: {
@@ -401,7 +559,7 @@ describe("Dexie repositories", () => {
     const preview = await storage.previewImport(v1Backup);
 
     expect(preview.sourceFormatVersion).toBe(1);
-    expect(preview.backup.manifest.formatVersion).toBe(2);
+    expect(preview.backup.manifest.formatVersion).toBe(3);
     expect(preview.recordCounts).toMatchObject({
       areas: 1,
       sources: 1,
@@ -410,10 +568,66 @@ describe("Dexie repositories", () => {
       memoryFacts: 0,
       decisions: 0,
       memoryConflicts: 0,
+      projects: 0,
+      goals: 0,
+      tasks: 0,
+      taskDependencies: 0,
     });
     await storage.importBackup(preview);
     await expect(storage.notes.getById(note.id)).resolves.toEqual(note);
     await expect(storage.memoryFacts.list({ includeDeleted: true })).resolves.toEqual([]);
+    await expect(storage.tasks.list({ includeDeleted: true })).resolves.toEqual([]);
+  });
+
+  it("migrates a verified v2 backup to v3 while preserving all memory records", async () => {
+    const { area, source, note, audit } = createTestRecords();
+    const { factOne, decision, conflict } = createTestMemoryRecords();
+    const v2Backup = await signV2Backup({
+      manifest: {
+        format: "rhia-backup",
+        formatVersion: 2,
+        schemaVersion: 1,
+        createdAt: timestamp,
+        checksumAlgorithm: "SHA-256",
+        checksum: "0".repeat(64),
+        recordCounts: {
+          areas: 1,
+          sources: 1,
+          notes: 1,
+          auditEntries: 1,
+          memoryFacts: 1,
+          decisions: 1,
+          memoryConflicts: 1,
+        },
+      },
+      data: {
+        areas: [area],
+        sources: [source],
+        notes: [note],
+        auditEntries: [audit],
+        memoryFacts: [factOne],
+        decisions: [decision],
+        memoryConflicts: [conflict],
+      },
+    });
+
+    const preview = await storage.previewImport(v2Backup);
+
+    expect(preview.sourceFormatVersion).toBe(2);
+    expect(preview.backup.manifest.formatVersion).toBe(3);
+    expect(preview.recordCounts).toMatchObject({
+      memoryFacts: 1,
+      decisions: 1,
+      memoryConflicts: 1,
+      projects: 0,
+      goals: 0,
+      tasks: 0,
+      taskDependencies: 0,
+    });
+    await storage.importBackup(preview);
+    await expect(storage.memoryFacts.getById(factOne.id)).resolves.toEqual(factOne);
+    await expect(storage.decisions.getById(decision.id)).resolves.toEqual(decision);
+    await expect(storage.memoryConflicts.getById(conflict.id)).resolves.toEqual(conflict);
   });
 
   it("rejects changed backup content and reports existing-record conflicts", async () => {
@@ -439,6 +653,24 @@ describe("Dexie repositories", () => {
     await expect(storage.previewImport(changedBackup)).rejects.toMatchObject({
       code: "BACKUP_CHECKSUM_MISMATCH",
     });
+  });
+
+  it("revalidates a task import preview immediately before writing", async () => {
+    const { area } = createTestRecords();
+    const { project, goal, taskOne } = createTestWorkHubRecords();
+    await storage.areas.create(area);
+    await storage.projects.create(project);
+    await storage.goals.create(goal);
+    await storage.tasks.create(taskOne);
+    const backup = await storage.createBackup();
+    await storage.clearAllData(DELETE_ALL_CONFIRMATION);
+    const preview = await storage.previewImport(backup);
+    preview.backup.data.tasks[0] = { ...taskOne, title: "Nach Prüfung manipuliert" };
+
+    await expect(storage.importBackup(preview)).rejects.toMatchObject({
+      code: "BACKUP_CHECKSUM_MISMATCH",
+    });
+    await expect(storage.tasks.list({ includeDeleted: true })).resolves.toEqual([]);
   });
 
   it("purges only expired trash and requires explicit confirmation for total deletion", async () => {

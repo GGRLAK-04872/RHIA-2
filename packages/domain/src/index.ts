@@ -1,6 +1,6 @@
 export const RHIA_PRODUCT_NAME = "RHIA 2.0" as const;
-export const RHIA_VERSION = "0.2.0" as const;
-export const RHIA_STAGE = 2 as const;
+export const RHIA_VERSION = "0.3.0" as const;
+export const RHIA_STAGE = 3 as const;
 export const RHIA_SCHEMA_VERSION = 1 as const;
 
 export const RHIA_RUNTIME = {
@@ -44,6 +44,15 @@ export interface Area extends EntityBase<"area"> {
   description: string | null;
   status: AreaStatus;
 }
+
+export const WORK_HUB_AREA_NAMES = ["Privat", "RH Produktion", "RHIA", "Shadow Grown"] as const;
+export type WorkHubAreaName = (typeof WORK_HUB_AREA_NAMES)[number];
+
+export type ActiveWorkHubArea = Area & {
+  name: WorkHubAreaName;
+  status: "active";
+  deletedAt: null;
+};
 
 export type SourceKind = "manual" | "import" | "system";
 
@@ -167,6 +176,19 @@ export interface ManualTaskPriority {
   rationale: string | null;
 }
 
+export interface ExplicitTaskPriorityDecision {
+  actor: "sir";
+  explicitlyConfirmed: true;
+  decidedAt: string;
+  rationale: string | null;
+}
+
+export interface ExplicitTaskInputConfirmation {
+  actor: "sir";
+  explicitlyConfirmed: true;
+  confirmedAt: string;
+}
+
 export interface Task extends EntityBase<"task"> {
   areaId: string;
   projectId: string | null;
@@ -187,6 +209,16 @@ export interface Task extends EntityBase<"task"> {
 export interface TaskDependency extends EntityBase<"task-dependency"> {
   taskId: string;
   dependsOnTaskId: string;
+}
+
+export type TaskBlockKind = "none" | "explicit" | "dependency" | "explicit-and-dependency";
+
+export interface TaskBlockState {
+  blocked: boolean;
+  kind: TaskBlockKind;
+  blockedReason: string | null;
+  blockedByTaskIds: string[];
+  explanation: string;
 }
 
 export type PersistedEntity =
@@ -446,12 +478,16 @@ export function createMemoryConflict(
 }
 
 export const WORK_HUB_RULE_ERROR_CODES = [
+  "INVALID_WORK_HUB_AREA",
   "INVALID_TASK_ASSIGNMENT",
   "INVALID_TASK_BLOCK_STATE",
   "INVALID_TASK_INCOME",
   "INVALID_TASK_DEPENDENCY",
   "DUPLICATE_TASK_DEPENDENCY",
   "CYCLIC_TASK_DEPENDENCY",
+  "INVALID_TASK_PRIORITY_CONTEXT",
+  "MANUAL_TASK_PRIORITY_CONFIRMATION_REQUIRED",
+  "TASK_INPUT_CONFIRMATION_REQUIRED",
 ] as const;
 
 export type WorkHubRuleErrorCode = (typeof WORK_HUB_RULE_ERROR_CODES)[number];
@@ -463,6 +499,41 @@ export class WorkHubRuleError extends Error {
     super(message, options);
     this.name = "WorkHubRuleError";
     this.code = code;
+  }
+}
+
+export function isWorkHubAreaName(name: string): name is WorkHubAreaName {
+  return WORK_HUB_AREA_NAMES.some((requiredName) => requiredName === name);
+}
+
+export function getMissingWorkHubAreaNames(
+  areas: readonly Pick<Area, "name" | "status" | "deletedAt">[],
+): WorkHubAreaName[] {
+  const availableNames = new Set(
+    areas
+      .filter((area) => area.status === "active" && area.deletedAt === null)
+      .map((area) => area.name)
+      .filter(isWorkHubAreaName),
+  );
+
+  return WORK_HUB_AREA_NAMES.filter((name) => !availableNames.has(name));
+}
+
+export function assertWorkHubAreaAssignment(
+  areaId: string,
+  area: Area | null,
+): asserts area is ActiveWorkHubArea {
+  if (
+    area === null ||
+    area.id !== areaId ||
+    area.status !== "active" ||
+    area.deletedAt !== null ||
+    !isWorkHubAreaName(area.name)
+  ) {
+    throw new WorkHubRuleError(
+      "INVALID_WORK_HUB_AREA",
+      "Projekte und Aufgaben müssen einem aktiven RHIA-Pflichtbereich zugeordnet sein.",
+    );
   }
 }
 
@@ -520,6 +591,29 @@ export function createTask(input: CreateTaskInput, options: EntityFactoryOptions
     blockedReason,
     manualPriority: null,
   };
+}
+
+export function createConfirmedTask(
+  input: CreateTaskInput,
+  confirmation: ExplicitTaskInputConfirmation,
+  options: EntityFactoryOptions = {},
+): Task {
+  const task = createTask(input, {
+    ...options,
+    timestamp: options.timestamp ?? confirmation.confirmedAt,
+  });
+  if (
+    confirmation.actor !== "sir" ||
+    confirmation.explicitlyConfirmed !== true ||
+    Number.isNaN(Date.parse(confirmation.confirmedAt)) ||
+    Date.parse(confirmation.confirmedAt) < Date.parse(task.createdAt)
+  ) {
+    throw new WorkHubRuleError(
+      "TASK_INPUT_CONFIRMATION_REQUIRED",
+      "Eine reale Aufgabe wird nur nach ausdrücklicher Bestätigung durch Sir übernommen.",
+    );
+  }
+  return task;
 }
 
 export function createTaskDependency(
@@ -681,6 +775,406 @@ export function assertTaskDependencyGraph(
   for (const task of tasks) {
     visit(task.id);
   }
+}
+
+export function getTaskBlockState(
+  task: Task,
+  tasks: readonly Task[],
+  dependencies: readonly TaskDependency[],
+): TaskBlockState {
+  assertTaskDependencyGraph(tasks, dependencies);
+
+  if (task.status === "completed" || task.status === "discarded") {
+    return {
+      blocked: false,
+      kind: "none",
+      blockedReason: null,
+      blockedByTaskIds: [],
+      explanation: "Die Aufgabe ist abgeschlossen und hat keine aktive Blockade.",
+    };
+  }
+
+  const taskById = new Map(tasks.map((candidate) => [candidate.id, candidate]));
+  const blockedByTaskIds = dependencies
+    .filter((dependency) => dependency.taskId === task.id)
+    .map((dependency) => dependency.dependsOnTaskId)
+    .filter((dependencyId) => taskById.get(dependencyId)?.status !== "completed")
+    .toSorted();
+  const explicitReason = task.status === "blocked" ? task.blockedReason : null;
+  const hasExplicitBlock = explicitReason !== null;
+  const hasDependencyBlock = blockedByTaskIds.length > 0;
+
+  if (hasExplicitBlock && hasDependencyBlock) {
+    return {
+      blocked: true,
+      kind: "explicit-and-dependency",
+      blockedReason: explicitReason,
+      blockedByTaskIds,
+      explanation: `${explicitReason} Zusätzlich sind ${blockedByTaskIds.length} abhängige Aufgaben offen.`,
+    };
+  }
+
+  if (hasExplicitBlock) {
+    return {
+      blocked: true,
+      kind: "explicit",
+      blockedReason: explicitReason,
+      blockedByTaskIds: [],
+      explanation: explicitReason,
+    };
+  }
+
+  if (hasDependencyBlock) {
+    return {
+      blocked: true,
+      kind: "dependency",
+      blockedReason: null,
+      blockedByTaskIds,
+      explanation: `${blockedByTaskIds.length} abhängige Aufgaben sind noch nicht erledigt.`,
+    };
+  }
+
+  return {
+    blocked: false,
+    kind: "none",
+    blockedReason: null,
+    blockedByTaskIds: [],
+    explanation: "Keine aktive Blockade.",
+  };
+}
+
+export const TASK_PRIORITY_FACTOR_KEYS = [
+  "deadline",
+  "importance",
+  "blockage",
+  "money-impact",
+  "income-timing",
+  "effort-fit",
+  "protected-work",
+] as const;
+export type TaskPriorityFactorKey = (typeof TASK_PRIORITY_FACTOR_KEYS)[number];
+
+export interface TaskPriorityFactor {
+  key: TaskPriorityFactorKey;
+  points: number;
+  explanation: string;
+}
+
+export interface TaskPriorityContext {
+  now: string;
+  availableMinutes?: number | null;
+  protectedAreaIds?: readonly string[];
+}
+
+export interface TaskPriorityEvaluation {
+  taskId: string;
+  score: number;
+  blocked: boolean;
+  blockedByTaskIds: string[];
+  factors: TaskPriorityFactor[];
+  explanation: string;
+}
+
+export interface RankedTaskPriority extends TaskPriorityEvaluation {
+  rank: number;
+  source: "manual" | "automatic";
+}
+
+const DAY_IN_MILLISECONDS = 86_400_000;
+
+function deadlineFactor(dueAt: string | null, now: number): TaskPriorityFactor {
+  if (dueAt === null) {
+    return { key: "deadline", points: 0, explanation: "Keine feste Frist." };
+  }
+
+  const daysUntilDue = (Date.parse(dueAt) - now) / DAY_IN_MILLISECONDS;
+  if (daysUntilDue <= 0) {
+    return {
+      key: "deadline",
+      points: 1_000,
+      explanation: "Frist ist erreicht oder überschritten.",
+    };
+  }
+  if (daysUntilDue <= 1) {
+    return { key: "deadline", points: 900, explanation: "Frist liegt innerhalb von 24 Stunden." };
+  }
+  if (daysUntilDue <= 3) {
+    return { key: "deadline", points: 750, explanation: "Frist liegt innerhalb von drei Tagen." };
+  }
+  if (daysUntilDue <= 7) {
+    return { key: "deadline", points: 600, explanation: "Frist liegt innerhalb einer Woche." };
+  }
+  return { key: "deadline", points: 300, explanation: "Feste spätere Frist vorhanden." };
+}
+
+function importanceFactor(importance: TaskImportance): TaskPriorityFactor {
+  const values: Record<TaskImportance, [number, string]> = {
+    high: [250, "Hohe Wichtigkeit."],
+    medium: [150, "Mittlere Wichtigkeit."],
+    low: [50, "Niedrige Wichtigkeit."],
+  };
+  const [points, explanation] = values[importance];
+  return { key: "importance", points, explanation };
+}
+
+function moneyImpactFactor(moneyImpact: TaskMoneyImpact): TaskPriorityFactor {
+  const values: Record<TaskMoneyImpact, [number, string]> = {
+    high: [140, "Hohe Geld- oder Geschäftswirkung."],
+    medium: [90, "Mittlere Geld- oder Geschäftswirkung."],
+    low: [40, "Geringe Geld- oder Geschäftswirkung."],
+    none: [0, "Keine direkte Geldwirkung."],
+  };
+  const [points, explanation] = values[moneyImpact];
+  return { key: "money-impact", points, explanation };
+}
+
+function incomeTimingFactor(expectedIncomeAt: string | null, now: number): TaskPriorityFactor {
+  if (expectedIncomeAt === null) {
+    return { key: "income-timing", points: 0, explanation: "Kein Geldeingang terminiert." };
+  }
+
+  const daysUntilIncome = (Date.parse(expectedIncomeAt) - now) / DAY_IN_MILLISECONDS;
+  if (daysUntilIncome <= 7) {
+    return { key: "income-timing", points: 120, explanation: "Geldeingang innerhalb einer Woche." };
+  }
+  if (daysUntilIncome <= 30) {
+    return { key: "income-timing", points: 80, explanation: "Geldeingang innerhalb eines Monats." };
+  }
+  return { key: "income-timing", points: 35, explanation: "Späterer Geldeingang erwartet." };
+}
+
+function effortFitFactor(
+  estimatedMinutes: number | null,
+  availableMinutes: number | null,
+): TaskPriorityFactor {
+  if (estimatedMinutes === null) {
+    return { key: "effort-fit", points: 0, explanation: "Aufwand ist noch nicht geschätzt." };
+  }
+  if (availableMinutes !== null && estimatedMinutes <= availableMinutes) {
+    return {
+      key: "effort-fit",
+      points: 90,
+      explanation: "Die Aufgabe passt vollständig in die verfügbare Zeit.",
+    };
+  }
+  if (estimatedMinutes <= 30) {
+    return {
+      key: "effort-fit",
+      points: 70,
+      explanation: "Kurzer Aufwand von höchstens 30 Minuten.",
+    };
+  }
+  if (estimatedMinutes <= 120) {
+    return {
+      key: "effort-fit",
+      points: 40,
+      explanation: "Überschaubarer Aufwand von höchstens zwei Stunden.",
+    };
+  }
+  return { key: "effort-fit", points: 10, explanation: "Hoher Zeitaufwand." };
+}
+
+export function evaluateTaskPriority(
+  task: Task,
+  tasks: readonly Task[],
+  dependencies: readonly TaskDependency[],
+  context: TaskPriorityContext,
+): TaskPriorityEvaluation {
+  const now = Date.parse(context.now);
+  const availableMinutes = context.availableMinutes ?? null;
+  if (
+    Number.isNaN(now) ||
+    (availableMinutes !== null && (!Number.isInteger(availableMinutes) || availableMinutes <= 0))
+  ) {
+    throw new WorkHubRuleError(
+      "INVALID_TASK_PRIORITY_CONTEXT",
+      "Die Prioritätsberechnung benötigt einen gültigen Zeitpunkt und eine positive verfügbare Zeit.",
+    );
+  }
+
+  const blockState = getTaskBlockState(task, tasks, dependencies);
+  const factors: TaskPriorityFactor[] = [
+    deadlineFactor(task.dueAt, now),
+    importanceFactor(task.importance),
+    {
+      key: "blockage",
+      points: blockState.blocked ? -500 : 0,
+      explanation: blockState.explanation,
+    },
+    moneyImpactFactor(task.moneyImpact),
+    incomeTimingFactor(task.expectedIncomeAt, now),
+    effortFitFactor(task.estimatedMinutes, availableMinutes),
+    context.protectedAreaIds?.includes(task.areaId)
+      ? {
+          key: "protected-work",
+          points: 35,
+          explanation: "Geschütztes Langzeitprojekt RHIA oder Shadow Grown.",
+        }
+      : { key: "protected-work", points: 0, explanation: "Kein Schutzbereich zugeordnet." },
+  ];
+  const inactive = task.status === "completed" || task.status === "discarded";
+  const score = inactive ? -10_000 : factors.reduce((sum, factor) => sum + factor.points, 0);
+  const strongestReasons = factors
+    .filter((factor) => factor.points !== 0)
+    .toSorted((left, right) => Math.abs(right.points) - Math.abs(left.points))
+    .slice(0, 3)
+    .map((factor) => factor.explanation);
+
+  return {
+    taskId: task.id,
+    score,
+    blocked: blockState.blocked,
+    blockedByTaskIds: blockState.blockedByTaskIds,
+    factors,
+    explanation: inactive
+      ? "Erledigte oder verworfene Aufgaben werden nicht aktiv priorisiert."
+      : strongestReasons.join(" "),
+  };
+}
+
+export function rankTasksByAutomaticPriority(
+  tasks: readonly Task[],
+  dependencies: readonly TaskDependency[],
+  context: TaskPriorityContext,
+): TaskPriorityEvaluation[] {
+  return tasks
+    .map((task) => evaluateTaskPriority(task, tasks, dependencies, context))
+    .toSorted((left, right) => {
+      if (left.score !== right.score) {
+        return right.score - left.score;
+      }
+      return left.taskId.localeCompare(right.taskId);
+    });
+}
+
+function assertExplicitTaskPriorityDecision(decision: ExplicitTaskPriorityDecision): void {
+  if (
+    decision.actor !== "sir" ||
+    decision.explicitlyConfirmed !== true ||
+    Number.isNaN(Date.parse(decision.decidedAt))
+  ) {
+    throw new WorkHubRuleError(
+      "MANUAL_TASK_PRIORITY_CONFIRMATION_REQUIRED",
+      "Eine manuelle Priorität benötigt eine ausdrückliche Entscheidung von Sir.",
+    );
+  }
+}
+
+export function setManualTaskPriority(
+  task: Task,
+  rank: number,
+  decision: ExplicitTaskPriorityDecision,
+): Task {
+  assertExplicitTaskPriorityDecision(decision);
+  if (
+    !Number.isInteger(rank) ||
+    rank <= 0 ||
+    Date.parse(decision.decidedAt) < Date.parse(task.createdAt) ||
+    task.deletedAt !== null ||
+    task.status === "completed" ||
+    task.status === "discarded"
+  ) {
+    throw new WorkHubRuleError(
+      "MANUAL_TASK_PRIORITY_CONFIRMATION_REQUIRED",
+      "Die manuelle Priorität ist für diese Aufgabe oder diesen Rang nicht zulässig.",
+    );
+  }
+
+  return {
+    ...task,
+    manualPriority: {
+      rank,
+      decidedAt: decision.decidedAt,
+      decidedBy: decision.actor,
+      rationale: decision.rationale ?? null,
+    },
+  };
+}
+
+export function clearManualTaskPriority(task: Task, decision: ExplicitTaskPriorityDecision): Task {
+  assertExplicitTaskPriorityDecision(decision);
+  return { ...task, manualPriority: null };
+}
+
+export function rankTasksByPriority(
+  tasks: readonly Task[],
+  dependencies: readonly TaskDependency[],
+  context: TaskPriorityContext,
+): RankedTaskPriority[] {
+  const taskById = new Map(tasks.map((task) => [task.id, task]));
+  const automatic = rankTasksByAutomaticPriority(tasks, dependencies, context);
+  const active = automatic.filter((evaluation) => {
+    const task = taskById.get(evaluation.taskId);
+    return task?.status !== "completed" && task?.status !== "discarded" && task?.deletedAt === null;
+  });
+  const activeIds = new Set(active.map((evaluation) => evaluation.taskId));
+  const inactive = automatic.filter((evaluation) => !activeIds.has(evaluation.taskId));
+  const manuallyRanked = active
+    .filter((evaluation) => taskById.get(evaluation.taskId)?.manualPriority !== null)
+    .toSorted((left, right) => {
+      const leftPriority = taskById.get(left.taskId)?.manualPriority;
+      const rightPriority = taskById.get(right.taskId)?.manualPriority;
+      if (!leftPriority || !rightPriority) {
+        return left.taskId.localeCompare(right.taskId);
+      }
+      if (leftPriority.rank !== rightPriority.rank) {
+        return leftPriority.rank - rightPriority.rank;
+      }
+      if (leftPriority.decidedAt !== rightPriority.decidedAt) {
+        return rightPriority.decidedAt.localeCompare(leftPriority.decidedAt);
+      }
+      return left.taskId.localeCompare(right.taskId);
+    });
+  const automaticOnly = active.filter(
+    (evaluation) => taskById.get(evaluation.taskId)?.manualPriority === null,
+  );
+  const slots = new Array<TaskPriorityEvaluation | undefined>(active.length);
+
+  for (const evaluation of manuallyRanked) {
+    const requestedRank = taskById.get(evaluation.taskId)?.manualPriority?.rank ?? 1;
+    let index = Math.min(requestedRank - 1, slots.length - 1);
+    while (index < slots.length && slots[index] !== undefined) {
+      index += 1;
+    }
+    if (index >= slots.length) {
+      index = slots.indexOf(undefined);
+    }
+    slots[index] = evaluation;
+  }
+
+  let automaticIndex = 0;
+  for (let index = 0; index < slots.length; index += 1) {
+    if (slots[index] === undefined) {
+      slots[index] = automaticOnly[automaticIndex];
+      automaticIndex += 1;
+    }
+  }
+
+  const rankedActive = slots.flatMap((evaluation, index): RankedTaskPriority[] => {
+    if (!evaluation) {
+      return [];
+    }
+    const manualPriority = taskById.get(evaluation.taskId)?.manualPriority;
+    return [
+      {
+        ...evaluation,
+        rank: index + 1,
+        source: manualPriority ? "manual" : "automatic",
+        explanation: manualPriority
+          ? `Manuelle Priorität von Sir: Rang ${manualPriority.rank}. ${manualPriority.rationale ?? ""}`.trim()
+          : evaluation.explanation,
+      },
+    ];
+  });
+  const rankedInactive = inactive.map(
+    (evaluation, index): RankedTaskPriority => ({
+      ...evaluation,
+      rank: rankedActive.length + index + 1,
+      source: "automatic",
+    }),
+  );
+
+  return [...rankedActive, ...rankedInactive];
 }
 
 export interface RepositoryReadOptions {

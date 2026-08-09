@@ -1,16 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
-  RHIA_RUNTIME,
-  RHIA_SCHEMA_VERSION,
-  RHIA_STAGE,
-  TASK_STATUSES,
   assertGoalProjectAssignment,
   assertTaskAssignment,
   assertTaskDependencyGraph,
+  assertWorkHubAreaAssignment,
+  clearManualTaskPriority,
   confirmDecisionProposal,
   confirmMemoryFactProposal,
   createArea,
   createAuditEntry,
+  createConfirmedTask,
   createDecision,
   createGoal,
   createMemoryConflict,
@@ -20,9 +19,20 @@ import {
   createSource,
   createTask,
   createTaskDependency,
+  evaluateTaskPriority,
+  getMissingWorkHubAreaNames,
+  getTaskBlockState,
+  RHIA_RUNTIME,
+  RHIA_SCHEMA_VERSION,
+  RHIA_STAGE,
+  rankTasksByAutomaticPriority,
+  rankTasksByPriority,
   revokeDecision,
+  setManualTaskPriority,
   supersedeDecision,
   supersedeMemoryFact,
+  TASK_STATUSES,
+  WORK_HUB_AREA_NAMES,
 } from "./index";
 
 const timestamp = "2026-08-08T16:00:00.000Z";
@@ -49,9 +59,9 @@ const ids = {
   dependencyThree: "456789ab-4567-4567-8567-456789abcdef",
 } as const;
 
-describe("RHIA stage 2 domain foundation", () => {
+describe("RHIA stage 3 domain foundation", () => {
   it("activates IndexedDB as the only local source while cloud and AI stay disabled", () => {
-    expect(RHIA_STAGE).toBe(2);
+    expect(RHIA_STAGE).toBe(3);
     expect(RHIA_RUNTIME).toEqual({
       sourceOfTruth: "indexeddb",
       cloudRuntime: false,
@@ -543,5 +553,308 @@ describe("stage 3.1 work hub domain", () => {
     expect(() => assertTaskDependencyGraph([taskOne], [dependencyOne])).toThrow(
       expect.objectContaining({ code: "INVALID_TASK_DEPENDENCY" }),
     );
+  });
+});
+
+describe("stage 3.2 required work hub areas", () => {
+  it("defines the four required areas in their binding order", () => {
+    expect(WORK_HUB_AREA_NAMES).toEqual(["Privat", "RH Produktion", "RHIA", "Shadow Grown"]);
+  });
+
+  it("reports only missing active required areas and preserves custom areas", () => {
+    const rhia = createArea({ name: "RHIA" }, { id: ids.area, timestamp });
+    const archivedPrivate = createArea(
+      { name: "Privat", status: "archived" },
+      { id: ids.project, timestamp },
+    );
+    const custom = createArea({ name: "Zusätzlicher Bereich" }, { id: ids.projectTwo, timestamp });
+
+    expect(getMissingWorkHubAreaNames([rhia, archivedPrivate, custom])).toEqual([
+      "Privat",
+      "RH Produktion",
+      "Shadow Grown",
+    ]);
+  });
+
+  it("accepts only the matching active required area for work hub assignments", () => {
+    const rhia = createArea({ name: "RHIA" }, { id: ids.area, timestamp });
+    const custom = createArea({ name: "Zusätzlicher Bereich" }, { id: ids.project, timestamp });
+
+    expect(() => assertWorkHubAreaAssignment(rhia.id, rhia)).not.toThrow();
+    expect(() => assertWorkHubAreaAssignment(ids.project, rhia)).toThrowError(
+      expect.objectContaining({ code: "INVALID_WORK_HUB_AREA" }),
+    );
+    expect(() => assertWorkHubAreaAssignment(custom.id, custom)).toThrowError(
+      expect.objectContaining({ code: "INVALID_WORK_HUB_AREA" }),
+    );
+    expect(() =>
+      assertWorkHubAreaAssignment(rhia.id, { ...rhia, status: "archived" }),
+    ).toThrowError(expect.objectContaining({ code: "INVALID_WORK_HUB_AREA" }));
+    expect(() => assertWorkHubAreaAssignment(rhia.id, null)).toThrowError(
+      expect.objectContaining({ code: "INVALID_WORK_HUB_AREA" }),
+    );
+  });
+});
+
+describe("stage 3.3 structured task fields and blockages", () => {
+  it("derives a visible dependency blockage until every prerequisite is completed", () => {
+    const task = createTask(
+      {
+        areaId: ids.area,
+        title: "Arbeitszentrale veröffentlichen",
+        status: "planned",
+        dueAt: "2026-08-12T18:00:00.000Z",
+        importance: "high",
+        estimatedMinutes: 90,
+        moneyImpact: "medium",
+        expectedIncomeCents: 25_000,
+        expectedIncomeAt: "2026-09-01T12:00:00.000Z",
+      },
+      { id: ids.taskOne, timestamp },
+    );
+    const prerequisite = createTask(
+      { areaId: ids.area, title: "Abnahme durchführen", status: "in-progress" },
+      { id: ids.taskTwo, timestamp },
+    );
+    const dependency = createTaskDependency(
+      { taskId: task.id, dependsOnTaskId: prerequisite.id },
+      { id: ids.dependencyOne, timestamp },
+    );
+
+    expect(getTaskBlockState(task, [task, prerequisite], [dependency])).toEqual({
+      blocked: true,
+      kind: "dependency",
+      blockedReason: null,
+      blockedByTaskIds: [prerequisite.id],
+      explanation: "1 abhängige Aufgaben sind noch nicht erledigt.",
+    });
+    expect(
+      getTaskBlockState(task, [task, { ...prerequisite, status: "completed" }], [dependency]),
+    ).toMatchObject({ blocked: false, kind: "none", blockedByTaskIds: [] });
+  });
+
+  it("combines an explicit blockage with unresolved dependencies", () => {
+    const task = createTask(
+      {
+        areaId: ids.area,
+        title: "Arbeitszentrale testen",
+        status: "blocked",
+        blockedReason: "Gerätetest fehlt.",
+      },
+      { id: ids.taskOne, timestamp },
+    );
+    const prerequisite = createTask(
+      { areaId: ids.area, title: "Testdaten vorbereiten", status: "planned" },
+      { id: ids.taskTwo, timestamp },
+    );
+    const dependency = createTaskDependency(
+      { taskId: task.id, dependsOnTaskId: prerequisite.id },
+      { id: ids.dependencyOne, timestamp },
+    );
+
+    expect(getTaskBlockState(task, [task, prerequisite], [dependency])).toMatchObject({
+      blocked: true,
+      kind: "explicit-and-dependency",
+      blockedReason: "Gerätetest fehlt.",
+      blockedByTaskIds: [prerequisite.id],
+    });
+  });
+});
+
+describe("stage 3.4 explainable automatic priority", () => {
+  it("orders deadline and importance before later priority factors", () => {
+    const urgent = createTask(
+      {
+        areaId: ids.area,
+        title: "Heute abgeben",
+        status: "planned",
+        dueAt: "2026-08-09T12:00:00.000Z",
+        importance: "high",
+        estimatedMinutes: 60,
+      },
+      { id: ids.taskOne, timestamp },
+    );
+    const profitable = createTask(
+      {
+        areaId: ids.source,
+        title: "Späterer Umsatz",
+        status: "planned",
+        importance: "medium",
+        moneyImpact: "high",
+        expectedIncomeCents: 100_000,
+        expectedIncomeAt: "2026-08-12T12:00:00.000Z",
+      },
+      { id: ids.taskTwo, timestamp },
+    );
+
+    const ranked = rankTasksByAutomaticPriority([profitable, urgent], [], {
+      now: "2026-08-09T10:00:00.000Z",
+      availableMinutes: 90,
+    });
+
+    expect(ranked.map((entry) => entry.taskId)).toEqual([urgent.id, profitable.id]);
+    expect(ranked[0]?.factors.map((factor) => factor.key)).toEqual([
+      "deadline",
+      "importance",
+      "blockage",
+      "money-impact",
+      "income-timing",
+      "effort-fit",
+      "protected-work",
+    ]);
+    expect(ranked[0]?.explanation).toContain("Frist liegt innerhalb von 24 Stunden");
+  });
+
+  it("makes blockages, income timing, effort fit and protected work visible", () => {
+    const task = createTask(
+      {
+        areaId: ids.area,
+        title: "Geschütztes Projekt fortsetzen",
+        status: "planned",
+        importance: "high",
+        estimatedMinutes: 45,
+        moneyImpact: "medium",
+        expectedIncomeCents: 30_000,
+        expectedIncomeAt: "2026-08-15T12:00:00.000Z",
+      },
+      { id: ids.taskOne, timestamp },
+    );
+    const blocker = createTask(
+      { areaId: ids.area, title: "Vorarbeit", status: "in-progress" },
+      { id: ids.taskTwo, timestamp },
+    );
+    const dependency = createTaskDependency(
+      { taskId: task.id, dependsOnTaskId: blocker.id },
+      { id: ids.dependencyOne, timestamp },
+    );
+
+    const result = evaluateTaskPriority(task, [task, blocker], [dependency], {
+      now: "2026-08-09T10:00:00.000Z",
+      availableMinutes: 60,
+      protectedAreaIds: [ids.area],
+    });
+
+    expect(result).toMatchObject({ blocked: true, blockedByTaskIds: [blocker.id] });
+    expect(result.factors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: "blockage", points: -500 }),
+        expect.objectContaining({ key: "income-timing", points: 120 }),
+        expect.objectContaining({ key: "effort-fit", points: 90 }),
+        expect.objectContaining({ key: "protected-work", points: 35 }),
+      ]),
+    );
+  });
+
+  it("rejects invalid priority context and excludes completed work from active ranking", () => {
+    const task = createTask(
+      { areaId: ids.area, title: "Abgeschlossen", status: "completed" },
+      { id: ids.taskOne, timestamp },
+    );
+
+    expect(() =>
+      evaluateTaskPriority(task, [task], [], { now: "ungültig", availableMinutes: 0 }),
+    ).toThrow(expect.objectContaining({ code: "INVALID_TASK_PRIORITY_CONTEXT" }));
+    expect(
+      evaluateTaskPriority(task, [task], [], { now: "2026-08-09T10:00:00.000Z" }),
+    ).toMatchObject({ score: -10_000, blocked: false });
+  });
+});
+
+describe("stage 3.5 protected manual priority", () => {
+  const decision = {
+    actor: "sir",
+    explicitlyConfirmed: true,
+    decidedAt: "2026-08-09T11:00:00.000Z",
+    rationale: "Diese Aufgabe kommt bewusst zuerst.",
+  } as const;
+
+  it("sets and clears manual priority only after an explicit decision by Sir", () => {
+    const task = createTask(
+      { areaId: ids.area, title: "Bewusst vorziehen", status: "planned" },
+      { id: ids.taskOne, timestamp },
+    );
+    const prioritized = setManualTaskPriority(task, 1, decision);
+
+    expect(prioritized.manualPriority).toEqual({
+      rank: 1,
+      decidedAt: decision.decidedAt,
+      decidedBy: "sir",
+      rationale: decision.rationale,
+    });
+    expect(() =>
+      setManualTaskPriority(task, 1, {
+        ...decision,
+        explicitlyConfirmed: false,
+      } as unknown as typeof decision),
+    ).toThrow(expect.objectContaining({ code: "MANUAL_TASK_PRIORITY_CONFIRMATION_REQUIRED" }));
+    expect(clearManualTaskPriority(prioritized, decision).manualPriority).toBeNull();
+  });
+
+  it("keeps Sir's chosen rank when automatic scores are recalculated", () => {
+    const automaticFirst = createTask(
+      {
+        areaId: ids.area,
+        title: "Automatisch dringend",
+        status: "planned",
+        dueAt: "2026-08-09T12:00:00.000Z",
+        importance: "high",
+      },
+      { id: ids.taskOne, timestamp },
+    );
+    const manualSecond = setManualTaskPriority(
+      createTask(
+        { areaId: ids.area, title: "Manuell auf Rang zwei", status: "planned" },
+        { id: ids.taskTwo, timestamp },
+      ),
+      2,
+      decision,
+    );
+    const automaticThird = createTask(
+      { areaId: ids.area, title: "Automatisch dahinter", status: "planned", importance: "low" },
+      { id: ids.taskThree, timestamp },
+    );
+
+    const ranked = rankTasksByPriority([automaticThird, manualSecond, automaticFirst], [], {
+      now: "2026-08-09T10:00:00.000Z",
+    });
+
+    expect(ranked.map((entry) => [entry.taskId, entry.rank, entry.source])).toEqual([
+      [automaticFirst.id, 1, "automatic"],
+      [manualSecond.id, 2, "manual"],
+      [automaticThird.id, 3, "automatic"],
+    ]);
+    expect(ranked[1]?.explanation).toContain("Manuelle Priorität von Sir: Rang 2");
+    expect(manualSecond.manualPriority?.rank).toBe(2);
+  });
+});
+
+describe("stage 3.8 confirmed task acceptance", () => {
+  it("creates a real task only after explicit confirmation by Sir", () => {
+    const confirmation = {
+      actor: "sir",
+      explicitlyConfirmed: true,
+      confirmedAt: "2026-08-09T11:00:00.000Z",
+    } as const;
+
+    expect(
+      createConfirmedTask({ areaId: ids.area, title: "Bestätigte Aufgabe" }, confirmation, {
+        id: ids.taskOne,
+        timestamp,
+      }),
+    ).toMatchObject({ id: ids.taskOne, title: "Bestätigte Aufgabe", status: "inbox" });
+    expect(() =>
+      createConfirmedTask(
+        { areaId: ids.area, title: "Unbestätigte Aufgabe" },
+        { ...confirmation, explicitlyConfirmed: false } as unknown as typeof confirmation,
+        { id: ids.taskTwo, timestamp },
+      ),
+    ).toThrow(expect.objectContaining({ code: "TASK_INPUT_CONFIRMATION_REQUIRED" }));
+    expect(() =>
+      createConfirmedTask(
+        { areaId: ids.area, title: "Zu früh bestätigt" },
+        { ...confirmation, confirmedAt: "2026-08-08T07:59:59.000Z" },
+        { id: ids.taskTwo, timestamp },
+      ),
+    ).toThrow(expect.objectContaining({ code: "TASK_INPUT_CONFIRMATION_REQUIRED" }));
   });
 });

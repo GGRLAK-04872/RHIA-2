@@ -13,10 +13,13 @@ import {
 } from "@rhia/domain";
 import { describe, expect, it } from "vitest";
 import {
+  activeWorkHubAreaSchema,
   appStatusSchema,
   areaSchema,
   auditEntrySchema,
   decisionSchema,
+  explicitTaskInputConfirmationSchema,
+  explicitTaskPriorityDecisionSchema,
   goalSchema,
   manualTaskPrioritySchema,
   memoryConflictSchema,
@@ -27,6 +30,7 @@ import {
   sourceSchema,
   taskDependencySchema,
   taskSchema,
+  workHubAreaNameSchema,
 } from "./index";
 
 const timestamp = "2026-08-08T16:00:00.000Z";
@@ -101,6 +105,26 @@ describe("stage 1 contracts", () => {
       appStatusSchema.safeParse({
         version: "0.2.0",
         stage: 1,
+        mode: "local-first",
+        apiEnabled: true,
+        persistenceEnabled: true,
+      }).success,
+    ).toBe(false);
+
+    expect(
+      appStatusSchema.safeParse({
+        version: "0.3.0",
+        stage: 3,
+        mode: "local-first",
+        apiEnabled: false,
+        persistenceEnabled: true,
+      }).success,
+    ).toBe(true);
+
+    expect(
+      appStatusSchema.safeParse({
+        version: "0.3.0",
+        stage: 3,
         mode: "local-first",
         apiEnabled: true,
         persistenceEnabled: true,
@@ -400,5 +424,74 @@ describe("stage 3.1 work hub contracts", () => {
       false,
     );
     expect(goalSchema.safeParse({ ...goal, projectId: "not-a-uuid" }).success).toBe(false);
+  });
+});
+
+describe("stage 3.2 required work hub area contracts", () => {
+  it("accepts exactly the four binding work hub area names", () => {
+    for (const name of ["Privat", "RH Produktion", "RHIA", "Shadow Grown"] as const) {
+      expect(workHubAreaNameSchema.parse(name)).toBe(name);
+    }
+
+    expect(workHubAreaNameSchema.safeParse("Allgemein").success).toBe(false);
+    expect(workHubAreaNameSchema.safeParse("Rhia").success).toBe(false);
+  });
+
+  it("requires a work hub area to be active and not deleted", () => {
+    const area = createArea({ name: "RHIA" }, { id: ids.area, timestamp });
+
+    expect(activeWorkHubAreaSchema.parse(area)).toEqual(area);
+    expect(activeWorkHubAreaSchema.safeParse({ ...area, name: "Allgemein" }).success).toBe(false);
+    expect(activeWorkHubAreaSchema.safeParse({ ...area, status: "archived" }).success).toBe(false);
+    expect(activeWorkHubAreaSchema.safeParse({ ...area, deletedAt: timestamp }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe("stage 3.5 manual priority decision contract", () => {
+  it("accepts only an explicit strict decision by Sir", () => {
+    const decision = {
+      actor: "sir",
+      explicitlyConfirmed: true,
+      decidedAt: "2026-08-09T11:00:00.000Z",
+      rationale: "Bewusst zuerst.",
+    } as const;
+
+    expect(explicitTaskPriorityDecisionSchema.parse(decision)).toEqual(decision);
+    expect(
+      explicitTaskPriorityDecisionSchema.safeParse({ ...decision, actor: "rhia" }).success,
+    ).toBe(false);
+    expect(
+      explicitTaskPriorityDecisionSchema.safeParse({ ...decision, explicitlyConfirmed: false })
+        .success,
+    ).toBe(false);
+    expect(
+      explicitTaskPriorityDecisionSchema.safeParse({ ...decision, unexpected: true }).success,
+    ).toBe(false);
+  });
+});
+
+describe("stage 3.8 task input confirmation contract", () => {
+  it("accepts only a strict explicit confirmation by Sir", () => {
+    const confirmation = {
+      actor: "sir",
+      explicitlyConfirmed: true,
+      confirmedAt: "2026-08-09T11:00:00.000Z",
+    } as const;
+
+    expect(explicitTaskInputConfirmationSchema.parse(confirmation)).toEqual(confirmation);
+    expect(
+      explicitTaskInputConfirmationSchema.safeParse({
+        ...confirmation,
+        explicitlyConfirmed: false,
+      }).success,
+    ).toBe(false);
+    expect(
+      explicitTaskInputConfirmationSchema.safeParse({ ...confirmation, actor: "rhia" }).success,
+    ).toBe(false);
+    expect(
+      explicitTaskInputConfirmationSchema.safeParse({ ...confirmation, unexpected: true }).success,
+    ).toBe(false);
   });
 });

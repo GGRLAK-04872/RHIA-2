@@ -1,0 +1,246 @@
+.panel {
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgb(35 16 27 / 84%), rgb(13 9 13 / 88%));
+  box-shadow: 0 24px 64px rgb(0 0 0 / 26%);
+}
+
+.header,
+.taskHeader,
+.projectHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.overline {
+  margin: 0 0 7px;
+  color: #d985a6;
+  font-size: 0.67rem;
+  font-weight: 760;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.header h2,
+.projectHeader h3,
+.taskHeader h4 {
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.header h2 {
+  font-size: 1.45rem;
+}
+
+.localBadge,
+.rankBadge,
+.metaRow span,
+.projectHeader strong {
+  border: 1px solid rgb(236 157 187 / 15%);
+  border-radius: 999px;
+  background: rgb(131 37 73 / 18%);
+  color: #e7b9ca;
+  font-size: 0.67rem;
+  font-weight: 700;
+}
+
+.localBadge,
+.rankBadge,
+.projectHeader strong {
+  padding: 7px 10px;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 20px;
+  padding: 5px;
+  border-radius: 14px;
+  background: rgb(5 4 6 / 52%);
+}
+
+.tabs button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #aa949e;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 680;
+  cursor: pointer;
+}
+
+.tabs button[aria-selected="true"] {
+  background: rgb(126 36 70 / 46%);
+  color: #fff3f7;
+  box-shadow: inset 0 0 0 1px rgb(242 166 195 / 10%);
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.4fr) repeat(2, minmax(120px, 0.8fr));
+  gap: 9px;
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.filters label {
+  display: grid;
+  gap: 5px;
+}
+
+.filters label > span {
+  color: #9f8993;
+  font-size: 0.65rem;
+}
+
+.filters input,
+.filters select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 11px;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 10px;
+  background: rgb(5 4 6 / 62%);
+  color: #f8ecf1;
+  font: inherit;
+  font-size: 0.75rem;
+}
+
+.content {
+  margin-top: 16px;
+}
+
+.taskList,
+.projectList {
+  display: grid;
+  gap: 10px;
+}
+
+.taskCard,
+.projectCard {
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 16px;
+  background: rgb(7 5 8 / 48%);
+}
+
+.taskCard {
+  padding: 14px;
+}
+
+.taskCard[data-blocked="true"] {
+  border-color: rgb(238 145 111 / 22%);
+}
+
+.taskContext {
+  margin: 0 0 4px;
+  color: #ad8b98;
+  font-size: 0.64rem;
+}
+
+.taskHeader h4 {
+  font-size: 0.91rem;
+}
+
+.rankBadge[data-manual="true"] {
+  border-color: rgb(238 195 117 / 28%);
+  background: rgb(113 74 22 / 32%);
+  color: #f1d59f;
+}
+
+.description,
+.priorityReason,
+.blockage,
+.empty {
+  color: #b8a3ac;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.description {
+  margin: 9px 0 0;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.metaRow span {
+  padding: 4px 7px;
+  background: rgb(255 255 255 / 3%);
+  color: #ad97a0;
+  font-weight: 560;
+}
+
+.priorityReason,
+.blockage {
+  margin: 10px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid #8c3155;
+}
+
+.blockage {
+  border-color: #b46c52;
+  color: #d9b0a1;
+}
+
+.projectCard {
+  padding: 15px;
+}
+
+.projectHeader span {
+  color: #a98f99;
+  font-size: 0.63rem;
+}
+
+.projectHeader h3 {
+  margin-top: 3px;
+  font-size: 1rem;
+}
+
+.projectHeader + .taskList {
+  margin-top: 12px;
+}
+
+.empty {
+  margin: 0;
+  padding: 18px;
+  text-align: center;
+}
+
+@media (max-width: 620px) {
+  .panel {
+    padding: 17px;
+    border-radius: 20px;
+  }
+
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .tabs {
+    overflow-x: auto;
+  }
+
+  .tabs button {
+    min-width: 72px;
+  }
+}
