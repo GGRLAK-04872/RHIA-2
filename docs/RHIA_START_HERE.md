@@ -13,11 +13,14 @@
 | Letzter verifizierter Funktionsstand auf `main` | `16d1f47f409c7247da5f5bce717514a4f38332c3` |
 | Produktversion | `0.2.0` |
 | Aktive Stufe im Produkt | `2` |
+| Freigegebene Entwicklungsstufe | `3` |
+| Vorbereiteter Teilmeilenstein | `3.1 – Domänenmodell und Verträge der Arbeitszentrale` |
 | Datenbankschema | Dexie-Version 3 |
 | Sicherungsformat | `rhia-backup` Version 2 |
 | Testseite | <https://ggrlak-04872.github.io/RHIA-2/> |
 | Aktive Datenquelle | lokale IndexedDB des jeweiligen Browsers |
-| Projektphase | Stufe 2 vollständig abgeschlossen und in `main` integriert |
+| Projektphase | Stufe 3 freigegeben; Teilmeilenstein 3.1 vorbereitet; noch keine Stufe-3-Funktionalität implementiert |
+| Dokumentationsstand | Stufe-3-Freigabe und Teilmeilenstein 3.1 über PR #4 dokumentiert; keine Funktionsänderung |
 
 Der Commit `16d1f47f409c7247da5f5bce717514a4f38332c3` bezeichnet den letzten technisch geprüften
 Funktionsstand von RHIA 2.0 auf `main`. Spätere reine Dokumentationsänderungen oder
@@ -26,6 +29,10 @@ neuer Chat muss prüfen, ob der Funktionscommit in der Historie des aktuellen `m
 welche späteren Commits hinzugekommen sind und ob spätere Funktionsänderungen vollständig in dieser
 Datei dokumentiert wurden. PR #3 ist geschlossen und gemergt. Das alte Repository
 `GGRLAK-04872/RHIA` bleibt unverändert und darf nicht beschrieben werden.
+
+Die Freigabe von Stufe 3 ändert den verifizierten Funktionsstand nicht. Bis ein Stufe-3-Teilmeilenstein
+implementiert, technisch geprüft, abgenommen und in `main` integriert wurde, bleibt der dokumentierte
+Funktionsstand bei Produktversion `0.2.0` und Stufe 2.
 
 ## Abgeschlossene Stufen
 
@@ -65,11 +72,21 @@ Enthalten sind:
 
 ## Aktueller Haltepunkt
 
-**Stufe 3 ist im Masterplan vorbereitet, aber gesperrt.**
+**Stufe 3 wurde von Sir am 09.08.2026 freigegeben. Vorbereitet ist ausschließlich Teilmeilenstein
+3.1 – Domänenmodell und Verträge der Arbeitszentrale.**
 
-Es wurde noch keine Stufe-3-Funktionalität begonnen. Der nächste Arbeitschat darf den Plan und den
-tatsächlichen Repository-Stand prüfen, aber ohne ausdrückliche Freigabe weder einen Stufe-3-Branch
-anlegen noch Datenmodell, UI, Architektur oder Funktionalität für Stufe 3 ändern.
+Es wurde noch keine Stufe-3-Funktionalität implementiert. Der bereits freigegebene erste
+Teilmeilenstein umfasst ausschließlich:
+
+- `Project`, `Goal`, `Task` und `TaskDependency` in `packages/domain`;
+- Status- und Felddefinitionen, Erzeugungsfunktionen sowie Domänenregeln;
+- strikte Zod-Verträge in `packages/contracts`;
+- automatisierte Domänen- und Vertragstests.
+
+Nicht Bestandteil von Teilmeilenstein 3.1 sind Dexie-Migration, Speicherung, Repositories,
+Prioritätsalgorithmus, Benutzeroberfläche, Export/Import-Erweiterung oder weitere
+Stufe-3-Teilmeilensteine. Der bestehende Datenweg
+`UI -> Anwendungsdienst -> Domäne -> Repository -> IndexedDB` bleibt unverändert.
 
 ## Letzte technische Änderungen
 
@@ -109,12 +126,12 @@ Export, Gesamtlöschung, Import sowie Hoch- und Querformat.
 
 ## Offene Punkte
 
-1. Stufe 3 benötigt eine ausdrückliche Freigabe von Sir.
-2. Nach Freigabe muss zuerst der tatsächliche `main`-Stand erneut geprüft und der erste
-   Stufe-3-Teilmeilenstein abgegrenzt werden.
-3. Für Stufe 3 sind ein eigener Branch, Draft-PR, technische Abnahme, reale Gerätetests und eine
-   spätere separate Merge-Freigabe erforderlich.
-4. Spätere Entscheidungen zu RHIA-PC, Integrationen, KI-Budget, Sprache und nativer App werden erst
+1. Vor der Implementierung von Teilmeilenstein 3.1 müssen der tatsächliche `main`-Stand, die
+   Repository-Regeln und der aktuelle CI-Stand erneut geprüft werden.
+2. Teilmeilenstein 3.1 erhält einen eigenen Feature-Branch und Draft-PR.
+3. Vor Teilmeilenstein 3.2 wird gestoppt; dafür ist eine neue ausdrückliche Freigabe erforderlich.
+4. Jeder Merge in `main` benötigt weiterhin eine separate ausdrückliche Freigabe von Sir.
+5. Spätere Entscheidungen zu RHIA-PC, Integrationen, KI-Budget, Sprache und nativer App werden erst
    an ihrem im Masterplan definierten Freigabepunkt getroffen.
 
 ## Bekannte Fehler oder nicht blockierende Punkte
@@ -137,8 +154,11 @@ Export, Gesamtlöschung, Import sowie Hoch- und Querformat.
 
 ## Aktuelle Sperren
 
-- Stufe 3 und alle späteren Stufen dürfen nicht begonnen werden.
-- Keine Funktions-, Architektur- oder Datenmodelländerung ohne neue Freigabe.
+- Freigegeben ist ausschließlich Stufe 3.1; Stufe 3.2 und alle späteren Teilmeilensteine oder Stufen
+  bleiben gesperrt.
+- In Stufe 3.1 sind nur Änderungen an Domänenmodell, Verträgen und zugehörigen Tests zulässig.
+- Keine Dexie-Migration, Speicherung, Repositories, Prioritätslogik, UI- oder
+  Export/Import-Erweiterung innerhalb von Stufe 3.1.
 - OpenAI API und andere externe KI bleiben technisch deaktiviert.
 - API-Budget bleibt bei 0 Euro, bis Sir einen Kostenrahmen ausdrücklich freigibt.
 - Keine Cloud- oder Mehrgerätesynchronisation.
@@ -152,27 +172,25 @@ Export, Gesamtlöschung, Import sowie Hoch- und Querformat.
 
 ## Nächster geplanter Schritt
 
-Nach Freigabe von Stufe 3:
-
-1. tatsächlichen GitHub-Stand, Repository-Regeln, Masterplan, diese Übergabe und CI lesend prüfen;
-2. Ziel, Umfang, Risiken und realistische Dauer des ersten Stufe-3-Teilmeilensteins nennen;
-3. einen getrennten Stufe-3-Feature-Branch vom dann aktuellen `main` anlegen;
-4. ausschließlich den freigegebenen ersten Teilmeilenstein der Arbeitszentrale umsetzen;
-5. vor jedem weiteren Teilmeilenstein am vorgesehenen Haltepunkt stoppen.
-
-Bis zur Freigabe ist nur lesende Prüfung und Pflege des Zwei-Dateien-Übergabesystems zulässig.
+1. tatsächlichen `main`-Stand, Repository-Regeln, Masterplan, diese Übergabe und CI lesend prüfen;
+2. einen getrennten Stufe-3.1-Feature-Branch vom dann aktuellen `main` anlegen;
+3. ausschließlich Domänenmodell, Verträge und zugehörige Tests für `Project`, `Goal`, `Task` und
+   `TaskDependency` umsetzen;
+4. die relevanten Qualitätsprüfungen ausführen und einen Draft-PR erstellen;
+5. vor Dexie-Migration, Speicherung, Priorisierung, UI und Teilmeilenstein 3.2 stoppen.
 
 ## Benötigte Freigabe von Sir
 
-Der nächste zulässige Entwicklungsbefehl lautet:
+Für den Beginn von Teilmeilenstein 3.1 ist keine weitere Stufenfreigabe erforderlich. Der nächste
+zulässige Entwicklungsbefehl lautet:
 
-> Stufe 3 freigegeben. Prüfe zuerst `docs/RHIA_START_HERE.md`,
-> `docs/RHIA_MASTER_AUFBAUPLAN_2.2.md`, die Repository-Regeln und den tatsächlichen Stand von
-> `GGRLAK-04872/RHIA-2/main`. Nenne anschließend Ziel, Umfang, Risiken und realistische Dauer des
-> ersten Teilmeilensteins von Stufe 3, bevor du Änderungen vornimmst. Das alte Repository `RHIA`
-> bleibt unverändert.
+> Setze ausschließlich Stufe 3.1 – Domänenmodell und Verträge der Arbeitszentrale – auf einem
+> getrennten Feature-Branch vom aktuellen `main` um. Prüfe vorher Repository-Regeln, CI und den
+> tatsächlichen `main`-Stand. Ändere nur `packages/domain`, `packages/contracts` und zugehörige
+> Tests. Keine Dexie-Migration, Speicherung, Priorisierung, UI oder Export/Import-Erweiterung. Das
+> alte Repository `RHIA` bleibt unverändert. Stoppe vor Stufe 3.2 und vor jedem Merge.
 
-Diese Freigabe erlaubt noch keinen Merge. Jeder Merge benötigt weiterhin eine separate
+Die Stufe-3-Freigabe erlaubt keinen Merge. Jeder Merge benötigt weiterhin eine separate
 ausdrückliche Freigabe.
 
 ## Dauerhafte Zwei-Dateien-Chatwechsel-Regel
@@ -236,9 +254,9 @@ Diese Regel ist verbindlich:
 > sofort. Wiederhole keine bereits bestandenen Tests ohne relevanten neuen Änderungsgrund. Fordere
 > keine alten Chatprotokolle, alten Masterversionen oder historischen Dokumente an, solange die
 > beiden aktiven Dateien vorhanden und konsistent sind. Verändere weder das alte Repository `RHIA`
-> noch Sicherheits-, Datenschutz- oder Kostengrenzen. Stufe 3 bleibt gesperrt, bis Sir sie
-> ausdrücklich freigibt. Nenne vor jedem längeren Arbeitsschritt eine realistische Dauer und stoppe
-> an jedem dokumentierten Freigabepunkt.
+> noch Sicherheits-, Datenschutz- oder Kostengrenzen. Stufe 3.1 ist freigegeben; alle späteren
+> Teilmeilensteine und Stufen bleiben gesperrt. Nenne vor jedem längeren Arbeitsschritt eine
+> realistische Dauer und stoppe an jedem dokumentierten Freigabepunkt.
 
 Nach diesem Starttext muss der neue Chat sofort melden:
 
@@ -246,6 +264,6 @@ Nach diesem Starttext muss der neue Chat sofort melden:
 - letzter verifizierter Funktionsstand auf `main`:
   `16d1f47f409c7247da5f5bce717514a4f38332c3`;
 - Dokumentationsstand: gegebenenfalls spätere reine Übergabe- oder Planungscommits;
-- nächster möglicher Schritt: Stufe 3 erst nach Freigabe;
-- verboten: jede Stufe-3-Implementierung, jeder Merge und jede Änderung am alten Repository ohne
-  passenden Auftrag.
+- nächster erlaubter Schritt: Stufe 3.1 auf einem getrennten Feature-Branch beginnen;
+- verboten: Stufe 3.2 oder spätere Stufen, jeder Merge sowie jede Änderung am alten Repository
+  ohne passenden Auftrag.
