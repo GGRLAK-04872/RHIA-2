@@ -447,6 +447,9 @@ export function confirmDecisionProposal(
 }
 
 export function supersedeMemoryFact(fact: MemoryFact): MemoryFact {
+  if (fact.status === "superseded" && fact.deletedAt === null) {
+    return fact;
+  }
   assertActiveConfirmedMemoryRecord(fact);
 
   return {
