@@ -37,6 +37,19 @@ Stufe 2 führt `MemoryFact`, `Decision` und `MemoryConflict` als getrennte Entit
 Bestätigungsfelder, Löschzeitpunkt, Gültigkeitszeitraum und Konfliktauflösung werden durch strikte
 Zod-Verträge gemeinsam validiert. Unvollständige oder widersprüchliche Zustände werden abgelehnt.
 
+## Technische Durchsetzung ab Teilmeilenstein 2.3
+
+- Die Fabriken für Fakten und Entscheidungen erzeugen unabhängig von zusätzlichen Eingabefeldern
+  ausschließlich den Status `proposed` ohne Bestätigungsdaten.
+- Der lokale Anwendungsdienst verlangt für die Aktivierung ein ausdrückliches Sir-Signal und setzt
+  erst dann `confirmedAt` und `confirmedBy`.
+- Nur ein offener Vorschlag darf bestätigt oder abgelehnt werden. Wiederholte Aktivierung sowie das
+  Ablehnen eines bereits bestätigten Datensatzes werden als ungültiger Zustandswechsel blockiert.
+- Ablehnungen verwenden den bestehenden 30-Tage-Papierkorb. Vorschlag, Bestätigung und Ablehnung
+  erzeugen jeweils eine technische Auditspur ohne den persönlichen Inhalt zu duplizieren.
+- Bereich und sämtliche Quellen werden innerhalb derselben Transaktion geprüft. Ein fehlender Bezug
+  rollt Vorschlag und Audit vollständig zurück.
+
 ## Sicherheits- und Kostengrenze
 
 Stufe 2 speichert keine vollständigen Chats automatisch, verwendet keine externe KI, führt keine

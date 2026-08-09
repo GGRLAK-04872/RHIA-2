@@ -7,7 +7,7 @@ Dieses Repository ist der saubere Neustart ohne Cloudflare-, KV- oder Durable-Ob
 
 - Stufe 0: abgeschlossen und abgenommen
 - Stufe 1: Local-first-Datenfundament abgeschlossen, real abgenommen und in `main` integriert
-- Stufe 2: Gedächtnis v1 freigegeben; Teilmeilenstein 2.0 abgeschlossen und 2.1 lokal grün
+- Stufe 2: Gedächtnis v1 freigegeben; Teilmeilensteine 2.0 bis 2.3 technisch umgesetzt
 - Betriebsart: lokale IndexedDB als einzige Datenquelle, ohne Cloud-Sync
 - Web/PWA: React, Vite und TypeScript Strict
 - Daten: Dexie, Zod, versionierte Migration, Export/Import und 30-Tage-Papierkorb
@@ -30,6 +30,11 @@ pnpm dev
 Anschließend die angezeigte lokale Adresse im Browser öffnen. In Stufe 1 speichert RHIA bewusst
 eingegebene Notizen ausschließlich in der IndexedDB dieses Browsers. Andere Geräte erhalten diese
 Daten erst durch einen kontrollierten Export und Import.
+
+Der lokale Gedächtnisdienst legt Fakten und Entscheidungen ausschließlich als inaktive Vorschläge
+an. Erst ein ausdrückliches Bestätigungssignal von Sir aktiviert sie; Ablehnungen bleiben im
+Papierkorb und in der Auditspur nachvollziehbar. Die Bedienoberfläche dafür folgt erst in
+Teilmeilenstein 2.8.
 
 ## Prüfung
 

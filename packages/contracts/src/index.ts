@@ -75,6 +75,7 @@ function validateValidityWindow(
 function validateConfirmation(
   entity: {
     status: string;
+    createdAt: string;
     confirmedAt: string | null;
     confirmedBy: "sir" | null;
     deletedAt: string | null;
@@ -103,6 +104,17 @@ function validateConfirmation(
       code: "custom",
       path: ["confirmedAt"],
       message: "Ein Vorschlag darf noch keine Bestätigung enthalten.",
+    });
+  }
+
+  if (
+    entity.confirmedAt !== null &&
+    Date.parse(entity.confirmedAt) < Date.parse(entity.createdAt)
+  ) {
+    context.addIssue({
+      code: "custom",
+      path: ["confirmedAt"],
+      message: "confirmedAt darf nicht vor createdAt liegen.",
     });
   }
 

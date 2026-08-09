@@ -13,8 +13,9 @@ Ausgangs-`main` für Stufe 2: `7578f79e627f9e0d298c734bba3040f9fef93049`.
 Stufe 2 – Gedächtnis v1 wurde am 09.08.2026 ausdrücklich freigegeben. Teilmeilenstein 2.0 ist grün;
 Teilmeilenstein 2.1 ist auf `feat/stufe-2-gedaechtnis-v1` umgesetzt und über GitHub-CI bestätigt.
 Teilmeilenstein 2.2 ist mit der additiven Dexie-Migration und den Gedächtnis-Repositories umgesetzt
-und lokal vollständig grün. Stufe 2 ist noch nicht abgeschlossen oder zur Zusammenführung
-freigegeben.
+und über GitHub-CI bestätigt. Teilmeilenstein 2.3 ist mit dem kontrollierten Vorschlags-,
+Bestätigungs- und Ablehnungsablauf umgesetzt und lokal vollständig grün. Stufe 2 ist noch nicht
+abgeschlossen oder zur Zusammenführung freigegeben.
 
 ## Umgesetzt
 
@@ -57,11 +58,17 @@ freigegeben.
 - Dexie-Version 3 statt der verkürzten Planangabe Version 2, weil Version 2 bereits das
   veröffentlichte Stufe-1-Schema ist;
 - Sicherungsformat v1 bleibt bis zum ausdrücklich vorgesehenen Teilmeilenstein 2.7 unverändert.
+- Fakten und Entscheidungen entstehen technisch ausschließlich als inaktive Vorschläge;
+- Aktivierung nur durch ausdrückliche Bestätigung von Sir mit Zeitstempel und Auditspur;
+- Ablehnung ausschließlich offener Vorschläge mit sicherem Übergang in den 30-Tage-Papierkorb;
+- ungültige oder wiederholte Zustandswechsel werden sichtbar blockiert;
+- Bereichs- und Quellenbezüge werden transaktional geprüft; fehlerhafte Vorschläge hinterlassen
+  weder Gedächtnisdatensatz noch Auditspur.
 
 ## Nächster notwendiger Schritt
 
-1. Teilmeilenstein 2.2 im Draft-PR durch GitHub-CI prüfen.
-2. Danach vor Teilmeilenstein 2.3 mit Vorschlagen, Bestätigen und Ablehnen halten.
+1. Teilmeilenstein 2.3 im Draft-PR durch GitHub-CI prüfen.
+2. Danach vor Teilmeilenstein 2.4 mit Korrektur, Ersetzen, Verwerfen und Historie halten.
 3. Stufe 2 erst nach vollständiger technischer und realer Abnahme zusammenführen.
 
 OpenAI API, Sprache, Android-App und Cloud-Sync bleiben deaktiviert. Das alte Repository `RHIA`

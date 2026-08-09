@@ -181,11 +181,8 @@ export interface CreateMemoryFactInput {
   value: string;
   conflictKey: string;
   displayText: string;
-  status?: MemoryFactStatus;
   validFrom?: string | null;
   validUntil?: string | null;
-  confirmedAt?: string | null;
-  confirmedBy?: MemoryConfirmationActor | null;
   supersedesId?: string | null;
 }
 
@@ -195,11 +192,8 @@ export interface CreateDecisionInput {
   title: string;
   decisionText: string;
   rationale: string;
-  status?: DecisionStatus;
   validFrom?: string | null;
   validUntil?: string | null;
-  confirmedAt?: string | null;
-  confirmedBy?: MemoryConfirmationActor | null;
   supersedesId?: string | null;
 }
 
@@ -295,11 +289,11 @@ export function createMemoryFact(
     value: input.value,
     conflictKey: input.conflictKey,
     displayText: input.displayText,
-    status: input.status ?? "proposed",
+    status: "proposed",
     validFrom: input.validFrom ?? null,
     validUntil: input.validUntil ?? null,
-    confirmedAt: input.confirmedAt ?? null,
-    confirmedBy: input.confirmedBy ?? null,
+    confirmedAt: null,
+    confirmedBy: null,
     supersedesId: input.supersedesId ?? null,
   };
 }
@@ -316,11 +310,11 @@ export function createDecision(
     title: input.title,
     decisionText: input.decisionText,
     rationale: input.rationale,
-    status: input.status ?? "proposed",
+    status: "proposed",
     validFrom: input.validFrom ?? null,
     validUntil: input.validUntil ?? null,
-    confirmedAt: input.confirmedAt ?? null,
-    confirmedBy: input.confirmedBy ?? null,
+    confirmedAt: null,
+    confirmedBy: null,
     supersedesId: input.supersedesId ?? null,
   };
 }
@@ -371,6 +365,7 @@ export const REPOSITORY_ERROR_CODES = [
   "BACKUP_CHECKSUM_MISMATCH",
   "IMPORT_CONFLICT",
   "CONFIRMATION_REQUIRED",
+  "INVALID_STATE_TRANSITION",
 ] as const;
 
 export type RepositoryErrorCode = (typeof REPOSITORY_ERROR_CODES)[number];
@@ -383,4 +378,60 @@ export class RepositoryError extends Error {
     this.name = "RepositoryError";
     this.code = code;
   }
+}
+
+export type MemoryProposal = MemoryFact | Decision;
+
+export interface ExplicitMemoryConfirmation {
+  actor: MemoryConfirmationActor;
+  explicitlyConfirmed: true;
+  confirmedAt: string;
+}
+
+export function assertPendingMemoryProposal(proposal: MemoryProposal): void {
+  if (proposal.status !== "proposed" || proposal.deletedAt !== null) {
+    throw new RepositoryError(
+      "INVALID_STATE_TRANSITION",
+      "Nur ein offener Gedächtnisvorschlag kann bestätigt oder abgelehnt werden.",
+    );
+  }
+}
+
+function assertExplicitMemoryConfirmation(confirmation: ExplicitMemoryConfirmation): void {
+  if (confirmation.actor !== "sir" || confirmation.explicitlyConfirmed !== true) {
+    throw new RepositoryError(
+      "CONFIRMATION_REQUIRED",
+      "Gedächtniswissen wird erst nach ausdrücklicher Bestätigung durch Sir aktiviert.",
+    );
+  }
+}
+
+export function confirmMemoryFactProposal(
+  fact: MemoryFact,
+  confirmation: ExplicitMemoryConfirmation,
+): MemoryFact {
+  assertPendingMemoryProposal(fact);
+  assertExplicitMemoryConfirmation(confirmation);
+
+  return {
+    ...fact,
+    status: "confirmed",
+    confirmedAt: confirmation.confirmedAt,
+    confirmedBy: confirmation.actor,
+  };
+}
+
+export function confirmDecisionProposal(
+  decision: Decision,
+  confirmation: ExplicitMemoryConfirmation,
+): Decision {
+  assertPendingMemoryProposal(decision);
+  assertExplicitMemoryConfirmation(confirmation);
+
+  return {
+    ...decision,
+    status: "confirmed",
+    confirmedAt: confirmation.confirmedAt,
+    confirmedBy: confirmation.actor,
+  };
 }

@@ -3,6 +3,8 @@ import {
   RHIA_RUNTIME,
   RHIA_SCHEMA_VERSION,
   RHIA_STAGE,
+  confirmDecisionProposal,
+  confirmMemoryFactProposal,
   createArea,
   createAuditEntry,
   createDecision,
@@ -13,6 +15,7 @@ import {
 } from "./index";
 
 const timestamp = "2026-08-08T16:00:00.000Z";
+const confirmedAt = "2026-08-08T16:05:00.000Z";
 const ids = {
   area: "11111111-1111-4111-8111-111111111111",
   source: "22222222-2222-4222-8222-222222222222",
@@ -140,5 +143,108 @@ describe("RHIA stage 1 domain foundation", () => {
       factIds: [factOne.id, factTwo.id],
       resolution: null,
     });
+  });
+
+  it("ignores untrusted activation fields when creating proposals", () => {
+    const untrustedInput = {
+      areaId: ids.area,
+      sourceIds: [ids.source],
+      knowledgeType: "profile",
+      subject: "sir",
+      predicate: "preferred-address",
+      value: "Sir",
+      conflictKey: "sir.profile.preferred-address",
+      displayText: "Die bevorzugte Anrede ist Sir.",
+      status: "confirmed",
+      confirmedAt,
+      confirmedBy: "sir",
+    };
+
+    const fact = createMemoryFact(untrustedInput, {
+      id: ids.factOne,
+      timestamp,
+      originDeviceId: ids.device,
+    });
+
+    expect(fact).toMatchObject({
+      status: "proposed",
+      confirmedAt: null,
+      confirmedBy: null,
+    });
+  });
+
+  it("confirms facts and decisions only through the explicit transition", () => {
+    const fact = createMemoryFact(
+      {
+        areaId: ids.area,
+        sourceIds: [ids.source],
+        knowledgeType: "profile",
+        subject: "sir",
+        predicate: "preferred-address",
+        value: "Sir",
+        conflictKey: "sir.profile.preferred-address",
+        displayText: "Die bevorzugte Anrede ist Sir.",
+      },
+      { id: ids.factOne, timestamp, originDeviceId: ids.device },
+    );
+    const decision = createDecision(
+      {
+        areaId: ids.area,
+        sourceIds: [ids.source],
+        title: "API deaktiviert lassen",
+        decisionText: "OpenAI bleibt in Stufe 2 deaktiviert.",
+        rationale: "Stufe 2 arbeitet vollständig lokal.",
+      },
+      { id: ids.decision, timestamp, originDeviceId: ids.device },
+    );
+    const confirmation = { actor: "sir", explicitlyConfirmed: true, confirmedAt } as const;
+
+    expect(confirmMemoryFactProposal(fact, confirmation)).toMatchObject({
+      status: "confirmed",
+      confirmedAt,
+      confirmedBy: "sir",
+    });
+    expect(confirmDecisionProposal(decision, confirmation)).toMatchObject({
+      status: "confirmed",
+      confirmedAt,
+      confirmedBy: "sir",
+    });
+  });
+
+  it("rejects implicit confirmation and repeated activation", () => {
+    const fact = createMemoryFact(
+      {
+        areaId: ids.area,
+        sourceIds: [ids.source],
+        knowledgeType: "profile",
+        subject: "sir",
+        predicate: "preferred-address",
+        value: "Sir",
+        conflictKey: "sir.profile.preferred-address",
+        displayText: "Die bevorzugte Anrede ist Sir.",
+      },
+      { id: ids.factOne, timestamp, originDeviceId: ids.device },
+    );
+
+    expect(() =>
+      confirmMemoryFactProposal(fact, {
+        actor: "sir",
+        explicitlyConfirmed: false,
+        confirmedAt,
+      } as never),
+    ).toThrow(expect.objectContaining({ code: "CONFIRMATION_REQUIRED" }));
+
+    const confirmed = confirmMemoryFactProposal(fact, {
+      actor: "sir",
+      explicitlyConfirmed: true,
+      confirmedAt,
+    });
+    expect(() =>
+      confirmMemoryFactProposal(confirmed, {
+        actor: "sir",
+        explicitlyConfirmed: true,
+        confirmedAt,
+      }),
+    ).toThrow(expect.objectContaining({ code: "INVALID_STATE_TRANSITION" }));
   });
 });

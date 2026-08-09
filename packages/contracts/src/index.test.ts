@@ -165,6 +165,14 @@ describe("stage 2 memory contracts", () => {
         confirmedBy: "sir",
       }).success,
     ).toBe(true);
+    expect(
+      memoryFactSchema.safeParse({
+        ...proposedFact,
+        status: "confirmed",
+        confirmedAt: "2026-08-08T15:59:59.000Z",
+        confirmedBy: "sir",
+      }).success,
+    ).toBe(false);
     expect(memoryFactSchema.safeParse({ ...proposedFact, status: "disputed" }).success).toBe(false);
 
     const decision = createDecision(
@@ -174,13 +182,17 @@ describe("stage 2 memory contracts", () => {
         title: "Lokale Entscheidung",
         decisionText: "Die Daten bleiben lokal.",
         rationale: "Eine Quelle der Wahrheit.",
-        status: "confirmed",
       },
       { id: ids.decision, timestamp, originDeviceId: ids.device },
     );
-    expect(decisionSchema.safeParse(decision).success).toBe(false);
+    expect(decisionSchema.safeParse({ ...decision, status: "confirmed" }).success).toBe(false);
     expect(
-      decisionSchema.safeParse({ ...decision, confirmedAt: timestamp, confirmedBy: "sir" }).success,
+      decisionSchema.safeParse({
+        ...decision,
+        status: "confirmed",
+        confirmedAt: timestamp,
+        confirmedBy: "sir",
+      }).success,
     ).toBe(true);
   });
 
