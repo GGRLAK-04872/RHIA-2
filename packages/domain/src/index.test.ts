@@ -499,6 +499,16 @@ describe("stage 3.1 work hub domain", () => {
     );
   });
 
+  it("accepts an inbox task without a project or goal assignment", () => {
+    const inboxTask = createTask(
+      { areaId: ids.area, title: "Unsortierter Eingang" },
+      { id: ids.taskOne, timestamp },
+    );
+
+    expect(inboxTask).toMatchObject({ status: "inbox", projectId: null, goalId: null });
+    expect(() => assertTaskAssignment(inboxTask, null, null)).not.toThrow();
+  });
+
   it("accepts an acyclic graph and rejects missing, duplicate or cyclic dependencies", () => {
     const { taskOne, taskTwo, taskThree } = createWorkHubFixture();
     const dependencyOne = createTaskDependency(

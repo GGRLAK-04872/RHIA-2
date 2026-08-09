@@ -590,7 +590,10 @@ export function assertGoalProjectAssignment(goal: Goal, project: Project): void 
 export function assertTaskAssignment(task: Task, project: Project | null, goal: Goal | null): void {
   assertTaskAssignmentIds(task.projectId, task.goalId);
 
-  if ((task.projectId === null) !== (project === null) || project?.id !== task.projectId) {
+  if (
+    (task.projectId === null) !== (project === null) ||
+    (project !== null && project.id !== task.projectId)
+  ) {
     throw new WorkHubRuleError(
       "INVALID_TASK_ASSIGNMENT",
       "Die Projektzuordnung der Aufgabe ist unvollständig oder widersprüchlich.",
@@ -604,7 +607,7 @@ export function assertTaskAssignment(task: Task, project: Project | null, goal: 
     );
   }
 
-  if ((task.goalId === null) !== (goal === null) || goal?.id !== task.goalId) {
+  if ((task.goalId === null) !== (goal === null) || (goal !== null && goal.id !== task.goalId)) {
     throw new WorkHubRuleError(
       "INVALID_TASK_ASSIGNMENT",
       "Die Zielzuordnung der Aufgabe ist unvollständig oder widersprüchlich.",
