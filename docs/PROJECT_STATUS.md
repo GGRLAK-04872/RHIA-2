@@ -11,8 +11,10 @@ integriert. Der Dokumentationsnachtrag aus PR #2 ist ebenfalls gemergt und verö
 Ausgangs-`main` für Stufe 2: `7578f79e627f9e0d298c734bba3040f9fef93049`.
 
 Stufe 2 – Gedächtnis v1 wurde am 09.08.2026 ausdrücklich freigegeben. Teilmeilenstein 2.0 ist grün;
-Teilmeilenstein 2.1 ist auf `feat/stufe-2-gedaechtnis-v1` umgesetzt und lokal vollständig grün.
-Stufe 2 ist noch nicht abgeschlossen oder zur Zusammenführung freigegeben.
+Teilmeilenstein 2.1 ist auf `feat/stufe-2-gedaechtnis-v1` umgesetzt und über GitHub-CI bestätigt.
+Teilmeilenstein 2.2 ist mit der additiven Dexie-Migration und den Gedächtnis-Repositories umgesetzt
+und lokal vollständig grün. Stufe 2 ist noch nicht abgeschlossen oder zur Zusammenführung
+freigegeben.
 
 ## Umgesetzt
 
@@ -46,11 +48,20 @@ Stufe 2 ist noch nicht abgeschlossen oder zur Zusammenführung freigegeben.
   Sicherung bestanden;
 - Handyansicht im Hoch- und Querformat real geprüft;
 - Stufe 1 am 09.08.2026 durch Sir abgenommen und über PR #1 in `main` integriert.
+- Gedächtnisverträge für `MemoryFact`, `Decision` und `MemoryConflict` mit strikter
+  Laufzeitvalidierung;
+- Dexie-Tabellen und typisierte Repositories für alle drei Gedächtnisentitäten;
+- gemeinsame Transaktionen über die vier Stufe-1- und drei Gedächtnistabellen;
+- Revisionsschutz, Löschung und sichere Wiederherstellung als unbestätigter Vorschlag;
+- verlustfreie Migration vom veröffentlichten Stufe-1-Schema auf die neuen Gedächtnistabellen;
+- Dexie-Version 3 statt der verkürzten Planangabe Version 2, weil Version 2 bereits das
+  veröffentlichte Stufe-1-Schema ist;
+- Sicherungsformat v1 bleibt bis zum ausdrücklich vorgesehenen Teilmeilenstein 2.7 unverändert.
 
 ## Nächster notwendiger Schritt
 
-1. Teilmeilenstein 2.1 im Draft-PR durch GitHub-CI prüfen.
-2. Danach vor Teilmeilenstein 2.2 mit Dexie-Schema-Version 2 und Repositories halten.
+1. Teilmeilenstein 2.2 im Draft-PR durch GitHub-CI prüfen.
+2. Danach vor Teilmeilenstein 2.3 mit Vorschlagen, Bestätigen und Ablehnen halten.
 3. Stufe 2 erst nach vollständiger technischer und realer Abnahme zusammenführen.
 
 OpenAI API, Sprache, Android-App und Cloud-Sync bleiben deaktiviert. Das alte Repository `RHIA`

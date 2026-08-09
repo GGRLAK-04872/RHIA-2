@@ -1,6 +1,9 @@
 import {
   areaSchema,
   auditEntrySchema,
+  decisionSchema,
+  memoryConflictSchema,
+  memoryFactSchema,
   noteSchema,
   rhiaBackupPackageSchema,
   sourceSchema,
@@ -13,8 +16,11 @@ import {
   RepositoryError,
   type Area,
   type AuditEntry,
+  type Decision,
   type EntityRepository,
   type EntityType,
+  type MemoryConflict,
+  type MemoryFact,
   type Note,
   type PersistedEntity,
   type RepositoryReadOptions,
@@ -23,7 +29,8 @@ import {
 import Dexie, { type Table, type TransactionMode } from "dexie";
 
 export const RHIA_BROWSER_DATABASE_NAME = "rhia-2" as const;
-export const RHIA_BROWSER_DATABASE_VERSION = 2 as const;
+export const RHIA_STAGE_ONE_BROWSER_DATABASE_VERSION = 2 as const;
+export const RHIA_BROWSER_DATABASE_VERSION = 3 as const;
 export const RHIA_BACKUP_FORMAT_VERSION = 1 as const;
 export const RHIA_TRASH_RETENTION_DAYS = 30 as const;
 export const DELETE_ALL_CONFIRMATION = "RHIA LOKALDATEN LÖSCHEN" as const;
@@ -43,6 +50,15 @@ const CURRENT_STORES = {
     "&id, type, entityType, entityId, action, occurredAt, updatedAt, [entityType+entityId]",
 } as const;
 
+const STAGE_TWO_STORES = {
+  ...CURRENT_STORES,
+  memoryFacts:
+    "&id, type, areaId, status, conflictKey, updatedAt, deletedAt, revision, [areaId+updatedAt], [conflictKey+status]",
+  decisions: "&id, type, areaId, status, updatedAt, deletedAt, revision, [areaId+updatedAt]",
+  memoryConflicts:
+    "&id, type, areaId, status, conflictKey, detectedAt, updatedAt, deletedAt, revision, [conflictKey+status]",
+} as const;
+
 type EntitySchema<TEntity> = {
   parse(value: unknown): TEntity;
 };
@@ -54,12 +70,15 @@ export class RhiaBrowserDatabase extends Dexie {
   sources!: Table<Source, string>;
   notes!: Table<Note, string>;
   auditEntries!: Table<AuditEntry, string>;
+  memoryFacts!: Table<MemoryFact, string>;
+  decisions!: Table<Decision, string>;
+  memoryConflicts!: Table<MemoryConflict, string>;
 
   constructor(databaseName: string = RHIA_BROWSER_DATABASE_NAME) {
     super(databaseName);
 
     this.version(1).stores(LEGACY_VERSION_ONE_STORES);
-    this.version(RHIA_BROWSER_DATABASE_VERSION)
+    this.version(RHIA_STAGE_ONE_BROWSER_DATABASE_VERSION)
       .stores(CURRENT_STORES)
       .upgrade(async (transaction) => {
         const migratedAt = new Date().toISOString();
@@ -121,7 +140,13 @@ export class RhiaBrowserDatabase extends Dexie {
             record.summary = typeof record.summary === "string" ? record.summary : null;
           });
       });
+    this.version(RHIA_BROWSER_DATABASE_VERSION).stores(STAGE_TWO_STORES);
   }
+}
+
+interface RepositoryLifecycle<TEntity> {
+  softDelete(entity: TEntity, changedAt: string): TEntity;
+  restore(entity: TEntity, changedAt: string): TEntity;
 }
 
 class DexieEntityRepository<TEntity extends PersistedEntity> implements EntityRepository<TEntity> {
@@ -130,6 +155,7 @@ class DexieEntityRepository<TEntity extends PersistedEntity> implements EntityRe
     private readonly table: Table<TEntity, string>,
     private readonly schema: EntitySchema<TEntity>,
     private readonly now: Clock,
+    private readonly lifecycle?: RepositoryLifecycle<TEntity>,
   ) {}
 
   async getById(id: string, options: RepositoryReadOptions = {}): Promise<TEntity | undefined> {
@@ -193,11 +219,11 @@ class DexieEntityRepository<TEntity extends PersistedEntity> implements EntityRe
   }
 
   async softDelete(id: string, expectedRevision: number): Promise<TEntity> {
-    return this.changeDeletedAt(id, expectedRevision, this.now());
+    return this.changeDeletedAt(id, expectedRevision, true);
   }
 
   async restore(id: string, expectedRevision: number): Promise<TEntity> {
-    return this.changeDeletedAt(id, expectedRevision, null);
+    return this.changeDeletedAt(id, expectedRevision, false);
   }
 
   async hardDelete(id: string, expectedRevision: number): Promise<void> {
@@ -210,16 +236,20 @@ class DexieEntityRepository<TEntity extends PersistedEntity> implements EntityRe
   private async changeDeletedAt(
     id: string,
     expectedRevision: number,
-    deletedAt: string | null,
+    deleteRecord: boolean,
   ): Promise<TEntity> {
     return this.database.transaction("rw", this.table, async () => {
       const current = await this.requireCurrent(id, expectedRevision);
       const changedAt = this.now();
+      const lifecycleEntity = deleteRecord
+        ? this.lifecycle?.softDelete(current, changedAt)
+        : this.lifecycle?.restore(current, changedAt);
       const next = this.parse({
         ...current,
+        ...lifecycleEntity,
         revision: current.revision + 1,
         updatedAt: changedAt,
-        deletedAt,
+        deletedAt: deleteRecord ? changedAt : null,
       });
 
       await this.table.put(next);
@@ -314,6 +344,9 @@ export class RhiaBrowserStorage {
   readonly sources: EntityRepository<Source>;
   readonly notes: EntityRepository<Note>;
   readonly auditEntries: EntityRepository<AuditEntry>;
+  readonly memoryFacts: EntityRepository<MemoryFact>;
+  readonly decisions: EntityRepository<Decision>;
+  readonly memoryConflicts: EntityRepository<MemoryConflict>;
   private readonly now: Clock;
 
   constructor(options: RhiaBrowserStorageOptions = {}) {
@@ -344,6 +377,42 @@ export class RhiaBrowserStorage {
       auditEntrySchema,
       now,
     );
+    this.memoryFacts = new DexieEntityRepository<MemoryFact>(
+      this.database,
+      this.database.memoryFacts,
+      memoryFactSchema,
+      now,
+      {
+        softDelete: (entity) => ({ ...entity, status: "deleted" }),
+        restore: (entity) => ({
+          ...entity,
+          status: "proposed",
+          confirmedAt: null,
+          confirmedBy: null,
+        }),
+      },
+    );
+    this.decisions = new DexieEntityRepository<Decision>(
+      this.database,
+      this.database.decisions,
+      decisionSchema,
+      now,
+      {
+        softDelete: (entity) => ({ ...entity, status: "deleted" }),
+        restore: (entity) => ({
+          ...entity,
+          status: "proposed",
+          confirmedAt: null,
+          confirmedBy: null,
+        }),
+      },
+    );
+    this.memoryConflicts = new DexieEntityRepository<MemoryConflict>(
+      this.database,
+      this.database.memoryConflicts,
+      memoryConflictSchema,
+      now,
+    );
   }
 
   async open(): Promise<void> {
@@ -371,10 +440,15 @@ export class RhiaBrowserStorage {
     const mode: TransactionMode = "rw";
     return this.database.transaction(
       mode,
-      this.database.areas,
-      this.database.sources,
-      this.database.notes,
-      this.database.auditEntries,
+      [
+        this.database.areas,
+        this.database.sources,
+        this.database.notes,
+        this.database.auditEntries,
+        this.database.memoryFacts,
+        this.database.decisions,
+        this.database.memoryConflicts,
+      ],
       () => operation(this),
     );
   }
@@ -481,6 +555,9 @@ export class RhiaBrowserStorage {
         this.database.areas.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
         this.database.sources.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
         this.database.notes.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
+        this.database.memoryFacts.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
+        this.database.decisions.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
+        this.database.memoryConflicts.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
       ]);
       return removed.reduce((total, count) => total + count, 0);
     });
@@ -500,6 +577,9 @@ export class RhiaBrowserStorage {
         this.database.sources.clear(),
         this.database.notes.clear(),
         this.database.auditEntries.clear(),
+        this.database.memoryFacts.clear(),
+        this.database.decisions.clear(),
+        this.database.memoryConflicts.clear(),
       ]);
     });
   }

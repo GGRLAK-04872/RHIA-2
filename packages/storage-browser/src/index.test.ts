@@ -1,11 +1,20 @@
 import "fake-indexeddb/auto";
 import { areaSchema, auditEntrySchema, noteSchema, sourceSchema } from "@rhia/contracts";
-import { createArea, createAuditEntry, createNote, createSource } from "@rhia/domain";
+import {
+  createArea,
+  createAuditEntry,
+  createDecision,
+  createMemoryConflict,
+  createMemoryFact,
+  createNote,
+  createSource,
+} from "@rhia/domain";
 import Dexie from "dexie";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   DELETE_ALL_CONFIRMATION,
   RHIA_BROWSER_DATABASE_VERSION,
+  RHIA_STAGE_ONE_BROWSER_DATABASE_VERSION,
   type RhiaBrowserStorage,
   createRhiaBrowserStorage,
 } from "./index";
@@ -17,6 +26,11 @@ const ids = {
   source: "22222222-2222-4222-8222-222222222222",
   note: "33333333-3333-4333-8333-333333333333",
   audit: "44444444-4444-4444-8444-444444444444",
+  factOne: "55555555-5555-4555-8555-555555555555",
+  factTwo: "66666666-6666-4666-8666-666666666666",
+  decision: "77777777-7777-4777-8777-777777777777",
+  conflict: "88888888-8888-4888-8888-888888888888",
+  device: "99999999-9999-4999-8999-999999999999",
 } as const;
 
 let storage: RhiaBrowserStorage;
@@ -50,6 +64,55 @@ function createTestRecords() {
   return { area, source, note, audit };
 }
 
+function createTestMemoryRecords() {
+  const factOne = createMemoryFact(
+    {
+      areaId: ids.area,
+      sourceIds: [ids.source],
+      knowledgeType: "profile",
+      subject: "sir",
+      predicate: "preferred-address",
+      value: "Sir",
+      conflictKey: "sir.profile.preferred-address",
+      displayText: "Die bevorzugte Anrede ist Sir.",
+    },
+    { id: ids.factOne, timestamp, originDeviceId: ids.device },
+  );
+  const factTwo = createMemoryFact(
+    {
+      areaId: ids.area,
+      sourceIds: [ids.source],
+      knowledgeType: "profile",
+      subject: "sir",
+      predicate: "preferred-address",
+      value: "Mike",
+      conflictKey: factOne.conflictKey,
+      displayText: "Die bevorzugte Anrede ist Mike.",
+    },
+    { id: ids.factTwo, timestamp, originDeviceId: ids.device },
+  );
+  const decision = createDecision(
+    {
+      areaId: ids.area,
+      sourceIds: [ids.source],
+      title: "OpenAI deaktiviert lassen",
+      decisionText: "OpenAI bleibt in Stufe 2 deaktiviert.",
+      rationale: "Das Gedächtnis arbeitet vollständig lokal.",
+    },
+    { id: ids.decision, timestamp, originDeviceId: ids.device },
+  );
+  const conflict = createMemoryConflict(
+    {
+      areaId: ids.area,
+      conflictKey: factOne.conflictKey,
+      factIds: [factOne.id, factTwo.id],
+    },
+    { id: ids.conflict, timestamp, originDeviceId: ids.device },
+  );
+
+  return { factOne, factTwo, decision, conflict };
+}
+
 describe("Dexie repositories", () => {
   it("stores and reads all four stage 1 entity types", async () => {
     const { area, source, note, audit } = createTestRecords();
@@ -65,6 +128,69 @@ describe("Dexie repositories", () => {
     await expect(storage.sources.list()).resolves.toEqual([source]);
     await expect(storage.notes.getById(note.id)).resolves.toEqual(note);
     await expect(storage.auditEntries.list()).resolves.toEqual([audit]);
+  });
+
+  it("stores and reads all three stage 2 memory entity types", async () => {
+    const { factOne, factTwo, decision, conflict } = createTestMemoryRecords();
+
+    await storage.transaction(async (repositories) => {
+      await repositories.memoryFacts.create(factOne);
+      await repositories.memoryFacts.create(factTwo);
+      await repositories.decisions.create(decision);
+      await repositories.memoryConflicts.create(conflict);
+    });
+
+    const memoryFacts = await storage.memoryFacts.list();
+    expect(memoryFacts).toHaveLength(2);
+    expect(memoryFacts).toEqual(expect.arrayContaining([factOne, factTwo]));
+    await expect(storage.decisions.getById(decision.id)).resolves.toEqual(decision);
+    await expect(storage.memoryConflicts.getById(conflict.id)).resolves.toEqual(conflict);
+  });
+
+  it("updates, deletes and safely restores memory records", async () => {
+    const { factOne, conflict } = createTestMemoryRecords();
+    await storage.memoryFacts.create(factOne);
+    await storage.memoryConflicts.create(conflict);
+
+    const updated = await storage.memoryFacts.replace(
+      { ...factOne, displayText: "Sir ist die bestätigte Anrede." },
+      1,
+    );
+    expect(updated).toMatchObject({ revision: 2, updatedAt: changedAt });
+
+    const deleted = await storage.memoryFacts.softDelete(factOne.id, 2);
+    expect(deleted).toMatchObject({ revision: 3, status: "deleted", deletedAt: changedAt });
+    await expect(storage.memoryFacts.getById(factOne.id)).resolves.toBeUndefined();
+
+    const restored = await storage.memoryFacts.restore(factOne.id, 3);
+    expect(restored).toMatchObject({
+      revision: 4,
+      status: "proposed",
+      confirmedAt: null,
+      confirmedBy: null,
+      deletedAt: null,
+    });
+
+    await storage.memoryConflicts.hardDelete(conflict.id, 1);
+    await expect(storage.memoryConflicts.getById(conflict.id)).resolves.toBeUndefined();
+  });
+
+  it("rolls back stage 1 and memory records in one transaction", async () => {
+    const { area } = createTestRecords();
+    const { factOne, decision } = createTestMemoryRecords();
+
+    await expect(
+      storage.transaction(async (repositories) => {
+        await repositories.areas.create(area);
+        await repositories.memoryFacts.create(factOne);
+        await repositories.decisions.create(decision);
+        throw new Error("Künstlicher Gedächtnis-Transaktionsfehler");
+      }),
+    ).rejects.toThrow("Künstlicher Gedächtnis-Transaktionsfehler");
+
+    await expect(storage.areas.list()).resolves.toEqual([]);
+    await expect(storage.memoryFacts.list()).resolves.toEqual([]);
+    await expect(storage.decisions.list()).resolves.toEqual([]);
   });
 
   it("increments revisions and rejects stale updates", async () => {
@@ -156,6 +282,40 @@ describe("Dexie repositories", () => {
     expect(auditEntrySchema.safeParse(await storage.auditEntries.getById(ids.audit)).success).toBe(
       true,
     );
+  });
+
+  it("migrates the complete stage 1 schema to memory storage without data loss", async () => {
+    const databaseName = storage.database.name;
+    const { area, source, note, audit } = createTestRecords();
+    await storage.deleteDatabase();
+
+    const stageOne = new Dexie(databaseName);
+    stageOne.version(RHIA_STAGE_ONE_BROWSER_DATABASE_VERSION).stores({
+      areas: "&id, type, name, status, updatedAt, deletedAt, revision",
+      sources: "&id, type, kind, label, updatedAt, deletedAt, revision",
+      notes:
+        "&id, type, areaId, sourceId, status, updatedAt, deletedAt, revision, [areaId+updatedAt]",
+      auditEntries:
+        "&id, type, entityType, entityId, action, occurredAt, updatedAt, [entityType+entityId]",
+    });
+    await stageOne.open();
+    await stageOne.table("areas").add(area);
+    await stageOne.table("sources").add(source);
+    await stageOne.table("notes").add(note);
+    await stageOne.table("auditEntries").add(audit);
+    stageOne.close();
+
+    storage = createRhiaBrowserStorage({ databaseName, now: () => changedAt });
+    await storage.open();
+
+    expect(storage.database.verno).toBe(RHIA_BROWSER_DATABASE_VERSION);
+    await expect(storage.areas.getById(area.id)).resolves.toEqual(area);
+    await expect(storage.sources.getById(source.id)).resolves.toEqual(source);
+    await expect(storage.notes.getById(note.id)).resolves.toEqual(note);
+    await expect(storage.auditEntries.getById(audit.id)).resolves.toEqual(audit);
+    await expect(storage.memoryFacts.list()).resolves.toEqual([]);
+    await expect(storage.decisions.list()).resolves.toEqual([]);
+    await expect(storage.memoryConflicts.list()).resolves.toEqual([]);
   });
 
   it("exports, verifies and restores a complete backup", async () => {
