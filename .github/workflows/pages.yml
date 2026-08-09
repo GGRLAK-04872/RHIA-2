@@ -1,5 +1,6 @@
 name: RHIA-2 Testseite
 
+# Stufe 3.9: Deployment-Retry nach Freigabe der github-pages-Umgebung.
 on:
   push:
     branches:
