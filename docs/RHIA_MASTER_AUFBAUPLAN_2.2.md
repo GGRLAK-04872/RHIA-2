@@ -7,9 +7,14 @@
 
 ## 1. Zweck und Geltung
 
-Dieser Masterplan enthält ausschließlich die langfristig stabilen Vorgaben für RHIA 2.0. Der
-aktuelle Commit, der letzte Teststand, offene Punkte, Sperren und der nächste Arbeitsschritt stehen
-ausschließlich in `docs/RHIA_START_HERE.md`.
+Dieser Masterplan enthält ausschließlich die langfristig stabilen Vorgaben für RHIA 2.0. Der letzte
+verifizierte Funktionsstand auf `main`, der spätere Dokumentationsstand, der letzte Teststand,
+offene Punkte, Sperren und der nächste Arbeitsschritt stehen ausschließlich in
+`docs/RHIA_START_HERE.md`.
+
+Der Funktionsstand bezeichnet den letzten technisch geprüften Entwicklungsstand. Spätere reine
+Änderungen an Übergabe- oder Planungsdateien gehören zum Dokumentationsstand und verändern den
+Funktionsstand nicht.
 
 Für einen neuen Arbeitschat sind genau diese zwei aktiven Projektdokumente erforderlich:
 
@@ -395,6 +400,9 @@ Playwright-Viewports. Ab Stufe 5 kommen API-, Migrations-, Sync- und Vertragstes
 
 ## 10. Dauerhaftes Zwei-Dateien-Übergabesystem
 
+- Die Zwei-Dateien-Struktur ist verbindlicher Projektstandard. Für jeden neuen Arbeitschat werden
+  ausschließlich `RHIA_MASTER_AUFBAUPLAN_2.2.md` und `RHIA_START_HERE.md` als aktive Übergabe
+  verwendet.
 - `RHIA_MASTER_AUFBAUPLAN_2.2.md` wird nur geändert, wenn sich Ziel, Architektur, Stack,
   Sicherheitsmodell, Kostenmodell, Stufenplan oder eine unveränderbare Vorgabe grundsätzlich
   ändert.
@@ -404,10 +412,17 @@ Playwright-Viewports. Ab Stufe 5 kommen API-, Migrations-, Sync- und Vertragstes
 - Die Aktualisierung gehört in denselben Meilenstein beziehungsweise Dokumentations-Commit.
 - Es wird keine neue Übergabedatei pro Stufe und kein paralleler aktiver Masterplan angelegt.
 - Alte Dokumente bleiben Historie und werden beim normalen Chatstart nicht benötigt.
-- Ein neuer Chat liest zuerst beide aktiven Dateien und verifiziert anschließend den dort genannten
-  Repository-Stand, bevor er Änderungen vornimmt.
+- Ein neuer Chat liest zuerst beide aktiven Dateien, prüft Repository-Stand und Konsistenz und
+  bestimmt anschließend den erlaubten nächsten Schritt.
+- Ein neuer Chat erstellt kein neues Übergabesystem und fordert keine alten Chatprotokolle,
+  Masterversionen oder historischen Dokumente an, solange die zwei aktiven Dateien vorhanden und
+  konsistent sind.
+- Ein neuer Chat unterscheidet zwischen dem letzten technisch geprüften Funktionsstand und späteren
+  reinen Übergabe- oder Planungscommits des Dokumentationsstands.
+- Bei einem normalen Chatwechsel erfolgt keine erneute Grundsatzprüfung des Zwei-Dateien-Systems.
 - Weicht GitHub von `RHIA_START_HERE.md` ab, wird gestoppt, die Abweichung gemeldet und zuerst die
-  Übergabedatei korrigiert.
+  Ursache bestimmt. Danach wird nur die betroffene Übergabedatei korrigiert.
+- `RHIA_START_HERE.md` wird immer vor Beginn der nächsten Entwicklungsstufe aktualisiert.
 
 ## 11. Technische Grenzen
 
