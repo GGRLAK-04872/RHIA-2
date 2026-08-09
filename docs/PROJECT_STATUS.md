@@ -4,9 +4,13 @@ Stand: 09.08.2026
 
 ## Aktuelle Stufe
 
-Stufe 1 – Local-first-Datenfundament ist vollständig abgeschlossen und von Sir am 09.08.2026 nach
-bestandenem Tablet- und Handytest abgenommen. Draft-PR #1 bleibt bis zur gesonderten Einbaufreigabe
-ungemergt; Stufe 2 ist noch nicht freigegeben.
+Stufe 1 – Local-first-Datenfundament ist vollständig abgeschlossen, von Sir am 09.08.2026 nach
+bestandenem Tablet- und Handytest abgenommen und durch den Squash-Merge von PR #1 in `main`
+integriert.
+
+Aktueller `main`-Commit: `e0abdce239f6eaaaf62b8ce9e02bcf4dde8dcebe`.
+
+Stufe 2 – Gedächtnis v1 bleibt ausdrücklich gesperrt und wurde nicht begonnen.
 
 ## Umgesetzt
 
@@ -39,12 +43,12 @@ ungemergt; Stufe 2 ist noch nicht freigegeben.
   Wiederherstellung, Export, Gesamtlöschung, gültigem Import und Ablehnung einer ungültigen
   Sicherung bestanden;
 - Handyansicht im Hoch- und Querformat real geprüft;
-- Stufe 1 am 09.08.2026 durch Sir abgenommen.
+- Stufe 1 am 09.08.2026 durch Sir abgenommen und über PR #1 in `main` integriert.
 
 ## Nächster notwendiger Schritt
 
-1. Abnahmedokumentation auf Draft-PR #1 veröffentlichen und GitHub-CI bestätigen.
-2. Draft-PR #1 erst nach gesonderter Freigabe in `main` einbauen.
+1. Diesen Dokumentations-Mini-PR prüfen und erst nach gesonderter Freigabe in `main` einbauen.
+2. Nach dem Merge `main`, CI und GitHub Pages kontrollieren.
 3. Stufe 2 – Gedächtnis v1 erst nach eigener ausdrücklicher Freigabe beginnen.
 
 OpenAI API, Sprache, Android-App und Cloud-Sync bleiben deaktiviert. Das alte Repository `RHIA`
