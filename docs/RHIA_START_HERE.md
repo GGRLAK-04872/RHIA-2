@@ -10,7 +10,7 @@
 | Datum | 09.08.2026 |
 | Repository | `GGRLAK-04872/RHIA-2` |
 | Verbindlicher Branch | `main` |
-| Aktueller `main`-Commit | `16d1f47f409c7247da5f5bce717514a4f38332c3` |
+| Letzter verifizierter Funktionsstand auf `main` | `16d1f47f409c7247da5f5bce717514a4f38332c3` |
 | Produktversion | `0.2.0` |
 | Aktive Stufe im Produkt | `2` |
 | Datenbankschema | Dexie-Version 3 |
@@ -19,9 +19,13 @@
 | Aktive Datenquelle | lokale IndexedDB des jeweiligen Browsers |
 | Projektphase | Stufe 2 vollständig abgeschlossen und in `main` integriert |
 
-Der Stand wurde gegen den tatsächlichen GitHub-Commit
-`16d1f47f409c7247da5f5bce717514a4f38332c3` geprüft. PR #3 ist geschlossen und gemergt. Das alte
-Repository `GGRLAK-04872/RHIA` bleibt unverändert und darf nicht beschrieben werden.
+Der Commit `16d1f47f409c7247da5f5bce717514a4f38332c3` bezeichnet den letzten technisch geprüften
+Funktionsstand von RHIA 2.0 auf `main`. Spätere reine Dokumentationsänderungen oder
+Übergabe-Commits verändern diesen Funktionsstand nicht. Sie gehören zum Dokumentationsstand. Ein
+neuer Chat muss prüfen, ob der Funktionscommit in der Historie des aktuellen `main` enthalten ist,
+welche späteren Commits hinzugekommen sind und ob spätere Funktionsänderungen vollständig in dieser
+Datei dokumentiert wurden. PR #3 ist geschlossen und gemergt. Das alte Repository
+`GGRLAK-04872/RHIA` bleibt unverändert und darf nicht beschrieben werden.
 
 ## Abgeschlossene Stufen
 
@@ -171,38 +175,77 @@ Der nächste zulässige Entwicklungsbefehl lautet:
 Diese Freigabe erlaubt noch keinen Merge. Jeder Merge benötigt weiterhin eine separate
 ausdrückliche Freigabe.
 
+## Dauerhafte Zwei-Dateien-Chatwechsel-Regel
+
+Die Zwei-Dateien-Struktur ist verbindlicher Projektstandard. Bei jedem neuen Arbeitschat werden
+ausschließlich diese beiden Dateien als aktive Übergabe verwendet:
+
+- `docs/RHIA_MASTER_AUFBAUPLAN_2.2.md`;
+- `docs/RHIA_START_HERE.md`.
+
+Ein neuer Chat:
+
+- prüft den tatsächlichen Repository-Stand;
+- prüft die Konsistenz der beiden Dateien;
+- bestimmt den erlaubten nächsten Schritt;
+- erstellt kein neues Übergabesystem;
+- fordert keine alten Chatprotokolle, alten Masterversionen oder historischen Dokumente an,
+  solange diese beiden Dateien vorhanden und konsistent sind.
+
+Der neue Chat unterscheidet dabei verbindlich zwischen:
+
+- **Funktionsstand:** letzter technisch geprüfter Entwicklungsstand;
+- **Dokumentationsstand:** spätere Änderungen an Übergabe- oder Planungsdateien.
+
+Falls eine Unstimmigkeit gefunden wird:
+
+1. Problem melden.
+2. Ursache nennen.
+3. Nur die betroffene Übergabedatei korrigieren.
+
+Bei einem normalen Chatwechsel erfolgt keine erneute Grundsatzprüfung des Zwei-Dateien-Systems.
+
 ## Automatische Aktualisierungsregel
 
 Diese Regel ist verbindlich:
 
 1. Nach jedem abgeschlossenen Teilmeilenstein, Meilenstein, Merge oder jeder abgeschlossenen
    Entwicklungsstufe wird `docs/RHIA_START_HERE.md` aktualisiert.
-2. Aktualisiert werden mindestens Datum, Repository/Commit, Version, abgeschlossene Arbeiten,
-   Abnahmen, offene Punkte, Fehler, Sperren, nächster Schritt und benötigte Freigabe.
-3. Kein Wechsel in einen neuen Arbeitschat ohne aktualisierte `docs/RHIA_START_HERE.md`.
-4. Es wird keine neue Übergabedatei pro Stufe erstellt.
-5. Es wird kein paralleler aktiver Masterplan erstellt.
-6. Historische Dokumente dürfen erhalten bleiben, gehören aber nicht zum normalen Chatstart.
-7. Ändert sich der grundsätzliche Projektplan, wird zusätzlich
+2. Aktualisiert werden mindestens Datum, letzter verifizierter Funktionsstand auf `main`, späterer
+   Dokumentationsstand, Version, abgeschlossene Arbeiten, Abnahmen, offene Punkte, Fehler, Sperren,
+   nächster Schritt und benötigte Freigabe.
+3. Die Aktualisierung erfolgt immer vor Beginn der nächsten Entwicklungsstufe.
+4. Kein Wechsel in einen neuen Arbeitschat ohne aktualisierte `docs/RHIA_START_HERE.md`.
+5. Es wird keine neue Übergabedatei pro Stufe erstellt.
+6. Es wird kein paralleler aktiver Masterplan erstellt.
+7. Historische Dokumente dürfen erhalten bleiben, gehören aber nicht zum normalen Chatstart.
+8. Ändert sich der grundsätzliche Projektplan, wird zusätzlich
    `docs/RHIA_MASTER_AUFBAUPLAN_2.2.md` nach ausdrücklicher Entscheidung von Sir aktualisiert.
-8. Vor Abschluss eines Arbeitschats ist zu prüfen, ob der Repository-Stand und diese Datei
-   übereinstimmen. Bei Abweichung wird zuerst diese Datei korrigiert.
+9. Vor Abschluss eines Arbeitschats ist zu prüfen, ob der Repository-Stand und diese Datei
+   übereinstimmen. Bei einer Abweichung werden Problem und Ursache gemeldet und nur die betroffene
+   Übergabedatei korrigiert.
 
 ## Startanweisung für neuen Chat
 
 > Arbeite ausschließlich auf Basis des tatsächlichen Repository-Stands von
 > `GGRLAK-04872/RHIA-2`. Öffne zuerst `docs/RHIA_START_HERE.md` und danach
-> `docs/RHIA_MASTER_AUFBAUPLAN_2.2.md`. Prüfe anschließend lesend, ob `main`, Commit, PR-/CI-Stand
-> und Sperren mit `RHIA_START_HERE.md` übereinstimmen. Melde jede Abweichung sofort. Wiederhole
-> keine bereits bestandenen Tests ohne relevanten neuen Änderungsgrund. Verändere weder das alte
-> Repository `RHIA` noch Sicherheits-, Datenschutz- oder Kostengrenzen. Stufe 3 bleibt gesperrt,
-> bis Sir sie ausdrücklich freigibt. Nenne vor jedem längeren Arbeitsschritt eine realistische
-> Dauer und stoppe an jedem dokumentierten Freigabepunkt.
+> `docs/RHIA_MASTER_AUFBAUPLAN_2.2.md`. Prüfe anschließend lesend den aktuellen `main`, den letzten
+> verifizierten Funktionsstand, alle späteren Commits, den PR-/CI-Stand und die Sperren. Stelle sicher,
+> dass spätere Funktionsänderungen vollständig in `RHIA_START_HERE.md` dokumentiert sind; reine
+> Übergabe-Dokumentationscommits dürfen nach dem Funktionscommit liegen. Melde jede Abweichung
+> sofort. Wiederhole keine bereits bestandenen Tests ohne relevanten neuen Änderungsgrund. Fordere
+> keine alten Chatprotokolle, alten Masterversionen oder historischen Dokumente an, solange die
+> beiden aktiven Dateien vorhanden und konsistent sind. Verändere weder das alte Repository `RHIA`
+> noch Sicherheits-, Datenschutz- oder Kostengrenzen. Stufe 3 bleibt gesperrt, bis Sir sie
+> ausdrücklich freigibt. Nenne vor jedem längeren Arbeitsschritt eine realistische Dauer und stoppe
+> an jedem dokumentierten Freigabepunkt.
 
 Nach diesem Starttext muss der neue Chat sofort melden:
 
 - aktueller Projektstand: Stufe 2 abgeschlossen;
-- aktueller `main`: `16d1f47f409c7247da5f5bce717514a4f38332c3`;
+- letzter verifizierter Funktionsstand auf `main`:
+  `16d1f47f409c7247da5f5bce717514a4f38332c3`;
+- Dokumentationsstand: gegebenenfalls spätere reine Übergabe- oder Planungscommits;
 - nächster möglicher Schritt: Stufe 3 erst nach Freigabe;
 - verboten: jede Stufe-3-Implementierung, jeder Merge und jede Änderung am alten Repository ohne
   passenden Auftrag.
