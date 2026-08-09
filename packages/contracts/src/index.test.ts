@@ -1,9 +1,20 @@
-import { createArea, createAuditEntry, createNote, createSource } from "@rhia/domain";
+import {
+  createArea,
+  createAuditEntry,
+  createDecision,
+  createMemoryConflict,
+  createMemoryFact,
+  createNote,
+  createSource,
+} from "@rhia/domain";
 import { describe, expect, it } from "vitest";
 import {
   appStatusSchema,
   areaSchema,
   auditEntrySchema,
+  decisionSchema,
+  memoryConflictSchema,
+  memoryFactSchema,
   noteSchema,
   persistedEntitySchema,
   sourceSchema,
@@ -15,6 +26,11 @@ const ids = {
   source: "22222222-2222-4222-8222-222222222222",
   note: "33333333-3333-4333-8333-333333333333",
   audit: "44444444-4444-4444-8444-444444444444",
+  factOne: "55555555-5555-4555-8555-555555555555",
+  factTwo: "66666666-6666-4666-8666-666666666666",
+  decision: "77777777-7777-4777-8777-777777777777",
+  conflict: "88888888-8888-4888-8888-888888888888",
+  device: "99999999-9999-4999-8999-999999999999",
 } as const;
 
 describe("stage 1 contracts", () => {
@@ -56,7 +72,7 @@ describe("stage 1 contracts", () => {
     );
   });
 
-  it("permits only the local-first, API-disabled stage 1 status", () => {
+  it("permits only local-first, API-disabled persisted stage status", () => {
     expect(
       appStatusSchema.safeParse({
         version: "0.2.0",
@@ -75,6 +91,188 @@ describe("stage 1 contracts", () => {
         apiEnabled: true,
         persistenceEnabled: true,
       }).success,
+    ).toBe(false);
+
+    expect(
+      appStatusSchema.safeParse({
+        version: "0.2.0",
+        stage: 2,
+        mode: "local-first",
+        apiEnabled: false,
+        persistenceEnabled: true,
+      }).success,
+    ).toBe(true);
+  });
+});
+
+describe("stage 2 memory contracts", () => {
+  const proposedFact = createMemoryFact(
+    {
+      areaId: ids.area,
+      sourceIds: [ids.source],
+      knowledgeType: "profile",
+      subject: "sir",
+      predicate: "preferred-address",
+      value: "Sir",
+      conflictKey: "sir.profile.preferred-address",
+      displayText: "Die bevorzugte Anrede ist Sir.",
+    },
+    { id: ids.factOne, timestamp, originDeviceId: ids.device },
+  );
+
+  it("validates proposed memory records without activating them", () => {
+    const decision = createDecision(
+      {
+        areaId: ids.area,
+        sourceIds: [ids.source],
+        title: "API deaktiviert lassen",
+        decisionText: "OpenAI bleibt in Stufe 2 deaktiviert.",
+        rationale: "Stufe 2 arbeitet vollständig lokal.",
+      },
+      { id: ids.decision, timestamp, originDeviceId: ids.device },
+    );
+    const conflictingFact = createMemoryFact(
+      {
+        areaId: ids.area,
+        sourceIds: [ids.source],
+        knowledgeType: "profile",
+        subject: "sir",
+        predicate: "preferred-address",
+        value: "Mike",
+        conflictKey: proposedFact.conflictKey,
+        displayText: "Die bevorzugte Anrede ist Mike.",
+      },
+      { id: ids.factTwo, timestamp, originDeviceId: ids.device },
+    );
+    const conflict = createMemoryConflict(
+      {
+        areaId: ids.area,
+        conflictKey: proposedFact.conflictKey,
+        factIds: [proposedFact.id, conflictingFact.id],
+      },
+      { id: ids.conflict, timestamp, originDeviceId: ids.device },
+    );
+
+    expect(memoryFactSchema.parse(proposedFact)).toEqual(proposedFact);
+    expect(decisionSchema.parse(decision)).toEqual(decision);
+    expect(memoryConflictSchema.parse(conflict)).toEqual(conflict);
+    expect(
+      [proposedFact, decision, conflict].every(
+        (entity) => persistedEntitySchema.safeParse(entity).success,
+      ),
+    ).toBe(true);
+  });
+
+  it("requires explicit confirmation for confirmed facts and decisions", () => {
+    expect(memoryFactSchema.safeParse({ ...proposedFact, status: "confirmed" }).success).toBe(
+      false,
+    );
+    expect(
+      memoryFactSchema.safeParse({
+        ...proposedFact,
+        status: "confirmed",
+        confirmedAt: timestamp,
+        confirmedBy: "sir",
+      }).success,
+    ).toBe(true);
+    expect(
+      memoryFactSchema.safeParse({
+        ...proposedFact,
+        status: "confirmed",
+        confirmedAt: "2026-08-08T15:59:59.000Z",
+        confirmedBy: "sir",
+      }).success,
+    ).toBe(false);
+    expect(memoryFactSchema.safeParse({ ...proposedFact, status: "disputed" }).success).toBe(false);
+
+    const decision = createDecision(
+      {
+        areaId: ids.area,
+        sourceIds: [ids.source],
+        title: "Lokale Entscheidung",
+        decisionText: "Die Daten bleiben lokal.",
+        rationale: "Eine Quelle der Wahrheit.",
+      },
+      { id: ids.decision, timestamp, originDeviceId: ids.device },
+    );
+    expect(decisionSchema.safeParse({ ...decision, status: "confirmed" }).success).toBe(false);
+    expect(
+      decisionSchema.safeParse({
+        ...decision,
+        status: "confirmed",
+        confirmedAt: timestamp,
+        confirmedBy: "sir",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects unstable keys, impossible validity and contradictory deletion states", () => {
+    expect(
+      memoryFactSchema.safeParse({ ...proposedFact, conflictKey: "Nicht Stabil" }).success,
+    ).toBe(false);
+    expect(
+      memoryFactSchema.safeParse({
+        ...proposedFact,
+        validFrom: "2026-08-09T12:00:00.000Z",
+        validUntil: "2026-08-09T11:00:00.000Z",
+      }).success,
+    ).toBe(false);
+    expect(memoryFactSchema.safeParse({ ...proposedFact, status: "deleted" }).success).toBe(false);
+  });
+
+  it("keeps conflicts open until Sir supplies a complete resolution", () => {
+    const conflict = createMemoryConflict(
+      {
+        areaId: ids.area,
+        conflictKey: proposedFact.conflictKey,
+        factIds: [ids.factOne, ids.factTwo],
+      },
+      { id: ids.conflict, timestamp, originDeviceId: ids.device },
+    );
+
+    expect(
+      memoryConflictSchema.safeParse({
+        ...conflict,
+        resolvedAt: timestamp,
+      }).success,
+    ).toBe(false);
+    expect(
+      memoryConflictSchema.safeParse({
+        ...conflict,
+        status: "resolved",
+        resolution: "keep-fact",
+      }).success,
+    ).toBe(false);
+    expect(
+      memoryConflictSchema.safeParse({
+        ...conflict,
+        status: "resolved",
+        resolvedAt: timestamp,
+        resolvedBy: "sir",
+        resolution: "keep-fact",
+        resolvedFactId: ids.factOne,
+      }).success,
+    ).toBe(true);
+    expect(
+      memoryConflictSchema.safeParse({
+        ...conflict,
+        status: "dismissed",
+        resolvedAt: timestamp,
+        resolvedBy: "sir",
+        resolution: "not-a-conflict",
+      }).success,
+    ).toBe(true);
+    expect(
+      memoryConflictSchema.safeParse({
+        ...conflict,
+        status: "resolved",
+        resolvedAt: timestamp,
+        resolvedBy: "sir",
+        resolution: "not-a-conflict",
+      }).success,
+    ).toBe(false);
+    expect(
+      memoryConflictSchema.safeParse({ ...conflict, factIds: [ids.factOne, ids.factOne] }).success,
     ).toBe(false);
   });
 });

@@ -1,0 +1,379 @@
+.panel {
+  width: 100%;
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 26px;
+  background: linear-gradient(145deg, rgb(45 18 32 / 92%), rgb(12 8 12 / 92%));
+  box-shadow: 0 28px 70px rgb(0 0 0 / 30%);
+}
+
+.header,
+.recordHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.overline {
+  margin: 0 0 7px;
+  color: #e28bad;
+  font-size: 0.68rem;
+  font-weight: 760;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.header h2,
+.results h3,
+.conflictGroup h3 {
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.header h2 {
+  font-size: 1.35rem;
+}
+
+.storageState,
+.badges span {
+  flex: none;
+  padding: 7px 10px;
+  border: 1px solid rgb(235 165 190 / 18%);
+  border-radius: 999px;
+  color: #f1c8d8;
+  font-size: 0.7rem;
+  font-weight: 680;
+}
+
+.storageState[data-state="error"] {
+  border-color: rgb(255 99 123 / 38%);
+  color: #ffb1bd;
+}
+
+.summary,
+.empty {
+  margin: 14px 0;
+  color: #ac959f;
+  font-size: 0.78rem;
+}
+
+.error {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border: 1px solid rgb(255 99 123 / 30%);
+  border-radius: 12px;
+  background: rgb(116 22 43 / 22%);
+  color: #ffc0ca;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.entryForm,
+.searchForm,
+.correctionForm {
+  display: grid;
+  gap: 11px;
+}
+
+.entryForm,
+.searchForm {
+  padding: 15px;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 16px;
+  background: rgb(5 4 6 / 38%);
+}
+
+.formRow,
+.formGrid,
+.searchForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.formRow {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.entryForm label,
+.searchForm label,
+.correctionForm label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #baa3ad;
+  font-size: 0.72rem;
+}
+
+.wideField,
+.searchField {
+  grid-column: 1 / -1;
+}
+
+.entryForm input,
+.entryForm textarea,
+.entryForm select,
+.searchForm input,
+.searchForm select,
+.correctionForm textarea {
+  width: 100%;
+  border: 1px solid rgb(255 255 255 / 11%);
+  border-radius: 11px;
+  outline: none;
+  background: rgb(6 4 7 / 72%);
+  color: #fff8fb;
+  font: inherit;
+}
+
+.entryForm input,
+.entryForm select,
+.searchForm input,
+.searchForm select {
+  min-height: 42px;
+  padding: 0 11px;
+}
+
+.entryForm textarea,
+.correctionForm textarea {
+  min-height: 66px;
+  padding: 10px 11px;
+  resize: vertical;
+}
+
+.entryForm input:focus,
+.entryForm textarea:focus,
+.entryForm select:focus,
+.searchForm input:focus,
+.searchForm select:focus,
+.correctionForm textarea:focus {
+  border-color: rgb(219 92 139 / 62%);
+  box-shadow: 0 0 0 3px rgb(143 41 78 / 18%);
+}
+
+.entryForm button,
+.searchForm button,
+.actions button,
+.correctionForm button {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgb(221 106 148 / 26%);
+  border-radius: 11px;
+  background: linear-gradient(135deg, #85234d, #541a35);
+  color: #fff5f9;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 680;
+  cursor: pointer;
+}
+
+.entryForm > button,
+.searchForm > button {
+  grid-column: 1 / -1;
+}
+
+.entryForm button:disabled,
+.searchForm button:disabled,
+.actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.searchForm {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.conflictGroup,
+.results {
+  margin-top: 20px;
+}
+
+.conflictGroup h3,
+.results h3 {
+  margin-bottom: 10px;
+  color: #dbc2cc;
+  font-size: 0.84rem;
+}
+
+.conflictCard {
+  margin-top: 9px;
+  padding: 14px;
+  border: 1px solid rgb(255 155 91 / 28%);
+  border-radius: 14px;
+  background: rgb(105 47 20 / 17%);
+}
+
+.conflictCard strong {
+  overflow-wrap: anywhere;
+  color: #ffd0ad;
+  font-size: 0.78rem;
+}
+
+.conflictCard p {
+  margin: 7px 0 11px;
+  color: #c6a99b;
+  font-size: 0.73rem;
+  line-height: 1.45;
+}
+
+.memoryList {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memoryList > li {
+  padding: 14px;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 14px;
+  background: rgb(6 4 7 / 48%);
+}
+
+.memoryList > li[data-status="disputed"] {
+  border-color: rgb(255 155 91 / 30%);
+}
+
+.memoryList > li[data-status="deleted"],
+.memoryList > li[data-status="superseded"],
+.memoryList > li[data-status="revoked"] {
+  opacity: 0.72;
+}
+
+.recordHeader > div:first-child {
+  min-width: 0;
+}
+
+.meta,
+.recordHeader strong,
+.memoryList p,
+.memoryList small {
+  display: block;
+}
+
+.meta {
+  overflow-wrap: anywhere;
+  color: #9f808d;
+  font-size: 0.64rem;
+  line-height: 1.4;
+}
+
+.recordHeader strong {
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  color: #fff3f7;
+  font-size: 0.86rem;
+}
+
+.badges {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.badges span {
+  padding: 5px 8px;
+  font-size: 0.62rem;
+}
+
+.memoryList p {
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+  color: #b39da6;
+  font-size: 0.74rem;
+  line-height: 1.48;
+}
+
+.memoryList small {
+  margin-top: 7px;
+  color: #d5a8b9;
+  font-size: 0.64rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 11px;
+}
+
+.actions .quietButton,
+.correctionForm .quietButton {
+  background: transparent;
+}
+
+.actions .dangerButton {
+  border-color: rgb(255 99 123 / 28%);
+  background: rgb(105 21 42 / 62%);
+}
+
+.correctionForm {
+  grid-template-columns: 1fr 1fr;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgb(255 255 255 / 7%);
+}
+
+.correctionForm label {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .formRow,
+  .searchForm {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .formRow label:last-child,
+  .searchField,
+  .entryForm > button,
+  .searchForm > button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .panel {
+    padding: 17px;
+    border-radius: 21px;
+  }
+
+  .header,
+  .recordHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .storageState {
+    align-self: flex-start;
+  }
+
+  .formRow,
+  .formGrid,
+  .searchForm,
+  .correctionForm {
+    grid-template-columns: 1fr;
+  }
+
+  .formRow label:last-child,
+  .wideField,
+  .searchField,
+  .entryForm > button,
+  .searchForm > button,
+  .correctionForm label {
+    grid-column: auto;
+  }
+
+  .badges {
+    justify-content: flex-start;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}

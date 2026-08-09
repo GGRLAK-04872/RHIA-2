@@ -1,11 +1,17 @@
 import {
   areaSchema,
   auditEntrySchema,
+  decisionSchema,
+  memoryConflictSchema,
+  memoryFactSchema,
   noteSchema,
   rhiaBackupPackageSchema,
+  rhiaBackupPackageV2Schema,
   sourceSchema,
   type RhiaBackupData,
   type RhiaBackupPackage,
+  type RhiaBackupPackageV1,
+  type RhiaBackupPackageV2,
 } from "@rhia/contracts";
 import {
   ENTITY_TYPES,
@@ -13,8 +19,11 @@ import {
   RepositoryError,
   type Area,
   type AuditEntry,
+  type Decision,
   type EntityRepository,
   type EntityType,
+  type MemoryConflict,
+  type MemoryFact,
   type Note,
   type PersistedEntity,
   type RepositoryReadOptions,
@@ -23,8 +32,9 @@ import {
 import Dexie, { type Table, type TransactionMode } from "dexie";
 
 export const RHIA_BROWSER_DATABASE_NAME = "rhia-2" as const;
-export const RHIA_BROWSER_DATABASE_VERSION = 2 as const;
-export const RHIA_BACKUP_FORMAT_VERSION = 1 as const;
+export const RHIA_STAGE_ONE_BROWSER_DATABASE_VERSION = 2 as const;
+export const RHIA_BROWSER_DATABASE_VERSION = 3 as const;
+export const RHIA_BACKUP_FORMAT_VERSION = 2 as const;
 export const RHIA_TRASH_RETENTION_DAYS = 30 as const;
 export const DELETE_ALL_CONFIRMATION = "RHIA LOKALDATEN LÖSCHEN" as const;
 
@@ -43,6 +53,15 @@ const CURRENT_STORES = {
     "&id, type, entityType, entityId, action, occurredAt, updatedAt, [entityType+entityId]",
 } as const;
 
+const STAGE_TWO_STORES = {
+  ...CURRENT_STORES,
+  memoryFacts:
+    "&id, type, areaId, status, conflictKey, updatedAt, deletedAt, revision, [areaId+updatedAt], [conflictKey+status]",
+  decisions: "&id, type, areaId, status, updatedAt, deletedAt, revision, [areaId+updatedAt]",
+  memoryConflicts:
+    "&id, type, areaId, status, conflictKey, detectedAt, updatedAt, deletedAt, revision, [conflictKey+status]",
+} as const;
+
 type EntitySchema<TEntity> = {
   parse(value: unknown): TEntity;
 };
@@ -54,12 +73,15 @@ export class RhiaBrowserDatabase extends Dexie {
   sources!: Table<Source, string>;
   notes!: Table<Note, string>;
   auditEntries!: Table<AuditEntry, string>;
+  memoryFacts!: Table<MemoryFact, string>;
+  decisions!: Table<Decision, string>;
+  memoryConflicts!: Table<MemoryConflict, string>;
 
   constructor(databaseName: string = RHIA_BROWSER_DATABASE_NAME) {
     super(databaseName);
 
     this.version(1).stores(LEGACY_VERSION_ONE_STORES);
-    this.version(RHIA_BROWSER_DATABASE_VERSION)
+    this.version(RHIA_STAGE_ONE_BROWSER_DATABASE_VERSION)
       .stores(CURRENT_STORES)
       .upgrade(async (transaction) => {
         const migratedAt = new Date().toISOString();
@@ -121,7 +143,13 @@ export class RhiaBrowserDatabase extends Dexie {
             record.summary = typeof record.summary === "string" ? record.summary : null;
           });
       });
+    this.version(RHIA_BROWSER_DATABASE_VERSION).stores(STAGE_TWO_STORES);
   }
+}
+
+interface RepositoryLifecycle<TEntity> {
+  softDelete(entity: TEntity, changedAt: string): TEntity;
+  restore(entity: TEntity, changedAt: string): TEntity;
 }
 
 class DexieEntityRepository<TEntity extends PersistedEntity> implements EntityRepository<TEntity> {
@@ -130,6 +158,7 @@ class DexieEntityRepository<TEntity extends PersistedEntity> implements EntityRe
     private readonly table: Table<TEntity, string>,
     private readonly schema: EntitySchema<TEntity>,
     private readonly now: Clock,
+    private readonly lifecycle?: RepositoryLifecycle<TEntity>,
   ) {}
 
   async getById(id: string, options: RepositoryReadOptions = {}): Promise<TEntity | undefined> {
@@ -193,11 +222,11 @@ class DexieEntityRepository<TEntity extends PersistedEntity> implements EntityRe
   }
 
   async softDelete(id: string, expectedRevision: number): Promise<TEntity> {
-    return this.changeDeletedAt(id, expectedRevision, this.now());
+    return this.changeDeletedAt(id, expectedRevision, true);
   }
 
   async restore(id: string, expectedRevision: number): Promise<TEntity> {
-    return this.changeDeletedAt(id, expectedRevision, null);
+    return this.changeDeletedAt(id, expectedRevision, false);
   }
 
   async hardDelete(id: string, expectedRevision: number): Promise<void> {
@@ -210,16 +239,20 @@ class DexieEntityRepository<TEntity extends PersistedEntity> implements EntityRe
   private async changeDeletedAt(
     id: string,
     expectedRevision: number,
-    deletedAt: string | null,
+    deleteRecord: boolean,
   ): Promise<TEntity> {
     return this.database.transaction("rw", this.table, async () => {
       const current = await this.requireCurrent(id, expectedRevision);
       const changedAt = this.now();
+      const lifecycleEntity = deleteRecord
+        ? this.lifecycle?.softDelete(current, changedAt)
+        : this.lifecycle?.restore(current, changedAt);
       const next = this.parse({
         ...current,
+        ...lifecycleEntity,
         revision: current.revision + 1,
         updatedAt: changedAt,
-        deletedAt,
+        deletedAt: deleteRecord ? changedAt : null,
       });
 
       await this.table.put(next);
@@ -260,7 +293,14 @@ export interface RhiaBrowserStorageOptions {
   now?: Clock;
 }
 
-export type BackupCollection = "areas" | "sources" | "notes" | "auditEntries";
+export type BackupCollection =
+  | "areas"
+  | "sources"
+  | "notes"
+  | "auditEntries"
+  | "memoryFacts"
+  | "decisions"
+  | "memoryConflicts";
 
 export interface ImportConflict {
   collection: BackupCollection;
@@ -268,9 +308,10 @@ export interface ImportConflict {
 }
 
 export interface ImportPreview {
-  backup: RhiaBackupPackage;
+  backup: RhiaBackupPackageV2;
   conflicts: ImportConflict[];
-  recordCounts: RhiaBackupPackage["manifest"]["recordCounts"];
+  recordCounts: RhiaBackupPackageV2["manifest"]["recordCounts"];
+  sourceFormatVersion: 1 | 2;
 }
 
 export type ImportConflictStrategy = "abort" | "replace";
@@ -308,12 +349,43 @@ async function sha256Hex(content: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function isV1Backup(backup: RhiaBackupPackage): backup is RhiaBackupPackageV1 {
+  return backup.manifest.formatVersion === 1;
+}
+
+async function migrateV1Backup(backup: RhiaBackupPackageV1): Promise<RhiaBackupPackageV2> {
+  const migrated: RhiaBackupPackageV2 = {
+    manifest: {
+      ...backup.manifest,
+      formatVersion: 2,
+      checksum: "0".repeat(64),
+      recordCounts: {
+        ...backup.manifest.recordCounts,
+        memoryFacts: 0,
+        decisions: 0,
+        memoryConflicts: 0,
+      },
+    },
+    data: {
+      ...backup.data,
+      memoryFacts: [],
+      decisions: [],
+      memoryConflicts: [],
+    },
+  };
+  migrated.manifest.checksum = await sha256Hex(checksumContent(migrated));
+  return migrated;
+}
+
 export class RhiaBrowserStorage {
   readonly database: RhiaBrowserDatabase;
   readonly areas: EntityRepository<Area>;
   readonly sources: EntityRepository<Source>;
   readonly notes: EntityRepository<Note>;
   readonly auditEntries: EntityRepository<AuditEntry>;
+  readonly memoryFacts: EntityRepository<MemoryFact>;
+  readonly decisions: EntityRepository<Decision>;
+  readonly memoryConflicts: EntityRepository<MemoryConflict>;
   private readonly now: Clock;
 
   constructor(options: RhiaBrowserStorageOptions = {}) {
@@ -344,6 +416,42 @@ export class RhiaBrowserStorage {
       auditEntrySchema,
       now,
     );
+    this.memoryFacts = new DexieEntityRepository<MemoryFact>(
+      this.database,
+      this.database.memoryFacts,
+      memoryFactSchema,
+      now,
+      {
+        softDelete: (entity) => ({ ...entity, status: "deleted" }),
+        restore: (entity) => ({
+          ...entity,
+          status: "proposed",
+          confirmedAt: null,
+          confirmedBy: null,
+        }),
+      },
+    );
+    this.decisions = new DexieEntityRepository<Decision>(
+      this.database,
+      this.database.decisions,
+      decisionSchema,
+      now,
+      {
+        softDelete: (entity) => ({ ...entity, status: "deleted" }),
+        restore: (entity) => ({
+          ...entity,
+          status: "proposed",
+          confirmedAt: null,
+          confirmedBy: null,
+        }),
+      },
+    );
+    this.memoryConflicts = new DexieEntityRepository<MemoryConflict>(
+      this.database,
+      this.database.memoryConflicts,
+      memoryConflictSchema,
+      now,
+    );
   }
 
   async open(): Promise<void> {
@@ -371,22 +479,30 @@ export class RhiaBrowserStorage {
     const mode: TransactionMode = "rw";
     return this.database.transaction(
       mode,
-      this.database.areas,
-      this.database.sources,
-      this.database.notes,
-      this.database.auditEntries,
+      [
+        this.database.areas,
+        this.database.sources,
+        this.database.notes,
+        this.database.auditEntries,
+        this.database.memoryFacts,
+        this.database.decisions,
+        this.database.memoryConflicts,
+      ],
       () => operation(this),
     );
   }
 
-  async createBackup(): Promise<RhiaBackupPackage> {
+  async createBackup(): Promise<RhiaBackupPackageV2> {
     const data: RhiaBackupData = {
       areas: sortById(await this.database.areas.toArray()),
       sources: sortById(await this.database.sources.toArray()),
       notes: sortById(await this.database.notes.toArray()),
       auditEntries: sortById(await this.database.auditEntries.toArray()),
+      memoryFacts: sortById(await this.database.memoryFacts.toArray()),
+      decisions: sortById(await this.database.decisions.toArray()),
+      memoryConflicts: sortById(await this.database.memoryConflicts.toArray()),
     };
-    const backup: RhiaBackupPackage = {
+    const backup: RhiaBackupPackageV2 = {
       manifest: {
         format: "rhia-backup",
         formatVersion: RHIA_BACKUP_FORMAT_VERSION,
@@ -399,13 +515,16 @@ export class RhiaBrowserStorage {
           sources: data.sources.length,
           notes: data.notes.length,
           auditEntries: data.auditEntries.length,
+          memoryFacts: data.memoryFacts.length,
+          decisions: data.decisions.length,
+          memoryConflicts: data.memoryConflicts.length,
         },
       },
       data,
     };
 
     backup.manifest.checksum = await sha256Hex(checksumContent(backup));
-    return rhiaBackupPackageSchema.parse(backup);
+    return rhiaBackupPackageV2Schema.parse(backup);
   }
 
   serializeBackup(backup: RhiaBackupPackage): string {
@@ -433,18 +552,22 @@ export class RhiaBrowserStorage {
       );
     }
 
-    const expectedChecksum = await sha256Hex(checksumContent(result.data));
-    if (expectedChecksum !== result.data.manifest.checksum) {
+    const sourceBackup = result.data;
+    const expectedChecksum = await sha256Hex(checksumContent(sourceBackup));
+    if (expectedChecksum !== sourceBackup.manifest.checksum) {
       throw new RepositoryError(
         "BACKUP_CHECKSUM_MISMATCH",
         "Die Prüfsumme der Sicherungsdatei stimmt nicht.",
       );
     }
 
+    const backup = isV1Backup(sourceBackup) ? await migrateV1Backup(sourceBackup) : sourceBackup;
+
     return {
-      backup: result.data,
-      conflicts: await this.findImportConflicts(result.data.data),
-      recordCounts: result.data.manifest.recordCounts,
+      backup,
+      conflicts: await this.findImportConflicts(backup.data),
+      recordCounts: backup.manifest.recordCounts,
+      sourceFormatVersion: sourceBackup.manifest.formatVersion,
     };
   }
 
@@ -463,11 +586,23 @@ export class RhiaBrowserStorage {
         );
       }
 
-      const method = conflictStrategy === "replace" ? "bulkPut" : "bulkAdd";
-      await this.database.areas[method](verified.backup.data.areas);
-      await this.database.sources[method](verified.backup.data.sources);
-      await this.database.notes[method](verified.backup.data.notes);
-      await this.database.auditEntries[method](verified.backup.data.auditEntries);
+      if (conflictStrategy === "replace") {
+        await this.database.areas.bulkPut(verified.backup.data.areas);
+        await this.database.sources.bulkPut(verified.backup.data.sources);
+        await this.database.notes.bulkPut(verified.backup.data.notes);
+        await this.database.auditEntries.bulkPut(verified.backup.data.auditEntries);
+        await this.database.memoryFacts.bulkPut(verified.backup.data.memoryFacts);
+        await this.database.decisions.bulkPut(verified.backup.data.decisions);
+        await this.database.memoryConflicts.bulkPut(verified.backup.data.memoryConflicts);
+      } else {
+        await this.database.areas.bulkAdd(verified.backup.data.areas);
+        await this.database.sources.bulkAdd(verified.backup.data.sources);
+        await this.database.notes.bulkAdd(verified.backup.data.notes);
+        await this.database.auditEntries.bulkAdd(verified.backup.data.auditEntries);
+        await this.database.memoryFacts.bulkAdd(verified.backup.data.memoryFacts);
+        await this.database.decisions.bulkAdd(verified.backup.data.decisions);
+        await this.database.memoryConflicts.bulkAdd(verified.backup.data.memoryConflicts);
+      }
     });
   }
 
@@ -481,6 +616,9 @@ export class RhiaBrowserStorage {
         this.database.areas.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
         this.database.sources.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
         this.database.notes.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
+        this.database.memoryFacts.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
+        this.database.decisions.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
+        this.database.memoryConflicts.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
       ]);
       return removed.reduce((total, count) => total + count, 0);
     });
@@ -500,21 +638,56 @@ export class RhiaBrowserStorage {
         this.database.sources.clear(),
         this.database.notes.clear(),
         this.database.auditEntries.clear(),
+        this.database.memoryFacts.clear(),
+        this.database.decisions.clear(),
+        this.database.memoryConflicts.clear(),
       ]);
     });
   }
 
   private async findImportConflicts(data: RhiaBackupData): Promise<ImportConflict[]> {
-    const groups = [
-      { collection: "areas", table: this.database.areas, records: data.areas },
-      { collection: "sources", table: this.database.sources, records: data.sources },
-      { collection: "notes", table: this.database.notes, records: data.notes },
+    type IdentifiedRecord = { id: string };
+    const groups: Array<{
+      collection: BackupCollection;
+      table: Table<IdentifiedRecord, string>;
+      records: IdentifiedRecord[];
+    }> = [
+      {
+        collection: "areas",
+        table: this.database.areas as unknown as Table<IdentifiedRecord, string>,
+        records: data.areas,
+      },
+      {
+        collection: "sources",
+        table: this.database.sources as unknown as Table<IdentifiedRecord, string>,
+        records: data.sources,
+      },
+      {
+        collection: "notes",
+        table: this.database.notes as unknown as Table<IdentifiedRecord, string>,
+        records: data.notes,
+      },
       {
         collection: "auditEntries",
-        table: this.database.auditEntries,
+        table: this.database.auditEntries as unknown as Table<IdentifiedRecord, string>,
         records: data.auditEntries,
       },
-    ] as const;
+      {
+        collection: "memoryFacts",
+        table: this.database.memoryFacts as unknown as Table<IdentifiedRecord, string>,
+        records: data.memoryFacts,
+      },
+      {
+        collection: "decisions",
+        table: this.database.decisions as unknown as Table<IdentifiedRecord, string>,
+        records: data.decisions,
+      },
+      {
+        collection: "memoryConflicts",
+        table: this.database.memoryConflicts as unknown as Table<IdentifiedRecord, string>,
+        records: data.memoryConflicts,
+      },
+    ];
     const conflicts: ImportConflict[] = [];
 
     for (const group of groups) {

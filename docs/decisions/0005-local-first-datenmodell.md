@@ -27,6 +27,18 @@ abgelehnt. Gelöschte Datensätze bleiben 30 Tage im Papierkorb.
 - Ohne ausdrückliche Strategie werden vorhandene Datensätze nicht überschrieben.
 - Die vollständige lokale Löschung erfordert die exakte Bestätigungsphrase.
 
+### Additive Gedächtnismigration in Stufe 2
+
+Das veröffentlichte Stufe-1-Schema verwendet bereits Dexie-Version 2, weil Version 1 als
+getesteter Altdaten-Migrationspfad erhalten bleibt. Teilmeilenstein 2.2 ergänzt die Tabellen
+`memoryFacts`, `decisions` und `memoryConflicts` deshalb sicher als Dexie-Version 3. Eine Änderung
+der bereits veröffentlichten Version 2 wäre kein zuverlässiger Upgradepfad für bestehende
+Browserdatenbanken.
+
+Der Migrationstest öffnet eine künstliche vollständige Stufe-1-Datenbank auf Version 2 mit
+`Area`, `Source`, `Note` und `AuditEntry`, aktualisiert sie auf Version 3 und weist anschließend
+sowohl den unveränderten Altbestand als auch die drei neuen leeren Gedächtnistabellen nach.
+
 ## Folgen
 
 Bis Stufe 5 ist die IndexedDB des jeweiligen Browsers die einzige Datenquelle. Zwischen Geräten

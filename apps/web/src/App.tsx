@@ -1,6 +1,7 @@
 import { appStatusSchema, type AppStatus } from "@rhia/contracts";
 import { RHIA_PRODUCT_NAME, RHIA_RUNTIME, RHIA_STAGE, RHIA_VERSION } from "@rhia/domain";
 import { RHIA_SECURITY_POLICY } from "@rhia/security";
+import { MemoryPanel } from "./components/MemoryPanel";
 import { StageOneDataPanel } from "./components/StageOneDataPanel";
 import styles from "./App.module.css";
 
@@ -46,10 +47,10 @@ export function App() {
         <div className={styles.copy}>
           <p className={styles.eyebrow}>RH Produktion · Stufe {RHIA_STAGE}</p>
           <h1 id="rhia-title">{RHIA_PRODUCT_NAME}</h1>
-          <p className={styles.lead}>Das lokale Datenfundament wird aufgebaut.</p>
+          <p className={styles.lead}>Bestätigtes Wissen bleibt unter deiner Kontrolle.</p>
           <p className={styles.explanation}>
-            RHIA erhält eine lokale Browserdatenbank. Cloud-Dienste und kostenpflichtige KI-Aufrufe
-            bleiben deaktiviert.
+            Fakten, Entscheidungen, Konflikte und Sicherungen bleiben in deiner lokalen
+            Browserdatenbank. Cloud-Dienste und kostenpflichtige KI-Aufrufe bleiben deaktiviert.
           </p>
         </div>
       </section>
@@ -63,7 +64,7 @@ export function App() {
             </div>
             <span className={styles.readyBadge}>
               <span className={styles.readyDot} aria-hidden="true" />
-              Stufe 1 aktiv
+              Stufe 2 lokal
             </span>
           </div>
 
@@ -83,13 +84,14 @@ export function App() {
           </p>
         </section>
 
+        <MemoryPanel />
         <StageOneDataPanel />
       </div>
 
       <footer className={styles.footer}>
         <span>Version {status.version}</span>
         <span aria-hidden="true">·</span>
-        <span>Aktueller Schritt: Local-first Datenfundament</span>
+        <span>Aktueller Schritt: Gedächtnis v1</span>
       </footer>
     </main>
   );

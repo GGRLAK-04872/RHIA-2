@@ -6,11 +6,30 @@ Stand: 09.08.2026
 
 Stufe 1 – Local-first-Datenfundament ist vollständig abgeschlossen, von Sir am 09.08.2026 nach
 bestandenem Tablet- und Handytest abgenommen und durch den Squash-Merge von PR #1 in `main`
-integriert.
+integriert. Der Dokumentationsnachtrag aus PR #2 ist ebenfalls gemergt und veröffentlicht.
 
-Aktueller `main`-Commit: `e0abdce239f6eaaaf62b8ce9e02bcf4dde8dcebe`.
+Ausgangs-`main` für Stufe 2: `7578f79e627f9e0d298c734bba3040f9fef93049`.
 
-Stufe 2 – Gedächtnis v1 bleibt ausdrücklich gesperrt und wurde nicht begonnen.
+Stufe 2 – Gedächtnis v1 wurde am 09.08.2026 ausdrücklich freigegeben. Teilmeilenstein 2.0 ist grün;
+Teilmeilenstein 2.1 ist auf `feat/stufe-2-gedaechtnis-v1` umgesetzt und über GitHub-CI bestätigt.
+Teilmeilenstein 2.2 ist mit der additiven Dexie-Migration und den Gedächtnis-Repositories umgesetzt
+und über GitHub-CI bestätigt. Teilmeilenstein 2.3 ist mit dem kontrollierten Vorschlags-,
+Bestätigungs- und Ablehnungsablauf umgesetzt und über GitHub-CI bestätigt. Teilmeilenstein 2.4 ist
+mit Korrektur-, Ersetzungs-, Verwerfungs- und Historienabläufen umgesetzt und über GitHub-CI
+bestätigt. Teilmeilenstein 2.5 ist mit stabiler Widerspruchserkennung und kontrollierter
+Konfliktauflösung umgesetzt und lokal vollständig grün. Stufe 2 ist noch nicht abgeschlossen oder
+zur Zusammenführung freigegeben. Teilmeilenstein 2.6 ist mit strukturierter lokaler Suche umgesetzt
+und lokal vollständig grün. Teilmeilenstein 2.7 ist mit Sicherungsformat v2, erhaltener
+v1-Migration und vollständigem Konfliktschutz umgesetzt und lokal vollständig grün.
+Teilmeilenstein 2.8 ist mit der responsiven Gedächtnisoberfläche und sichtbaren Fehlerzuständen
+umgesetzt; Komponenten, TypeScript, Gesamtprüflauf und Build sind lokal grün. Der ergänzte
+Browser-/Responsive-Smoke konnte lokal nicht starten, weil in der Work-Umgebung kein Chromium
+vorhanden ist und der freigegebene Download nur ein ungültiges leeres Archiv liefert. Die Prüfung
+bleibt für GitHub-CI vorbereitet. Teilmeilenstein 2.9 wurde am 09.08.2026 ausdrücklich freigegeben.
+Die vollständige Abnahme ist mit einem getrennten Stufe-2-Preview-Trigger und einem detaillierten
+Tablet-/Handyprotokoll vorbereitet. Der vollständige lokale 2.9-Prüflauf ist mit 50/50 Tests,
+Format/Lint, TypeScript, Produktions-/PWA-Build und allen Audits grün. GitHub-CI, die
+bereitgestellte Preview und Sirs reale Gerätetests bleiben bis zur Ausführung ausdrücklich offen.
 
 ## Umgesetzt
 
@@ -44,12 +63,60 @@ Stufe 2 – Gedächtnis v1 bleibt ausdrücklich gesperrt und wurde nicht begonne
   Sicherung bestanden;
 - Handyansicht im Hoch- und Querformat real geprüft;
 - Stufe 1 am 09.08.2026 durch Sir abgenommen und über PR #1 in `main` integriert.
+- Gedächtnisverträge für `MemoryFact`, `Decision` und `MemoryConflict` mit strikter
+  Laufzeitvalidierung;
+- Dexie-Tabellen und typisierte Repositories für alle drei Gedächtnisentitäten;
+- gemeinsame Transaktionen über die vier Stufe-1- und drei Gedächtnistabellen;
+- Revisionsschutz, Löschung und sichere Wiederherstellung als unbestätigter Vorschlag;
+- verlustfreie Migration vom veröffentlichten Stufe-1-Schema auf die neuen Gedächtnistabellen;
+- Dexie-Version 3 statt der verkürzten Planangabe Version 2, weil Version 2 bereits das
+  veröffentlichte Stufe-1-Schema ist;
+- frühere Sicherungsformat-v1-Dateien bleiben über eine geprüfte Migration importierbar.
+- Fakten und Entscheidungen entstehen technisch ausschließlich als inaktive Vorschläge;
+- Aktivierung nur durch ausdrückliche Bestätigung von Sir mit Zeitstempel und Auditspur;
+- Ablehnung ausschließlich offener Vorschläge mit sicherem Übergang in den 30-Tage-Papierkorb;
+- ungültige oder wiederholte Zustandswechsel werden sichtbar blockiert;
+- Bereichs- und Quellenbezüge werden transaktional geprüft; fehlerhafte Vorschläge hinterlassen
+  weder Gedächtnisdatensatz noch Auditspur.
+- Korrekturen erzeugen eine neue inaktive Fassung mit kontrolliertem `supersedesId`;
+- bestätigte Vorgänger bleiben bis zur ausdrücklichen Bestätigung ihrer Korrektur aktiv;
+- Bestätigung ersetzt Vorgänger und Korrektur atomar; Revisionsfehler rollen beide Änderungen
+  vollständig zurück;
+- verworfene Korrekturen ändern die aktive Fassung nicht;
+- bestätigte Fakten können ausdrücklich in den Papierkorb verworfen und Entscheidungen
+  nachvollziehbar widerrufen werden;
+- vollständige Fassungshistorie einschließlich ersetzter und verworfener Fassungen mit höchstens
+  einer aktiven bestätigten Fassung.
+- stabile Konflikterkennung über `conflictKey`, ohne automatische Überschreibung;
+- widersprüchliche bestätigte Werte werden gemeinsam `disputed` und in einem offenen
+  `MemoryConflict` sichtbar;
+- ausdrückliche Auflösung durch Beibehalten eines Fakts oder Verwerfen als Nicht-Konflikt;
+- atomare Aktualisierung von Faktenstatus, Konfliktstatus und Auditspur mit Revisionsschutz.
+- abgeleitete lokale Volltextsuche ohne zweite Datenquelle oder externen Dienst;
+- strukturierte Filter nach Bereich, Typ, Status, Quelle, Gültigkeit und Änderungszeit;
+- normalisierte Suche einschließlich deutscher Akzentzeichen mit deterministischer Reihenfolge;
+- Treffer zeigen Bereich, Quellen und aktuellen Gültigkeitszustand nachvollziehbar an.
+- Sicherungsformat v2 umfasst alle sieben lokalen Sammlungen einschließlich vollständiger
+  Gedächtniszustände;
+- geprüfte v1-Sicherungen werden verlustfrei mit leeren Gedächtnissammlungen auf v2 migriert;
+- SHA-256-Manipulationsschutz und strikte versionsbezogene Datensatzanzahlen;
+- Importkonflikte für alle sieben Sammlungen blockieren stilles Überschreiben;
+- gemeinsamer atomarer v2-Import mit vollständigem Rollback bei Fehlern.
+- responsive Gedächtnisoberfläche für Fakten, Entscheidungen, Bestätigung und Ablehnung;
+- sichtbare Korrektur-, Papierkorb-, Wiederherstellungs- und Konfliktauflösungsabläufe;
+- bedienbare Volltextsuche und Filter mit Herkunfts-, Status- und Gültigkeitsanzeige;
+- verständliche lokale Fehleranzeige ohne stillen Fallback;
+- grüne Komponentenprüfung sowie vorbereiteter Browser-Smoke für Handy, Tablet, Desktop, Hoch- und
+  Querformat; lokale Browserausführung ausschließlich durch fehlendes Testprogramm blockiert.
 
 ## Nächster notwendiger Schritt
 
-1. Diesen Dokumentations-Mini-PR prüfen und erst nach gesonderter Freigabe in `main` einbauen.
-2. Nach dem Merge `main`, CI und GitHub Pages kontrollieren.
-3. Stufe 2 – Gedächtnis v1 erst nach eigener ausdrücklicher Freigabe beginnen.
+1. Das isolierte 2.9-Prüfpaket lokal vollständig prüfen und als eigenen Commit festhalten.
+2. Nach einer getrennten Uploadfreigabe GitHub-CI und Stufe-2-Preview kontrollieren.
+3. Anschließend den dokumentierten Tablet- und Handytest mit ausschließlich künstlichen Daten
+   durch Sir durchführen lassen.
+4. Stufe 2 erst nach vollständiger technischer und realer Abnahme und nur nach separater
+   Mergefreigabe zusammenführen. Stufe 3 bleibt gesperrt.
 
 OpenAI API, Sprache, Android-App und Cloud-Sync bleiben deaktiviert. Das alte Repository `RHIA`
 bleibt unverändert.
