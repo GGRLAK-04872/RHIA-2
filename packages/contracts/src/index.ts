@@ -1,14 +1,20 @@
 import {
   ENTITY_TYPES,
   RHIA_SCHEMA_VERSION,
+  TASK_STATUSES,
   type Area,
   type AuditEntry,
   type Decision,
+  type Goal,
+  type ManualTaskPriority,
   type MemoryConflict,
   type MemoryFact,
   type Note,
   type PersistedEntity,
+  type Project,
   type Source,
+  type Task,
+  type TaskDependency,
 } from "@rhia/domain";
 import { z } from "zod";
 
@@ -353,6 +359,129 @@ export const memoryConflictSchema: z.ZodType<MemoryConflict> = z
     }
   });
 
+export const projectSchema: z.ZodType<Project> = z
+  .object({
+    ...entityBaseShape,
+    type: z.literal("project"),
+    areaId: entityIdSchema,
+    title: z.string().trim().min(1).max(240),
+    description: z.string().trim().max(10_000).nullable(),
+    status: z.enum(["active", "on-hold", "completed", "archived"]),
+  })
+  .strict()
+  .superRefine(validateTimeline);
+
+export const goalSchema: z.ZodType<Goal> = z
+  .object({
+    ...entityBaseShape,
+    type: z.literal("goal"),
+    projectId: entityIdSchema,
+    title: z.string().trim().min(1).max(240),
+    description: z.string().trim().max(10_000).nullable(),
+    status: z.enum(["planned", "active", "achieved", "abandoned"]),
+    targetAt: timestampSchema.nullable(),
+  })
+  .strict()
+  .superRefine(validateTimeline);
+
+export const manualTaskPrioritySchema: z.ZodType<ManualTaskPriority> = z
+  .object({
+    rank: z.number().int().positive().max(10_000),
+    decidedAt: timestampSchema,
+    decidedBy: z.literal("sir"),
+    rationale: z.string().trim().max(2_000).nullable(),
+  })
+  .strict();
+
+export const taskSchema: z.ZodType<Task> = z
+  .object({
+    ...entityBaseShape,
+    type: z.literal("task"),
+    areaId: entityIdSchema,
+    projectId: entityIdSchema.nullable(),
+    goalId: entityIdSchema.nullable(),
+    title: z.string().trim().min(1).max(240),
+    description: z.string().trim().max(10_000).nullable(),
+    status: z.enum(TASK_STATUSES),
+    dueAt: timestampSchema.nullable(),
+    importance: z.enum(["low", "medium", "high"]),
+    estimatedMinutes: z.number().int().positive().max(525_600).nullable(),
+    moneyImpact: z.enum(["none", "low", "medium", "high"]),
+    expectedIncomeCents: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).nullable(),
+    expectedIncomeAt: timestampSchema.nullable(),
+    blockedReason: z.string().trim().min(1).max(2_000).nullable(),
+    manualPriority: manualTaskPrioritySchema.nullable(),
+  })
+  .strict()
+  .superRefine((entity, context) => {
+    validateTimeline(entity, context);
+
+    if (entity.goalId !== null && entity.projectId === null) {
+      context.addIssue({
+        code: "custom",
+        path: ["projectId"],
+        message: "Eine Aufgabe mit Ziel benötigt auch das zugehörige Projekt.",
+      });
+    }
+
+    if ((entity.status === "blocked") !== (entity.blockedReason !== null)) {
+      context.addIssue({
+        code: "custom",
+        path: ["blockedReason"],
+        message: "Status Blockiert und Blockadegrund müssen gemeinsam gesetzt sein.",
+      });
+    }
+
+    if (
+      entity.moneyImpact === "none" &&
+      (entity.expectedIncomeCents !== null || entity.expectedIncomeAt !== null)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["moneyImpact"],
+        message: "Eine Aufgabe ohne Geldwirkung darf keine erwarteten Einnahmen enthalten.",
+      });
+    }
+
+    if (entity.expectedIncomeAt !== null && entity.expectedIncomeCents === null) {
+      context.addIssue({
+        code: "custom",
+        path: ["expectedIncomeCents"],
+        message: "Ein erwarteter Einnahmezeitpunkt benötigt einen Einnahmewert.",
+      });
+    }
+
+    if (
+      entity.manualPriority !== null &&
+      Date.parse(entity.manualPriority.decidedAt) < Date.parse(entity.createdAt)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["manualPriority", "decidedAt"],
+        message: "Eine manuelle Priorität darf nicht vor Erstellung der Aufgabe entschieden sein.",
+      });
+    }
+  });
+
+export const taskDependencySchema: z.ZodType<TaskDependency> = z
+  .object({
+    ...entityBaseShape,
+    type: z.literal("task-dependency"),
+    taskId: entityIdSchema,
+    dependsOnTaskId: entityIdSchema,
+  })
+  .strict()
+  .superRefine((entity, context) => {
+    validateTimeline(entity, context);
+    if (entity.taskId === entity.dependsOnTaskId) {
+      context.addIssue({
+        code: "custom",
+        path: ["dependsOnTaskId"],
+        message: "Eine Aufgabe darf nicht von sich selbst abhängen.",
+      });
+    }
+  });
+
 export const persistedEntitySchema: z.ZodType<PersistedEntity> = z.union([
   areaSchema,
   sourceSchema,
@@ -361,6 +490,10 @@ export const persistedEntitySchema: z.ZodType<PersistedEntity> = z.union([
   memoryFactSchema,
   decisionSchema,
   memoryConflictSchema,
+  projectSchema,
+  goalSchema,
+  taskSchema,
+  taskDependencySchema,
 ]);
 
 export const stageZeroAppStatusSchema = z.object({

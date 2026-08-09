@@ -20,6 +20,10 @@ export const ENTITY_TYPES = [
   "memory-fact",
   "decision",
   "memory-conflict",
+  "project",
+  "goal",
+  "task",
+  "task-dependency",
 ] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];
 
@@ -125,6 +129,66 @@ export interface MemoryConflict extends EntityBase<"memory-conflict"> {
   note: string | null;
 }
 
+export type ProjectStatus = "active" | "on-hold" | "completed" | "archived";
+
+export interface Project extends EntityBase<"project"> {
+  areaId: string;
+  title: string;
+  description: string | null;
+  status: ProjectStatus;
+}
+
+export type GoalStatus = "planned" | "active" | "achieved" | "abandoned";
+
+export interface Goal extends EntityBase<"goal"> {
+  projectId: string;
+  title: string;
+  description: string | null;
+  status: GoalStatus;
+  targetAt: string | null;
+}
+
+export const TASK_STATUSES = [
+  "inbox",
+  "planned",
+  "in-progress",
+  "blocked",
+  "completed",
+  "discarded",
+] as const;
+export type TaskStatus = (typeof TASK_STATUSES)[number];
+export type TaskImportance = "low" | "medium" | "high";
+export type TaskMoneyImpact = "none" | "low" | "medium" | "high";
+
+export interface ManualTaskPriority {
+  rank: number;
+  decidedAt: string;
+  decidedBy: "sir";
+  rationale: string | null;
+}
+
+export interface Task extends EntityBase<"task"> {
+  areaId: string;
+  projectId: string | null;
+  goalId: string | null;
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  dueAt: string | null;
+  importance: TaskImportance;
+  estimatedMinutes: number | null;
+  moneyImpact: TaskMoneyImpact;
+  expectedIncomeCents: number | null;
+  expectedIncomeAt: string | null;
+  blockedReason: string | null;
+  manualPriority: ManualTaskPriority | null;
+}
+
+export interface TaskDependency extends EntityBase<"task-dependency"> {
+  taskId: string;
+  dependsOnTaskId: string;
+}
+
 export type PersistedEntity =
   | Area
   | Source
@@ -132,7 +196,11 @@ export type PersistedEntity =
   | AuditEntry
   | MemoryFact
   | Decision
-  | MemoryConflict;
+  | MemoryConflict
+  | Project
+  | Goal
+  | Task
+  | TaskDependency;
 
 export interface EntityFactoryOptions {
   id?: string;
@@ -208,6 +276,42 @@ export interface CreateMemoryConflictInput {
   resolution?: MemoryConflictResolution | null;
   resolvedFactId?: string | null;
   note?: string | null;
+}
+
+export interface CreateProjectInput {
+  areaId: string;
+  title: string;
+  description?: string | null;
+  status?: ProjectStatus;
+}
+
+export interface CreateGoalInput {
+  projectId: string;
+  title: string;
+  description?: string | null;
+  status?: GoalStatus;
+  targetAt?: string | null;
+}
+
+export interface CreateTaskInput {
+  areaId: string;
+  projectId?: string | null;
+  goalId?: string | null;
+  title: string;
+  description?: string | null;
+  status?: TaskStatus;
+  dueAt?: string | null;
+  importance?: TaskImportance;
+  estimatedMinutes?: number | null;
+  moneyImpact?: TaskMoneyImpact;
+  expectedIncomeCents?: number | null;
+  expectedIncomeAt?: string | null;
+  blockedReason?: string | null;
+}
+
+export interface CreateTaskDependencyInput {
+  taskId: string;
+  dependsOnTaskId: string;
 }
 
 function createEnvelope<TType extends EntityType>(
@@ -339,6 +443,241 @@ export function createMemoryConflict(
     resolvedFactId: input.resolvedFactId ?? null,
     note: input.note ?? null,
   };
+}
+
+export const WORK_HUB_RULE_ERROR_CODES = [
+  "INVALID_TASK_ASSIGNMENT",
+  "INVALID_TASK_BLOCK_STATE",
+  "INVALID_TASK_INCOME",
+  "INVALID_TASK_DEPENDENCY",
+  "DUPLICATE_TASK_DEPENDENCY",
+  "CYCLIC_TASK_DEPENDENCY",
+] as const;
+
+export type WorkHubRuleErrorCode = (typeof WORK_HUB_RULE_ERROR_CODES)[number];
+
+export class WorkHubRuleError extends Error {
+  readonly code: WorkHubRuleErrorCode;
+
+  constructor(code: WorkHubRuleErrorCode, message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = "WorkHubRuleError";
+    this.code = code;
+  }
+}
+
+export function createProject(
+  input: CreateProjectInput,
+  options: EntityFactoryOptions = {},
+): Project {
+  return {
+    ...createEnvelope("project", options),
+    areaId: input.areaId,
+    title: input.title,
+    description: input.description ?? null,
+    status: input.status ?? "active",
+  };
+}
+
+export function createGoal(input: CreateGoalInput, options: EntityFactoryOptions = {}): Goal {
+  return {
+    ...createEnvelope("goal", options),
+    projectId: input.projectId,
+    title: input.title,
+    description: input.description ?? null,
+    status: input.status ?? "planned",
+    targetAt: input.targetAt ?? null,
+  };
+}
+
+export function createTask(input: CreateTaskInput, options: EntityFactoryOptions = {}): Task {
+  const projectId = input.projectId ?? null;
+  const goalId = input.goalId ?? null;
+  const status = input.status ?? "inbox";
+  const blockedReason = input.blockedReason ?? null;
+  const moneyImpact = input.moneyImpact ?? "none";
+  const expectedIncomeCents = input.expectedIncomeCents ?? null;
+  const expectedIncomeAt = input.expectedIncomeAt ?? null;
+
+  assertTaskAssignmentIds(projectId, goalId);
+  assertTaskBlockState(status, blockedReason);
+  assertTaskIncome(moneyImpact, expectedIncomeCents, expectedIncomeAt);
+
+  return {
+    ...createEnvelope("task", options),
+    areaId: input.areaId,
+    projectId,
+    goalId,
+    title: input.title,
+    description: input.description ?? null,
+    status,
+    dueAt: input.dueAt ?? null,
+    importance: input.importance ?? "medium",
+    estimatedMinutes: input.estimatedMinutes ?? null,
+    moneyImpact,
+    expectedIncomeCents,
+    expectedIncomeAt,
+    blockedReason,
+    manualPriority: null,
+  };
+}
+
+export function createTaskDependency(
+  input: CreateTaskDependencyInput,
+  options: EntityFactoryOptions = {},
+): TaskDependency {
+  if (input.taskId === input.dependsOnTaskId) {
+    throw new WorkHubRuleError(
+      "INVALID_TASK_DEPENDENCY",
+      "Eine Aufgabe darf nicht von sich selbst abhängen.",
+    );
+  }
+
+  return {
+    ...createEnvelope("task-dependency", options),
+    taskId: input.taskId,
+    dependsOnTaskId: input.dependsOnTaskId,
+  };
+}
+
+export function assertTaskAssignmentIds(projectId: string | null, goalId: string | null): void {
+  if (goalId !== null && projectId === null) {
+    throw new WorkHubRuleError(
+      "INVALID_TASK_ASSIGNMENT",
+      "Eine Aufgabe mit Ziel benötigt auch das zugehörige Projekt.",
+    );
+  }
+}
+
+export function assertTaskBlockState(status: TaskStatus, blockedReason: string | null): void {
+  if ((status === "blocked") !== (blockedReason !== null)) {
+    throw new WorkHubRuleError(
+      "INVALID_TASK_BLOCK_STATE",
+      "Status Blockiert und Blockadegrund müssen gemeinsam gesetzt oder entfernt werden.",
+    );
+  }
+}
+
+export function assertTaskIncome(
+  moneyImpact: TaskMoneyImpact,
+  expectedIncomeCents: number | null,
+  expectedIncomeAt: string | null,
+): void {
+  if (moneyImpact === "none" && (expectedIncomeCents !== null || expectedIncomeAt !== null)) {
+    throw new WorkHubRuleError(
+      "INVALID_TASK_INCOME",
+      "Eine Aufgabe ohne Geldwirkung darf keine erwarteten Einnahmen enthalten.",
+    );
+  }
+
+  if (expectedIncomeAt !== null && expectedIncomeCents === null) {
+    throw new WorkHubRuleError(
+      "INVALID_TASK_INCOME",
+      "Ein erwarteter Einnahmezeitpunkt benötigt einen Einnahmewert.",
+    );
+  }
+}
+
+export function assertGoalProjectAssignment(goal: Goal, project: Project): void {
+  if (goal.projectId !== project.id) {
+    throw new WorkHubRuleError(
+      "INVALID_TASK_ASSIGNMENT",
+      "Das Ziel gehört nicht zum angegebenen Projekt.",
+    );
+  }
+}
+
+export function assertTaskAssignment(task: Task, project: Project | null, goal: Goal | null): void {
+  assertTaskAssignmentIds(task.projectId, task.goalId);
+
+  if ((task.projectId === null) !== (project === null) || project?.id !== task.projectId) {
+    throw new WorkHubRuleError(
+      "INVALID_TASK_ASSIGNMENT",
+      "Die Projektzuordnung der Aufgabe ist unvollständig oder widersprüchlich.",
+    );
+  }
+
+  if (project !== null && project.areaId !== task.areaId) {
+    throw new WorkHubRuleError(
+      "INVALID_TASK_ASSIGNMENT",
+      "Aufgabe und Projekt müssen zum gleichen Bereich gehören.",
+    );
+  }
+
+  if ((task.goalId === null) !== (goal === null) || goal?.id !== task.goalId) {
+    throw new WorkHubRuleError(
+      "INVALID_TASK_ASSIGNMENT",
+      "Die Zielzuordnung der Aufgabe ist unvollständig oder widersprüchlich.",
+    );
+  }
+
+  if (goal !== null && goal.projectId !== task.projectId) {
+    throw new WorkHubRuleError(
+      "INVALID_TASK_ASSIGNMENT",
+      "Das Ziel der Aufgabe muss zum zugeordneten Projekt gehören.",
+    );
+  }
+}
+
+export function assertTaskDependencyGraph(
+  tasks: readonly Task[],
+  dependencies: readonly TaskDependency[],
+): void {
+  const taskIds = new Set(tasks.map((task) => task.id));
+  const seenPairs = new Set<string>();
+  const outgoing = new Map<string, string[]>();
+
+  for (const dependency of dependencies) {
+    if (
+      dependency.taskId === dependency.dependsOnTaskId ||
+      !taskIds.has(dependency.taskId) ||
+      !taskIds.has(dependency.dependsOnTaskId)
+    ) {
+      throw new WorkHubRuleError(
+        "INVALID_TASK_DEPENDENCY",
+        "Eine Aufgabenabhängigkeit muss zwei vorhandene unterschiedliche Aufgaben verbinden.",
+      );
+    }
+
+    const pair = `${dependency.taskId}:${dependency.dependsOnTaskId}`;
+    if (seenPairs.has(pair)) {
+      throw new WorkHubRuleError(
+        "DUPLICATE_TASK_DEPENDENCY",
+        "Dieselbe Aufgabenabhängigkeit darf nur einmal vorkommen.",
+      );
+    }
+    seenPairs.add(pair);
+
+    const targets = outgoing.get(dependency.taskId) ?? [];
+    targets.push(dependency.dependsOnTaskId);
+    outgoing.set(dependency.taskId, targets);
+  }
+
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+
+  const visit = (taskId: string): void => {
+    if (visiting.has(taskId)) {
+      throw new WorkHubRuleError(
+        "CYCLIC_TASK_DEPENDENCY",
+        "Aufgabenabhängigkeiten dürfen keinen Kreis bilden.",
+      );
+    }
+    if (visited.has(taskId)) {
+      return;
+    }
+
+    visiting.add(taskId);
+    for (const dependencyId of outgoing.get(taskId) ?? []) {
+      visit(dependencyId);
+    }
+    visiting.delete(taskId);
+    visited.add(taskId);
+  };
+
+  for (const task of tasks) {
+    visit(task.id);
+  }
 }
 
 export interface RepositoryReadOptions {
