@@ -7,7 +7,7 @@ Dieses Repository ist der saubere Neustart ohne Cloudflare-, KV- oder Durable-Ob
 
 - Stufe 0: abgeschlossen und abgenommen
 - Stufe 1: Local-first-Datenfundament abgeschlossen, real abgenommen und in `main` integriert
-- Stufe 2: Gedächtnis v1 freigegeben; Teilmeilensteine 2.0 bis 2.4 technisch umgesetzt
+- Stufe 2: Gedächtnis v1 freigegeben; Teilmeilensteine 2.0 bis 2.5 technisch umgesetzt
 - Betriebsart: lokale IndexedDB als einzige Datenquelle, ohne Cloud-Sync
 - Web/PWA: React, Vite und TypeScript Strict
 - Daten: Dexie, Zod, versionierte Migration, Export/Import und 30-Tage-Papierkorb
@@ -40,6 +40,10 @@ Korrekturen erzeugen eine neue, zunächst inaktive Fassung. Bis zu deren ausdrü
 bleibt die bisherige Fassung aktiv; danach werden neue Fassung und Vorgänger atomar als
 `confirmed` beziehungsweise `superseded` gespeichert. Verwerfen und die vollständige
 Fassungshistorie bleiben nachvollziehbar, ohne stilles Wiederbeleben älterer Inhalte.
+
+Abweichende Werte unter demselben stabilen Konfliktschlüssel werden nicht automatisch
+überschrieben. RHIA markiert beide Fakten sichtbar als strittig und hält einen offenen Konflikt,
+bis Sir ausdrücklich einen Fakt beibehält oder den Fall als Nicht-Konflikt verwirft.
 
 ## Prüfung
 

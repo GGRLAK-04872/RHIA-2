@@ -15,8 +15,10 @@ Teilmeilenstein 2.1 ist auf `feat/stufe-2-gedaechtnis-v1` umgesetzt und über Gi
 Teilmeilenstein 2.2 ist mit der additiven Dexie-Migration und den Gedächtnis-Repositories umgesetzt
 und über GitHub-CI bestätigt. Teilmeilenstein 2.3 ist mit dem kontrollierten Vorschlags-,
 Bestätigungs- und Ablehnungsablauf umgesetzt und über GitHub-CI bestätigt. Teilmeilenstein 2.4 ist
-mit Korrektur-, Ersetzungs-, Verwerfungs- und Historienabläufen umgesetzt und lokal vollständig
-grün. Stufe 2 ist noch nicht abgeschlossen oder zur Zusammenführung freigegeben.
+mit Korrektur-, Ersetzungs-, Verwerfungs- und Historienabläufen umgesetzt und über GitHub-CI
+bestätigt. Teilmeilenstein 2.5 ist mit stabiler Widerspruchserkennung und kontrollierter
+Konfliktauflösung umgesetzt und lokal vollständig grün. Stufe 2 ist noch nicht abgeschlossen oder
+zur Zusammenführung freigegeben.
 
 ## Umgesetzt
 
@@ -74,11 +76,16 @@ grün. Stufe 2 ist noch nicht abgeschlossen oder zur Zusammenführung freigegebe
   nachvollziehbar widerrufen werden;
 - vollständige Fassungshistorie einschließlich ersetzter und verworfener Fassungen mit höchstens
   einer aktiven bestätigten Fassung.
+- stabile Konflikterkennung über `conflictKey`, ohne automatische Überschreibung;
+- widersprüchliche bestätigte Werte werden gemeinsam `disputed` und in einem offenen
+  `MemoryConflict` sichtbar;
+- ausdrückliche Auflösung durch Beibehalten eines Fakts oder Verwerfen als Nicht-Konflikt;
+- atomare Aktualisierung von Faktenstatus, Konfliktstatus und Auditspur mit Revisionsschutz.
 
 ## Nächster notwendiger Schritt
 
-1. Teilmeilenstein 2.4 im Draft-PR durch GitHub-CI prüfen.
-2. Danach vor Teilmeilenstein 2.5 mit Widerspruchserkennung über stabile Konfliktschlüssel halten.
+1. Teilmeilenstein 2.5 vollständig lokal prüfen und als isolierten Commit festhalten.
+2. Danach Teilmeilenstein 2.6 mit strukturierten Filtern und lokaler Volltextsuche umsetzen.
 3. Stufe 2 erst nach vollständiger technischer und realer Abnahme zusammenführen.
 
 OpenAI API, Sprache, Android-App und Cloud-Sync bleiben deaktiviert. Das alte Repository `RHIA`

@@ -65,6 +65,24 @@ Zod-Verträge gemeinsam validiert. Unvollständige oder widersprüchliche Zustä
 - Die Historie umfasst auch ersetzte und verworfene Fassungen und weist höchstens eine aktive
   bestätigte Fassung aus. Frühere Fassungen werden niemals still reaktiviert.
 
+## Widerspruchserkennung ab Teilmeilenstein 2.5
+
+- Erst die ausdrückliche Bestätigung eines abweichenden Werts löst die Konfliktprüfung aus;
+  ungeprüfte Vorschläge verändern bestätigtes Wissen nicht.
+- Die Prüfung verwendet ausschließlich den stabilen `conflictKey`. Ein gleicher Wert unter
+  demselben Schlüssel ist kein Widerspruch.
+- Ein abweichender Wert markiert die neue und die bisher bestätigte Fassung atomar als `disputed`
+  und erzeugt beziehungsweise erweitert einen offenen `MemoryConflict`.
+- Eine bestätigte Korrektur des direkten Vorgängers bleibt der kontrollierte Ersetzungsablauf und
+  erzeugt allein keinen Konflikt.
+- Ein offener Konflikt überschreibt keinen Fakt. Sir kann ausdrücklich einen zugehörigen Fakt
+  beibehalten; die übrigen Konfliktfakten werden dann nachvollziehbar `superseded`.
+- Verwirft Sir den Fall ausdrücklich als Nicht-Konflikt, werden die beteiligten Fakten wieder
+  `confirmed` und der Konflikt als `dismissed` dokumentiert.
+- Auflösung, Faktenstatus und Auditspur werden gemeinsam transaktional gespeichert. Fehlende
+  Bestätigung, fremde Fakten-IDs, veraltete Revisionen oder unvollständige Zustände rollen die
+  gesamte Änderung zurück.
+
 ## Sicherheits- und Kostengrenze
 
 Stufe 2 speichert keine vollständigen Chats automatisch, verwendet keine externe KI, führt keine

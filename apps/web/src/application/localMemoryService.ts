@@ -5,10 +5,12 @@ import {
   confirmMemoryFactProposal,
   createAuditEntry,
   createDecision,
+  createMemoryConflict,
   createMemoryFact,
   type CreateDecisionInput,
   type CreateMemoryFactInput,
   type Decision,
+  type MemoryConflict,
   type MemoryFact,
   RepositoryError,
   revokeDecision,
@@ -36,6 +38,12 @@ export interface ExplicitSirRejection {
 export interface ExplicitSirDiscard {
   actor: "sir";
   explicitlyDiscarded: true;
+}
+
+export interface ExplicitSirConflictResolution {
+  actor: "sir";
+  explicitlyResolved: true;
+  note?: string | null;
 }
 
 export type NewMemoryFactInput = Omit<CreateMemoryFactInput, "supersedesId">;
@@ -235,6 +243,8 @@ export class LocalMemoryService {
       if (!current) {
         throw new RepositoryError("RECORD_NOT_FOUND", "Der Gedächtnisfakt wurde nicht gefunden.");
       }
+      assertPendingMemoryProposal(current);
+      this.requireExpectedRevision(current.revision, expectedRevision);
 
       let superseded: MemoryFact | null = null;
       if (current.supersedesId !== null) {
@@ -251,14 +261,62 @@ export class LocalMemoryService {
         );
       }
 
-      const confirmed = await repositories.memoryFacts.replace(
-        confirmMemoryFactProposal(current, {
-          actor: confirmation.actor,
-          explicitlyConfirmed: true,
-          confirmedAt,
-        }),
-        expectedRevision,
-      );
+      const confirmedProposal = confirmMemoryFactProposal(current, {
+        actor: confirmation.actor,
+        explicitlyConfirmed: true,
+        confirmedAt,
+      });
+      const conflictingFacts = (await repositories.memoryFacts.list())
+        .filter(
+          (fact) =>
+            fact.id !== current.id &&
+            fact.id !== current.supersedesId &&
+            fact.conflictKey === current.conflictKey &&
+            fact.value !== current.value &&
+            (fact.status === "confirmed" || fact.status === "disputed"),
+        )
+        .toSorted((left, right) => left.id.localeCompare(right.id));
+      const nextProposal =
+        conflictingFacts.length > 0
+          ? { ...confirmedProposal, status: "disputed" as const }
+          : confirmedProposal;
+      const confirmed = await repositories.memoryFacts.replace(nextProposal, expectedRevision);
+      let openConflict: MemoryConflict | null = null;
+      if (conflictingFacts.length > 0) {
+        const disputedFacts: MemoryFact[] = [];
+        for (const fact of conflictingFacts) {
+          disputedFacts.push(
+            fact.status === "disputed"
+              ? fact
+              : await repositories.memoryFacts.replace(
+                  { ...fact, status: "disputed" },
+                  fact.revision,
+                ),
+          );
+        }
+
+        const existingConflict = (await repositories.memoryConflicts.list()).find(
+          (conflict) => conflict.conflictKey === current.conflictKey && conflict.status === "open",
+        );
+        const factIds = [...new Set([confirmed.id, ...disputedFacts.map((fact) => fact.id)])]
+          .toSorted()
+          .slice(0, 10);
+        openConflict = existingConflict
+          ? await repositories.memoryConflicts.replace(
+              { ...existingConflict, factIds },
+              existingConflict.revision,
+            )
+          : await repositories.memoryConflicts.create(
+              createMemoryConflict(
+                {
+                  areaId: confirmed.areaId,
+                  conflictKey: confirmed.conflictKey,
+                  factIds,
+                },
+                { originDeviceId: confirmed.originDeviceId, timestamp: confirmedAt },
+              ),
+            );
+      }
       await repositories.auditEntries.create(
         createAuditEntry(
           {
@@ -266,7 +324,9 @@ export class LocalMemoryService {
             entityId: confirmed.id,
             entityRevision: confirmed.revision,
             action: "update",
-            summary: "Gedächtnisvorschlag von Sir bestätigt.",
+            summary: openConflict
+              ? "Gedächtnisvorschlag bestätigt; sichtbarer Widerspruch erkannt."
+              : "Gedächtnisvorschlag von Sir bestätigt.",
           },
           { timestamp: confirmedAt },
         ),
@@ -286,6 +346,137 @@ export class LocalMemoryService {
         );
       }
       return confirmed;
+    });
+  }
+
+  async listOpenMemoryConflicts(): Promise<MemoryConflict[]> {
+    await this.initialize();
+    return (await this.storage.memoryConflicts.list()).filter(
+      (conflict) => conflict.status === "open",
+    );
+  }
+
+  async resolveMemoryConflictKeepingFact(
+    conflictId: string,
+    expectedRevision: number,
+    keptFactId: string,
+    resolution: ExplicitSirConflictResolution,
+  ): Promise<MemoryConflict> {
+    this.requireExplicitConflictResolution(resolution);
+    await this.initialize();
+    const resolvedAt = this.now();
+
+    return this.storage.transaction(async (repositories) => {
+      const conflict = await repositories.memoryConflicts.getById(conflictId);
+      if (!conflict) {
+        throw new RepositoryError(
+          "RECORD_NOT_FOUND",
+          "Der Gedächtniskonflikt wurde nicht gefunden.",
+        );
+      }
+      this.requireOpenConflict(conflict, expectedRevision);
+      if (!conflict.factIds.includes(keptFactId)) {
+        throw new RepositoryError(
+          "INVALID_STATE_TRANSITION",
+          "Der beizubehaltende Fakt gehört nicht zu diesem Konflikt.",
+        );
+      }
+
+      for (const factId of conflict.factIds) {
+        const fact = await repositories.memoryFacts.getById(factId);
+        if (fact?.status !== "disputed") {
+          throw new RepositoryError(
+            "INVALID_STATE_TRANSITION",
+            "Der Konflikt enthält keinen vollständig auflösbaren Faktenstand.",
+          );
+        }
+        const nextStatus = fact.id === keptFactId ? "confirmed" : "superseded";
+        await repositories.memoryFacts.replace({ ...fact, status: nextStatus }, fact.revision);
+      }
+
+      const resolved = await repositories.memoryConflicts.replace(
+        {
+          ...conflict,
+          status: "resolved",
+          resolvedAt,
+          resolvedBy: "sir",
+          resolution: "keep-fact",
+          resolvedFactId: keptFactId,
+          note: resolution.note ?? null,
+        },
+        expectedRevision,
+      );
+      await repositories.auditEntries.create(
+        createAuditEntry(
+          {
+            entityType: resolved.type,
+            entityId: resolved.id,
+            entityRevision: resolved.revision,
+            action: "update",
+            summary: "Gedächtniskonflikt von Sir durch Beibehalten eines Fakts aufgelöst.",
+          },
+          { timestamp: resolvedAt },
+        ),
+      );
+      return resolved;
+    });
+  }
+
+  async dismissMemoryConflict(
+    conflictId: string,
+    expectedRevision: number,
+    resolution: ExplicitSirConflictResolution,
+  ): Promise<MemoryConflict> {
+    this.requireExplicitConflictResolution(resolution);
+    await this.initialize();
+    const resolvedAt = this.now();
+
+    return this.storage.transaction(async (repositories) => {
+      const conflict = await repositories.memoryConflicts.getById(conflictId);
+      if (!conflict) {
+        throw new RepositoryError(
+          "RECORD_NOT_FOUND",
+          "Der Gedächtniskonflikt wurde nicht gefunden.",
+        );
+      }
+      this.requireOpenConflict(conflict, expectedRevision);
+
+      for (const factId of conflict.factIds) {
+        const fact = await repositories.memoryFacts.getById(factId);
+        if (fact?.status !== "disputed") {
+          throw new RepositoryError(
+            "INVALID_STATE_TRANSITION",
+            "Der Konflikt enthält keinen vollständig verwerfbaren Faktenstand.",
+          );
+        }
+        await repositories.memoryFacts.replace({ ...fact, status: "confirmed" }, fact.revision);
+      }
+
+      const dismissed = await repositories.memoryConflicts.replace(
+        {
+          ...conflict,
+          status: "dismissed",
+          resolvedAt,
+          resolvedBy: "sir",
+          resolution: "not-a-conflict",
+          resolvedFactId: null,
+          note: resolution.note ?? null,
+        },
+        expectedRevision,
+      );
+      await repositories.auditEntries.create(
+        createAuditEntry(
+          {
+            entityType: dismissed.type,
+            entityId: dismissed.id,
+            entityRevision: dismissed.revision,
+            action: "update",
+            summary: "Gedächtniskonflikt von Sir ausdrücklich als Nicht-Konflikt verworfen.",
+          },
+          { timestamp: resolvedAt },
+        ),
+      );
+      return dismissed;
     });
   }
 
@@ -536,6 +727,16 @@ export class LocalMemoryService {
     }
   }
 
+  private requireOpenConflict(conflict: MemoryConflict, expectedRevision: number): void {
+    this.requireExpectedRevision(conflict.revision, expectedRevision);
+    if (conflict.status !== "open" || conflict.deletedAt !== null) {
+      throw new RepositoryError(
+        "INVALID_STATE_TRANSITION",
+        "Nur ein offener Gedächtniskonflikt kann aufgelöst werden.",
+      );
+    }
+  }
+
   private requireNoOpenSuccessor(
     predecessorId: string,
     records: Array<MemoryFact | Decision>,
@@ -626,6 +827,15 @@ export class LocalMemoryService {
       throw new RepositoryError(
         "CONFIRMATION_REQUIRED",
         "Das Verwerfen bestätigten Gedächtniswissens muss Sir ausdrücklich bestätigen.",
+      );
+    }
+  }
+
+  private requireExplicitConflictResolution(resolution: ExplicitSirConflictResolution): void {
+    if (resolution.actor !== "sir" || resolution.explicitlyResolved !== true) {
+      throw new RepositoryError(
+        "CONFIRMATION_REQUIRED",
+        "Die Konfliktauflösung muss Sir ausdrücklich bestätigen.",
       );
     }
   }

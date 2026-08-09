@@ -3,6 +3,7 @@ import { createRhiaBrowserStorage, type RhiaBrowserStorage } from "@rhia/storage
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   type ExplicitSirConfirmation,
+  type ExplicitSirConflictResolution,
   type ExplicitSirDiscard,
   type ExplicitSirRejection,
   LocalMemoryService,
@@ -19,6 +20,7 @@ const ids = {
 const confirmation = { actor: "sir", explicitlyConfirmed: true } as const;
 const rejection = { actor: "sir", explicitlyRejected: true } as const;
 const discard = { actor: "sir", explicitlyDiscarded: true } as const;
+const conflictResolution = { actor: "sir", explicitlyResolved: true } as const;
 
 let storage: RhiaBrowserStorage;
 let service: LocalMemoryService;
@@ -385,6 +387,150 @@ describe("LocalMemoryService proposal workflow", () => {
     await expect(service.getMemoryFactHistory(discarded.id)).resolves.toMatchObject({
       activeVersion: null,
       versions: [expect.objectContaining({ id: discarded.id, status: "deleted" })],
+    });
+  });
+
+  it("detects a contradictory confirmed value without silently overwriting either fact", async () => {
+    const firstProposal = await service.proposeMemoryFact(factInput(), {
+      originDeviceId: ids.device,
+    });
+    const first = await service.confirmMemoryFact(
+      firstProposal.id,
+      firstProposal.revision,
+      confirmation,
+    );
+    const secondProposal = await service.proposeMemoryFact(
+      {
+        ...factInput(),
+        value: "Mike",
+        displayText: "Die bevorzugte Anrede ist Mike.",
+      },
+      { originDeviceId: ids.device },
+    );
+
+    const second = await service.confirmMemoryFact(
+      secondProposal.id,
+      secondProposal.revision,
+      confirmation,
+    );
+    const conflicts = await service.listOpenMemoryConflicts();
+
+    expect(second).toMatchObject({ status: "disputed", revision: 2 });
+    await expect(storage.memoryFacts.getById(first.id)).resolves.toMatchObject({
+      status: "disputed",
+      revision: 3,
+    });
+    expect(conflicts).toEqual([
+      expect.objectContaining({
+        conflictKey: first.conflictKey,
+        factIds: expect.arrayContaining([first.id, second.id]),
+        status: "open",
+      }),
+    ]);
+  });
+
+  it("does not create a conflict for an identical value under the same stable key", async () => {
+    const firstProposal = await service.proposeMemoryFact(factInput(), {
+      originDeviceId: ids.device,
+    });
+    await service.confirmMemoryFact(firstProposal.id, firstProposal.revision, confirmation);
+    const duplicateProposal = await service.proposeMemoryFact(
+      { ...factInput(), displayText: "Sir bleibt die bevorzugte Anrede." },
+      { originDeviceId: ids.device },
+    );
+
+    await expect(
+      service.confirmMemoryFact(duplicateProposal.id, duplicateProposal.revision, confirmation),
+    ).resolves.toMatchObject({ status: "confirmed" });
+    await expect(service.listOpenMemoryConflicts()).resolves.toEqual([]);
+  });
+
+  it("resolves a conflict atomically by keeping Sir's selected fact", async () => {
+    const firstProposal = await service.proposeMemoryFact(factInput(), {
+      originDeviceId: ids.device,
+    });
+    const first = await service.confirmMemoryFact(
+      firstProposal.id,
+      firstProposal.revision,
+      confirmation,
+    );
+    const secondProposal = await service.proposeMemoryFact(
+      { ...factInput(), value: "Mike", displayText: "Die bevorzugte Anrede ist Mike." },
+      { originDeviceId: ids.device },
+    );
+    const second = await service.confirmMemoryFact(
+      secondProposal.id,
+      secondProposal.revision,
+      confirmation,
+    );
+    const [conflict] = await service.listOpenMemoryConflicts();
+    if (!conflict) {
+      throw new Error("Der erwartete Testkonflikt fehlt.");
+    }
+
+    const resolved = await service.resolveMemoryConflictKeepingFact(
+      conflict.id,
+      conflict.revision,
+      first.id,
+      conflictResolution,
+    );
+
+    expect(resolved).toMatchObject({
+      status: "resolved",
+      resolution: "keep-fact",
+      resolvedFactId: first.id,
+    });
+    await expect(storage.memoryFacts.getById(first.id)).resolves.toMatchObject({
+      status: "confirmed",
+    });
+    await expect(storage.memoryFacts.getById(second.id)).resolves.toMatchObject({
+      status: "superseded",
+    });
+    await expect(service.listOpenMemoryConflicts()).resolves.toEqual([]);
+  });
+
+  it("requires explicit resolution and can dismiss an open case as not a conflict", async () => {
+    const firstProposal = await service.proposeMemoryFact(factInput(), {
+      originDeviceId: ids.device,
+    });
+    const first = await service.confirmMemoryFact(
+      firstProposal.id,
+      firstProposal.revision,
+      confirmation,
+    );
+    const secondProposal = await service.proposeMemoryFact(
+      { ...factInput(), value: "Mike", displayText: "Privat lautet die Anrede Mike." },
+      { originDeviceId: ids.device },
+    );
+    const second = await service.confirmMemoryFact(
+      secondProposal.id,
+      secondProposal.revision,
+      confirmation,
+    );
+    const [conflict] = await service.listOpenMemoryConflicts();
+    if (!conflict) {
+      throw new Error("Der erwartete Testkonflikt fehlt.");
+    }
+    const implicitResolution = {
+      actor: "sir",
+      explicitlyResolved: false,
+    } as unknown as ExplicitSirConflictResolution;
+
+    await expect(
+      service.dismissMemoryConflict(conflict.id, conflict.revision, implicitResolution),
+    ).rejects.toMatchObject({ code: "CONFIRMATION_REQUIRED" });
+    const dismissed = await service.dismissMemoryConflict(
+      conflict.id,
+      conflict.revision,
+      conflictResolution,
+    );
+
+    expect(dismissed).toMatchObject({ status: "dismissed", resolution: "not-a-conflict" });
+    await expect(storage.memoryFacts.getById(first.id)).resolves.toMatchObject({
+      status: "confirmed",
+    });
+    await expect(storage.memoryFacts.getById(second.id)).resolves.toMatchObject({
+      status: "confirmed",
     });
   });
 });
