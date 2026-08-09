@@ -1,9 +1,10 @@
 # Abnahmeprotokoll – Stufe 1
 
-Stand: 08.08.2026
+Stand: 09.08.2026
 
-Stufe 1 ist implementiert und technisch geprüft. Der abschließende reale Geräte-Praxistest durch
-Sir steht noch aus. Bis zu dessen Bestätigung bleibt Stufe 1 offen und Stufe 2 gesperrt.
+Stufe 1 ist vollständig implementiert, technisch geprüft und nach dem realen Geräte-Praxistest
+durch Sir am 09.08.2026 abgenommen. Stufe 2 bleibt bis zu einer eigenen ausdrücklichen Freigabe
+gesperrt.
 
 ## Automatisierte Prüfung
 
@@ -42,12 +43,20 @@ Nur künstliche Testdaten verwenden. Testdauer: ungefähr 20–40 Minuten.
 10. Seite neu laden und prüfen, dass keine Notiz wieder erscheint.
 11. Die Schritte 1–6 auf dem Handy wiederholen und Hoch-/Querformat prüfen.
 
+## Bestätigtes Praxisergebnis
+
+Sir hat am 09.08.2026 den vollständigen Tablet- und Handytest als bestanden bestätigt. Damit sind
+Erstellen, Bearbeiten, Neustartpersistenz, Papierkorb, Wiederherstellung, Export, vollständige
+Löschung, gültiger Import, Ablehnung einer ungültigen Sicherung sowie die Handyansicht im Hoch- und
+Querformat real geprüft.
+
 ## Abschluss
 
-- [ ] vollständiger lokaler und GitHub-CI-Prüflauf grün
-- [ ] Stufe-1-Testbuild unter der getrennten RHIA-2-Adresse bereitgestellt
-- [ ] Tablet-Test bestanden
-- [ ] Handy-Test bestanden
-- [ ] Sir bestätigt Stufe 1 ausdrücklich
+- [x] vollständiger lokaler und GitHub-CI-Prüflauf grün
+- [x] Stufe-1-Testbuild unter der getrennten RHIA-2-Adresse bereitgestellt
+- [x] Tablet-Test bestanden
+- [x] Handy-Test bestanden
+- [x] Sir bestätigt Stufe 1 ausdrücklich
 
-Erst danach darf Stufe 2 – Gedächtnis v1 beginnen.
+Stufe 1 ist abgeschlossen. Stufe 2 – Gedächtnis v1 beginnt erst nach einer eigenen ausdrücklichen
+Freigabe durch Sir.
