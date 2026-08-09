@@ -67,13 +67,13 @@ describe("LocalMemoryService restored correction workflow", () => {
       confirmation,
     );
 
-    const discarded = await service.discardMemoryFact(
-      correction.id,
-      correction.revision,
-      discard,
-    );
+    const discarded = await service.discardMemoryFact(correction.id, correction.revision, discard);
     const restored = await service.restoreMemoryFact(discarded.id, discarded.revision, restore);
-    const reconfirmed = await service.confirmMemoryFact(restored.id, restored.revision, confirmation);
+    const reconfirmed = await service.confirmMemoryFact(
+      restored.id,
+      restored.revision,
+      confirmation,
+    );
 
     expect(reconfirmed).toMatchObject({
       id: correction.id,
