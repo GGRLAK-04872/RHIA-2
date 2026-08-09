@@ -7,7 +7,7 @@ Dieses Repository ist der saubere Neustart ohne Cloudflare-, KV- oder Durable-Ob
 
 - Stufe 0: abgeschlossen und abgenommen
 - Stufe 1: Local-first-Datenfundament abgeschlossen, real abgenommen und in `main` integriert
-- Stufe 2: Gedächtnis v1 freigegeben; Teilmeilensteine 2.0 bis 2.8 technisch umgesetzt
+- Stufe 2: Gedächtnis v1; Teilmeilensteine 2.0 bis 2.8 technisch umgesetzt, Abnahme 2.9 vorbereitet
 - Betriebsart: lokale IndexedDB als einzige Datenquelle, ohne Cloud-Sync
 - Web/PWA: React, Vite und TypeScript Strict
 - Daten: Dexie, Zod, versionierte Migration, Export/Import und 30-Tage-Papierkorb
@@ -56,6 +56,10 @@ vorhandene IDs blockieren den Import sichtbar.
 Die Gedächtnisoberfläche unterstützt Fakt- und Entscheidungsvorschläge, Bestätigung, Ablehnung,
 Korrektur, Papierkorb, Konfliktauflösung sowie Suche und Filter. Fehler bleiben sichtbar; die
 Bedienung ist für Handy, Tablet, Hoch- und Querformat ausgelegt.
+
+Das Abnahmeprotokoll für Stufe 2 trennt automatisierte Prüfung, Preview und reale Gerätetests. Bis
+GitHub-CI, Stufe-2-Testbuild sowie Tablet- und Handytest bestätigt sind, bleibt Draft-PR #3 offen
+und ungemergt; Stufe 3 bleibt gesperrt.
 
 ## Prüfung
 

@@ -25,7 +25,11 @@ Teilmeilenstein 2.8 ist mit der responsiven Gedächtnisoberfläche und sichtbare
 umgesetzt; Komponenten, TypeScript, Gesamtprüflauf und Build sind lokal grün. Der ergänzte
 Browser-/Responsive-Smoke konnte lokal nicht starten, weil in der Work-Umgebung kein Chromium
 vorhanden ist und der freigegebene Download nur ein ungültiges leeres Archiv liefert. Die Prüfung
-bleibt für GitHub-CI vorbereitet. Teilmeilenstein 2.9 wurde nicht begonnen.
+bleibt für GitHub-CI vorbereitet. Teilmeilenstein 2.9 wurde am 09.08.2026 ausdrücklich freigegeben.
+Die vollständige Abnahme ist mit einem getrennten Stufe-2-Preview-Trigger und einem detaillierten
+Tablet-/Handyprotokoll vorbereitet. Der vollständige lokale 2.9-Prüflauf ist mit 50/50 Tests,
+Format/Lint, TypeScript, Produktions-/PWA-Build und allen Audits grün. GitHub-CI, die
+bereitgestellte Preview und Sirs reale Gerätetests bleiben bis zur Ausführung ausdrücklich offen.
 
 ## Umgesetzt
 
@@ -107,9 +111,12 @@ bleibt für GitHub-CI vorbereitet. Teilmeilenstein 2.9 wurde nicht begonnen.
 
 ## Nächster notwendiger Schritt
 
-1. Teilmeilenstein 2.8 vollständig lokal prüfen und als isolierten Commit festhalten.
-2. Vor Teilmeilenstein 2.9 und der vollständigen Preview-/Geräteabnahme halten.
-3. Stufe 2 erst nach vollständiger technischer und realer Abnahme zusammenführen.
+1. Das isolierte 2.9-Prüfpaket lokal vollständig prüfen und als eigenen Commit festhalten.
+2. Nach einer getrennten Uploadfreigabe GitHub-CI und Stufe-2-Preview kontrollieren.
+3. Anschließend den dokumentierten Tablet- und Handytest mit ausschließlich künstlichen Daten
+   durch Sir durchführen lassen.
+4. Stufe 2 erst nach vollständiger technischer und realer Abnahme und nur nach separater
+   Mergefreigabe zusammenführen. Stufe 3 bleibt gesperrt.
 
 OpenAI API, Sprache, Android-App und Cloud-Sync bleiben deaktiviert. Das alte Repository `RHIA`
 bleibt unverändert.
