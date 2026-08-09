@@ -83,6 +83,22 @@ Zod-Verträge gemeinsam validiert. Unvollständige oder widersprüchliche Zustä
   Bestätigung, fremde Fakten-IDs, veraltete Revisionen oder unvollständige Zustände rollen die
   gesamte Änderung zurück.
 
+## Strukturierte Suche ab Teilmeilenstein 2.6
+
+- Die Volltextdarstellung wird beim Lesen ausschließlich aus den lokalen Fakten,
+  Entscheidungen, Bereichsnamen und Quellenbezeichnungen abgeleitet. Sie ist keine zweite
+  Datenquelle.
+- Groß-/Kleinschreibung und deutsche Akzentzeichen beeinflussen die Suche nicht; mehrere
+  Suchbegriffe müssen gemeinsam im abgeleiteten Text vorkommen.
+- Strukturierte Filter begrenzen Treffer nach Bereich, Datensatztyp, Status, einer oder mehreren
+  Quellen, Gültigkeit und Änderungszeit.
+- Gültigkeit wird am ausdrücklich übergebenen Prüfzeitpunkt als `current`, `future` oder `expired`
+  ausgewiesen. Ein unbegrenzter Datensatz ist aktuell.
+- Gelöschte Datensätze bleiben standardmäßig ausgeschlossen und werden nur über den ausdrücklichen
+  Papierkorbfilter einbezogen.
+- Jeder Treffer enthält den Datensatz, den lesbaren Bereich, die verknüpften Quellen und seinen
+  Gültigkeitszustand. Die Reihenfolge ist deterministisch nach letzter Änderung und ID.
+
 ## Sicherheits- und Kostengrenze
 
 Stufe 2 speichert keine vollständigen Chats automatisch, verwendet keine externe KI, führt keine

@@ -7,7 +7,7 @@ Dieses Repository ist der saubere Neustart ohne Cloudflare-, KV- oder Durable-Ob
 
 - Stufe 0: abgeschlossen und abgenommen
 - Stufe 1: Local-first-Datenfundament abgeschlossen, real abgenommen und in `main` integriert
-- Stufe 2: Gedächtnis v1 freigegeben; Teilmeilensteine 2.0 bis 2.5 technisch umgesetzt
+- Stufe 2: Gedächtnis v1 freigegeben; Teilmeilensteine 2.0 bis 2.6 technisch umgesetzt
 - Betriebsart: lokale IndexedDB als einzige Datenquelle, ohne Cloud-Sync
 - Web/PWA: React, Vite und TypeScript Strict
 - Daten: Dexie, Zod, versionierte Migration, Export/Import und 30-Tage-Papierkorb
@@ -44,6 +44,10 @@ Fassungshistorie bleiben nachvollziehbar, ohne stilles Wiederbeleben älterer In
 Abweichende Werte unter demselben stabilen Konfliktschlüssel werden nicht automatisch
 überschrieben. RHIA markiert beide Fakten sichtbar als strittig und hält einen offenen Konflikt,
 bis Sir ausdrücklich einen Fakt beibehält oder den Fall als Nicht-Konflikt verwirft.
+
+Die Gedächtnissuche arbeitet vollständig lokal. Sie kombiniert normalisierten Volltext mit Filtern
+für Bereich, Typ, Status, Quelle, Gültigkeit und Änderungszeit und zeigt bei jedem Treffer dessen
+Bereich, Quellen und Aktualität an.
 
 ## Prüfung
 

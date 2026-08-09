@@ -15,6 +15,8 @@ const ids = {
   source: "22222222-2222-4222-8222-222222222222",
   missingSource: "33333333-3333-4333-8333-333333333333",
   device: "44444444-4444-4444-8444-444444444444",
+  areaTwo: "55555555-5555-4555-8555-555555555555",
+  sourceTwo: "66666666-6666-4666-8666-666666666666",
 } as const;
 
 const confirmation = { actor: "sir", explicitlyConfirmed: true } as const;
@@ -532,5 +534,83 @@ describe("LocalMemoryService proposal workflow", () => {
     await expect(storage.memoryFacts.getById(second.id)).resolves.toMatchObject({
       status: "confirmed",
     });
+  });
+
+  it("finds normalized local full-text with correct area, source, status and validity", async () => {
+    const proposal = await service.proposeMemoryFact(
+      {
+        ...factInput(),
+        displayText: "Die Präferenz für die Anrede ist Sir.",
+      },
+      { originDeviceId: ids.device },
+    );
+    const confirmed = await service.confirmMemoryFact(proposal.id, proposal.revision, confirmation);
+
+    const hits = await service.searchMemory({
+      query: "praferenz direkte",
+      areaId: ids.area,
+      recordTypes: ["fact"],
+      statuses: ["confirmed"],
+      sourceIds: [ids.source],
+      validity: "current",
+      validAt: timestamp,
+    });
+
+    expect(hits).toEqual([
+      {
+        recordType: "fact",
+        record: confirmed,
+        areaName: "RHIA",
+        sources: [expect.objectContaining({ id: ids.source, label: "Direkte Eingabe durch Sir" })],
+        validity: "current",
+      },
+    ]);
+  });
+
+  it("separates future and expired records and applies updated-time boundaries", async () => {
+    await storage.areas.create(
+      createArea({ name: "Shadow Grown" }, { id: ids.areaTwo, timestamp }),
+    );
+    await storage.sources.create(
+      createSource({ kind: "manual", label: "Künstlerprofil" }, { id: ids.sourceTwo, timestamp }),
+    );
+    const futureFact = await service.proposeMemoryFact(
+      {
+        ...factInput(),
+        areaId: ids.areaTwo,
+        sourceIds: [ids.sourceTwo],
+        value: "Sommerkampagne",
+        displayText: "Die Sommerkampagne beginnt morgen.",
+        conflictKey: "shadow-grown.release.sommer",
+        validFrom: "2026-08-10T09:00:00.000Z",
+      },
+      { originDeviceId: ids.device },
+    );
+    const expiredDecision = await service.proposeDecision(
+      {
+        ...decisionInput(),
+        validUntil: "2026-08-08T09:00:00.000Z",
+      },
+      { originDeviceId: ids.device },
+    );
+
+    await expect(
+      service.searchMemory({
+        areaId: ids.areaTwo,
+        sourceIds: [ids.sourceTwo],
+        recordTypes: ["fact"],
+        statuses: ["proposed"],
+        validity: "future",
+        validAt: timestamp,
+        updatedAfter: timestamp,
+        updatedBefore: timestamp,
+      }),
+    ).resolves.toEqual([expect.objectContaining({ record: futureFact, validity: "future" })]);
+    await expect(
+      service.searchMemory({ recordTypes: ["decision"], validity: "expired", validAt: timestamp }),
+    ).resolves.toEqual([expect.objectContaining({ record: expiredDecision, validity: "expired" })]);
+    await expect(
+      service.searchMemory({ updatedAfter: "2026-08-09T09:00:00.001Z" }),
+    ).resolves.toEqual([]);
   });
 });

@@ -18,7 +18,8 @@ Bestätigungs- und Ablehnungsablauf umgesetzt und über GitHub-CI bestätigt. Te
 mit Korrektur-, Ersetzungs-, Verwerfungs- und Historienabläufen umgesetzt und über GitHub-CI
 bestätigt. Teilmeilenstein 2.5 ist mit stabiler Widerspruchserkennung und kontrollierter
 Konfliktauflösung umgesetzt und lokal vollständig grün. Stufe 2 ist noch nicht abgeschlossen oder
-zur Zusammenführung freigegeben.
+zur Zusammenführung freigegeben. Teilmeilenstein 2.6 ist mit strukturierter lokaler Suche umgesetzt
+und lokal vollständig grün.
 
 ## Umgesetzt
 
@@ -81,11 +82,15 @@ zur Zusammenführung freigegeben.
   `MemoryConflict` sichtbar;
 - ausdrückliche Auflösung durch Beibehalten eines Fakts oder Verwerfen als Nicht-Konflikt;
 - atomare Aktualisierung von Faktenstatus, Konfliktstatus und Auditspur mit Revisionsschutz.
+- abgeleitete lokale Volltextsuche ohne zweite Datenquelle oder externen Dienst;
+- strukturierte Filter nach Bereich, Typ, Status, Quelle, Gültigkeit und Änderungszeit;
+- normalisierte Suche einschließlich deutscher Akzentzeichen mit deterministischer Reihenfolge;
+- Treffer zeigen Bereich, Quellen und aktuellen Gültigkeitszustand nachvollziehbar an.
 
 ## Nächster notwendiger Schritt
 
-1. Teilmeilenstein 2.5 vollständig lokal prüfen und als isolierten Commit festhalten.
-2. Danach Teilmeilenstein 2.6 mit strukturierten Filtern und lokaler Volltextsuche umsetzen.
+1. Teilmeilenstein 2.6 vollständig lokal prüfen und als isolierten Commit festhalten.
+2. Danach Teilmeilenstein 2.7 mit Sicherungsformat v2 und erhaltener v1-Migration umsetzen.
 3. Stufe 2 erst nach vollständiger technischer und realer Abnahme zusammenführen.
 
 OpenAI API, Sprache, Android-App und Cloud-Sync bleiben deaktiviert. Das alte Repository `RHIA`

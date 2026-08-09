@@ -10,9 +10,12 @@ import {
   type CreateDecisionInput,
   type CreateMemoryFactInput,
   type Decision,
+  type DecisionStatus,
   type MemoryConflict,
   type MemoryFact,
+  type MemoryFactStatus,
   RepositoryError,
+  type Source,
   revokeDecision,
   supersedeDecision,
   supersedeMemoryFact,
@@ -53,6 +56,31 @@ export interface MemoryHistory<TEntity extends MemoryFact | Decision> {
   requestedId: string;
   activeVersion: TEntity | null;
   versions: TEntity[];
+}
+
+export type MemoryRecordType = "fact" | "decision";
+export type MemoryValidity = "current" | "future" | "expired";
+export type MemoryRecordStatus = MemoryFactStatus | DecisionStatus;
+
+export interface MemorySearchFilters {
+  query?: string;
+  areaId?: string;
+  recordTypes?: MemoryRecordType[];
+  statuses?: MemoryRecordStatus[];
+  sourceIds?: string[];
+  validity?: MemoryValidity;
+  validAt?: string;
+  updatedAfter?: string;
+  updatedBefore?: string;
+  includeDeleted?: boolean;
+}
+
+export interface MemorySearchHit {
+  recordType: MemoryRecordType;
+  record: MemoryFact | Decision;
+  areaName: string;
+  sources: Source[];
+  validity: MemoryValidity;
 }
 
 export interface LocalMemoryServiceOptions {
@@ -700,6 +728,74 @@ export class LocalMemoryService {
     );
   }
 
+  async searchMemory(filters: MemorySearchFilters = {}): Promise<MemorySearchHit[]> {
+    await this.initialize();
+    const [facts, decisions, areas, sources] = await Promise.all([
+      this.storage.memoryFacts.list({ includeDeleted: true }),
+      this.storage.decisions.list({ includeDeleted: true }),
+      this.storage.areas.list({ includeDeleted: true }),
+      this.storage.sources.list({ includeDeleted: true }),
+    ]);
+    const areaNames = new Map(areas.map((area) => [area.id, area.name]));
+    const sourcesById = new Map(sources.map((source) => [source.id, source]));
+    const queryTokens = this.normalizeSearchText(filters.query ?? "")
+      .split(/\s+/)
+      .filter(Boolean);
+    const validAt = filters.validAt ?? this.now();
+
+    return [
+      ...facts.map((record) => ({ recordType: "fact" as const, record })),
+      ...decisions.map((record) => ({ recordType: "decision" as const, record })),
+    ]
+      .filter(({ record }) => filters.includeDeleted === true || record.deletedAt === null)
+      .filter(({ recordType }) => !filters.recordTypes || filters.recordTypes.includes(recordType))
+      .filter(({ record }) => !filters.areaId || record.areaId === filters.areaId)
+      .filter(({ record }) => !filters.statuses || filters.statuses.includes(record.status))
+      .filter(
+        ({ record }) =>
+          !filters.sourceIds ||
+          filters.sourceIds.every((sourceId) => record.sourceIds.includes(sourceId)),
+      )
+      .filter(({ record }) => !filters.updatedAfter || record.updatedAt >= filters.updatedAfter)
+      .filter(({ record }) => !filters.updatedBefore || record.updatedAt <= filters.updatedBefore)
+      .map(({ recordType, record }): MemorySearchHit => {
+        const linkedSources = record.sourceIds
+          .map((sourceId) => sourcesById.get(sourceId))
+          .filter((source): source is Source => source !== undefined);
+        return {
+          recordType,
+          record,
+          areaName: areaNames.get(record.areaId) ?? "Unbekannter Bereich",
+          sources: linkedSources,
+          validity: this.memoryValidity(record, validAt),
+        };
+      })
+      .filter((hit) => !filters.validity || hit.validity === filters.validity)
+      .filter((hit) => {
+        if (queryTokens.length === 0) return true;
+        const recordText =
+          hit.record.type === "memory-fact"
+            ? [
+                hit.record.knowledgeType,
+                hit.record.subject,
+                hit.record.predicate,
+                hit.record.value,
+                hit.record.displayText,
+                hit.record.conflictKey,
+              ]
+            : [hit.record.title, hit.record.decisionText, hit.record.rationale];
+        const searchText = this.normalizeSearchText(
+          [...recordText, hit.areaName, ...hit.sources.map((source) => source.label)].join(" "),
+        );
+        return queryTokens.every((token) => searchText.includes(token));
+      })
+      .toSorted(
+        (left, right) =>
+          right.record.updatedAt.localeCompare(left.record.updatedAt) ||
+          left.record.id.localeCompare(right.record.id),
+      );
+  }
+
   private async requireReferences(
     areaId: string,
     sourceIds: string[],
@@ -716,6 +812,28 @@ export class LocalMemoryService {
     if (sources.some((source) => !source)) {
       throw new RepositoryError("RECORD_NOT_FOUND", "Mindestens eine Gedächtnisquelle fehlt.");
     }
+  }
+
+  private memoryValidity(
+    record: Pick<MemoryFact | Decision, "validFrom" | "validUntil">,
+    validAt: string,
+  ): MemoryValidity {
+    if (record.validFrom !== null && record.validFrom > validAt) {
+      return "future";
+    }
+    if (record.validUntil !== null && record.validUntil < validAt) {
+      return "expired";
+    }
+    return "current";
+  }
+
+  private normalizeSearchText(value: string): string {
+    return value
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("de-DE")
+      .replace(/[^a-z0-9._:/-]+/g, " ")
+      .trim();
   }
 
   private requireExpectedRevision(actualRevision: number, expectedRevision: number): void {
