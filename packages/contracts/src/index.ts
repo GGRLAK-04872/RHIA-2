@@ -379,9 +379,18 @@ export const stageOneAppStatusSchema = z.object({
   persistenceEnabled: z.literal(true),
 });
 
+export const stageTwoAppStatusSchema = z.object({
+  version: z.string().min(1),
+  stage: z.literal(2),
+  mode: z.literal("local-first"),
+  apiEnabled: z.literal(false),
+  persistenceEnabled: z.literal(true),
+});
+
 export const appStatusSchema = z.discriminatedUnion("stage", [
   stageZeroAppStatusSchema,
   stageOneAppStatusSchema,
+  stageTwoAppStatusSchema,
 ]);
 
 export type AppStatus = z.infer<typeof appStatusSchema>;

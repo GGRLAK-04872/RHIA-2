@@ -21,6 +21,11 @@ Konfliktauflösung umgesetzt und lokal vollständig grün. Stufe 2 ist noch nich
 zur Zusammenführung freigegeben. Teilmeilenstein 2.6 ist mit strukturierter lokaler Suche umgesetzt
 und lokal vollständig grün. Teilmeilenstein 2.7 ist mit Sicherungsformat v2, erhaltener
 v1-Migration und vollständigem Konfliktschutz umgesetzt und lokal vollständig grün.
+Teilmeilenstein 2.8 ist mit der responsiven Gedächtnisoberfläche und sichtbaren Fehlerzuständen
+umgesetzt; Komponenten, TypeScript, Gesamtprüflauf und Build sind lokal grün. Der ergänzte
+Browser-/Responsive-Smoke konnte lokal nicht starten, weil in der Work-Umgebung kein Chromium
+vorhanden ist und der freigegebene Download nur ein ungültiges leeres Archiv liefert. Die Prüfung
+bleibt für GitHub-CI vorbereitet. Teilmeilenstein 2.9 wurde nicht begonnen.
 
 ## Umgesetzt
 
@@ -93,11 +98,17 @@ v1-Migration und vollständigem Konfliktschutz umgesetzt und lokal vollständig 
 - SHA-256-Manipulationsschutz und strikte versionsbezogene Datensatzanzahlen;
 - Importkonflikte für alle sieben Sammlungen blockieren stilles Überschreiben;
 - gemeinsamer atomarer v2-Import mit vollständigem Rollback bei Fehlern.
+- responsive Gedächtnisoberfläche für Fakten, Entscheidungen, Bestätigung und Ablehnung;
+- sichtbare Korrektur-, Papierkorb-, Wiederherstellungs- und Konfliktauflösungsabläufe;
+- bedienbare Volltextsuche und Filter mit Herkunfts-, Status- und Gültigkeitsanzeige;
+- verständliche lokale Fehleranzeige ohne stillen Fallback;
+- grüne Komponentenprüfung sowie vorbereiteter Browser-Smoke für Handy, Tablet, Desktop, Hoch- und
+  Querformat; lokale Browserausführung ausschließlich durch fehlendes Testprogramm blockiert.
 
 ## Nächster notwendiger Schritt
 
-1. Teilmeilenstein 2.7 vollständig lokal prüfen und als isolierten Commit festhalten.
-2. Danach Teilmeilenstein 2.8 mit responsiver Gedächtnisoberfläche umsetzen.
+1. Teilmeilenstein 2.8 vollständig lokal prüfen und als isolierten Commit festhalten.
+2. Vor Teilmeilenstein 2.9 und der vollständigen Preview-/Geräteabnahme halten.
 3. Stufe 2 erst nach vollständiger technischer und realer Abnahme zusammenführen.
 
 OpenAI API, Sprache, Android-App und Cloud-Sync bleiben deaktiviert. Das alte Repository `RHIA`

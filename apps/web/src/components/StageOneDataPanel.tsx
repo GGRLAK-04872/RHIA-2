@@ -261,8 +261,10 @@ export function StageOneDataPanel() {
         {pendingImport && (
           <div className={styles.importPreview} role="status">
             <p>
-              {pendingImport.recordCounts.notes} Notizen · {pendingImport.conflicts.length}{" "}
-              Konflikte
+              {pendingImport.recordCounts.notes} Notizen · {pendingImport.recordCounts.memoryFacts}{" "}
+              Fakten · {pendingImport.recordCounts.decisions} Entscheidungen ·{" "}
+              {pendingImport.recordCounts.memoryConflicts} Gedächtniskonflikte ·{" "}
+              {pendingImport.conflicts.length} Importkonflikte
             </p>
             <button
               type="button"

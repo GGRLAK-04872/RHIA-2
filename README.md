@@ -7,7 +7,7 @@ Dieses Repository ist der saubere Neustart ohne Cloudflare-, KV- oder Durable-Ob
 
 - Stufe 0: abgeschlossen und abgenommen
 - Stufe 1: Local-first-Datenfundament abgeschlossen, real abgenommen und in `main` integriert
-- Stufe 2: Gedächtnis v1 freigegeben; Teilmeilensteine 2.0 bis 2.7 technisch umgesetzt
+- Stufe 2: Gedächtnis v1 freigegeben; Teilmeilensteine 2.0 bis 2.8 technisch umgesetzt
 - Betriebsart: lokale IndexedDB als einzige Datenquelle, ohne Cloud-Sync
 - Web/PWA: React, Vite und TypeScript Strict
 - Daten: Dexie, Zod, versionierte Migration, Export/Import und 30-Tage-Papierkorb
@@ -33,8 +33,8 @@ Daten erst durch einen kontrollierten Export und Import.
 
 Der lokale Gedächtnisdienst legt Fakten und Entscheidungen ausschließlich als inaktive Vorschläge
 an. Erst ein ausdrückliches Bestätigungssignal von Sir aktiviert sie; Ablehnungen bleiben im
-Papierkorb und in der Auditspur nachvollziehbar. Die Bedienoberfläche dafür folgt erst in
-Teilmeilenstein 2.8.
+Papierkorb und in der Auditspur nachvollziehbar. Die responsive Bedienoberfläche stellt diesen
+Lebenszyklus sichtbar bereit.
 
 Korrekturen erzeugen eine neue, zunächst inaktive Fassung. Bis zu deren ausdrücklicher Bestätigung
 bleibt die bisherige Fassung aktiv; danach werden neue Fassung und Vorgänger atomar als
@@ -52,6 +52,10 @@ Bereich, Quellen und Aktualität an.
 Sicherungen werden im Format v2 mit allen sieben lokalen Sammlungen erstellt. Gültige v1-Dateien
 bleiben importierbar und werden ohne erfundene Gedächtnisdaten migriert. Prüfsummenfehler oder
 vorhandene IDs blockieren den Import sichtbar.
+
+Die Gedächtnisoberfläche unterstützt Fakt- und Entscheidungsvorschläge, Bestätigung, Ablehnung,
+Korrektur, Papierkorb, Konfliktauflösung sowie Suche und Filter. Fehler bleiben sichtbar; die
+Bedienung ist für Handy, Tablet, Hoch- und Querformat ausgelegt.
 
 ## Prüfung
 

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { App } from "./App";
 
-describe("RHIA stage 1 shell", () => {
+describe("RHIA stage 2 shell", () => {
   it("stores, edits, deletes and restores a note through the local data view", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -15,7 +15,7 @@ describe("RHIA stage 1 shell", () => {
     expect(screen.getByText("Nicht verbunden")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Kein stiller Rückfall");
 
-    await screen.findByText("Bereit");
+    await screen.findAllByText("Bereit");
     await user.type(screen.getByRole("textbox", { name: "Bereich" }), "RHIA");
     await user.type(screen.getByRole("textbox", { name: "Titel" }), "Lokaler UI-Test");
     await user.type(screen.getByRole("textbox", { name: "Notiz" }), "Künstliche Testdaten");

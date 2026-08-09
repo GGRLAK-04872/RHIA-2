@@ -3,10 +3,13 @@ import {
   assertPendingMemoryProposal,
   confirmDecisionProposal,
   confirmMemoryFactProposal,
+  createArea,
   createAuditEntry,
   createDecision,
   createMemoryConflict,
   createMemoryFact,
+  createSource,
+  type Area,
   type CreateDecisionInput,
   type CreateMemoryFactInput,
   type Decision,
@@ -49,6 +52,11 @@ export interface ExplicitSirConflictResolution {
   note?: string | null;
 }
 
+export interface ExplicitSirRestore {
+  actor: "sir";
+  explicitlyRestored: true;
+}
+
 export type NewMemoryFactInput = Omit<CreateMemoryFactInput, "supersedesId">;
 export type NewDecisionInput = Omit<CreateDecisionInput, "supersedesId">;
 
@@ -83,6 +91,14 @@ export interface MemorySearchHit {
   validity: MemoryValidity;
 }
 
+export interface MemoryWorkspace {
+  areas: Area[];
+  sources: Source[];
+  hits: MemorySearchHit[];
+  openConflicts: MemoryConflict[];
+  conflictFacts: MemoryFact[];
+}
+
 export interface LocalMemoryServiceOptions {
   storage?: RhiaBrowserStorage;
   now?: Clock;
@@ -103,6 +119,19 @@ export class LocalMemoryService {
       await this.storage.open();
       this.opened = true;
     }
+  }
+
+  async getMemoryWorkspace(filters: MemorySearchFilters = {}): Promise<MemoryWorkspace> {
+    const { areas, sources } = await this.ensureMemoryReferences();
+    const [hits, openConflicts] = await Promise.all([
+      this.searchMemory(filters),
+      this.listOpenMemoryConflicts(),
+    ]);
+    const conflictIds = new Set(openConflicts.flatMap((conflict) => conflict.factIds));
+    const conflictFacts = (await this.storage.memoryFacts.list()).filter((fact) =>
+      conflictIds.has(fact.id),
+    );
+    return { areas, sources, hits, openConflicts, conflictFacts };
   }
 
   async proposeMemoryFact(
@@ -710,6 +739,80 @@ export class LocalMemoryService {
     });
   }
 
+  async restoreMemoryFact(
+    id: string,
+    expectedRevision: number,
+    restore: ExplicitSirRestore,
+  ): Promise<MemoryFact> {
+    this.requireExplicitRestore(restore);
+    await this.initialize();
+    const restoredAt = this.now();
+
+    return this.storage.transaction(async (repositories) => {
+      const current = await repositories.memoryFacts.getById(id, { includeDeleted: true });
+      if (!current) {
+        throw new RepositoryError("RECORD_NOT_FOUND", "Der Gedächtnisfakt wurde nicht gefunden.");
+      }
+      if (current.status !== "deleted" || current.deletedAt === null) {
+        throw new RepositoryError(
+          "INVALID_STATE_TRANSITION",
+          "Nur ein gelöschter Gedächtnisfakt kann wiederhergestellt werden.",
+        );
+      }
+      const restored = await repositories.memoryFacts.restore(id, expectedRevision);
+      await repositories.auditEntries.create(
+        createAuditEntry(
+          {
+            entityType: restored.type,
+            entityId: restored.id,
+            entityRevision: restored.revision,
+            action: "restore",
+            summary: "Gedächtnisfakt von Sir als neuer Vorschlag wiederhergestellt.",
+          },
+          { timestamp: restoredAt },
+        ),
+      );
+      return restored;
+    });
+  }
+
+  async restoreDecision(
+    id: string,
+    expectedRevision: number,
+    restore: ExplicitSirRestore,
+  ): Promise<Decision> {
+    this.requireExplicitRestore(restore);
+    await this.initialize();
+    const restoredAt = this.now();
+
+    return this.storage.transaction(async (repositories) => {
+      const current = await repositories.decisions.getById(id, { includeDeleted: true });
+      if (!current) {
+        throw new RepositoryError("RECORD_NOT_FOUND", "Die Entscheidung wurde nicht gefunden.");
+      }
+      if (current.status !== "deleted" || current.deletedAt === null) {
+        throw new RepositoryError(
+          "INVALID_STATE_TRANSITION",
+          "Nur eine gelöschte Entscheidung kann wiederhergestellt werden.",
+        );
+      }
+      const restored = await repositories.decisions.restore(id, expectedRevision);
+      await repositories.auditEntries.create(
+        createAuditEntry(
+          {
+            entityType: restored.type,
+            entityId: restored.id,
+            entityRevision: restored.revision,
+            action: "restore",
+            summary: "Entscheidung von Sir als neuer Vorschlag wiederhergestellt.",
+          },
+          { timestamp: restoredAt },
+        ),
+      );
+      return restored;
+    });
+  }
+
   async getMemoryFactHistory(id: string): Promise<MemoryHistory<MemoryFact>> {
     await this.initialize();
     return this.buildHistory(
@@ -812,6 +915,36 @@ export class LocalMemoryService {
     if (sources.some((source) => !source)) {
       throw new RepositoryError("RECORD_NOT_FOUND", "Mindestens eine Gedächtnisquelle fehlt.");
     }
+  }
+
+  private async ensureMemoryReferences(): Promise<{ areas: Area[]; sources: Source[] }> {
+    await this.initialize();
+    let [areas, sources] = await Promise.all([
+      this.storage.areas.list(),
+      this.storage.sources.list(),
+    ]);
+    if (areas.length > 0 && sources.length > 0) {
+      return { areas, sources };
+    }
+
+    await this.storage.transaction(async (repositories) => {
+      const [currentAreas, currentSources] = await Promise.all([
+        repositories.areas.list(),
+        repositories.sources.list(),
+      ]);
+      if (currentAreas.length === 0) {
+        await repositories.areas.create(
+          createArea({ name: "Allgemein", description: "Lokales RHIA-Gedächtnis" }),
+        );
+      }
+      if (currentSources.length === 0) {
+        await repositories.sources.create(
+          createSource({ kind: "manual", label: "Direkte Eingabe durch Sir" }),
+        );
+      }
+    });
+    [areas, sources] = await Promise.all([this.storage.areas.list(), this.storage.sources.list()]);
+    return { areas, sources };
   }
 
   private memoryValidity(
@@ -957,4 +1090,15 @@ export class LocalMemoryService {
       );
     }
   }
+
+  private requireExplicitRestore(restore: ExplicitSirRestore): void {
+    if (restore.actor !== "sir" || restore.explicitlyRestored !== true) {
+      throw new RepositoryError(
+        "CONFIRMATION_REQUIRED",
+        "Die Wiederherstellung muss Sir ausdrücklich bestätigen.",
+      );
+    }
+  }
 }
+
+export const localMemoryService = new LocalMemoryService();

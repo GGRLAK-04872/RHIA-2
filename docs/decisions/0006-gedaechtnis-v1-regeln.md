@@ -116,6 +116,23 @@ Zod-Verträge gemeinsam validiert. Unvollständige oder widersprüchliche Zustä
 - Die Übernahme aller sieben Sammlungen erfolgt in einer gemeinsamen Dexie-Transaktion. Ein Fehler
   rollt den vollständigen Import zurück.
 
+## Responsive Bedienung ab Teilmeilenstein 2.8
+
+- Die Oberfläche ruft ausschließlich den lokalen Gedächtnisdienst auf. Sie schreibt nie direkt in
+  Dexie und erzeugt keine alternative Datenquelle.
+- Fakt und Entscheidung werden mit bewusst gewähltem Bereich und Quelle als Vorschlag erfasst.
+  Bestätigen, Ablehnen, Korrigieren, Verwerfen und Wiederherstellen bleiben getrennte sichtbare
+  Aktionen.
+- Wiederhergestelltes Wissen erscheint wieder als `proposed` und benötigt erneut Sirs Bestätigung.
+- Offene Konflikte zeigen die beteiligten Aussagen. Eine Auflösung verlangt eine bewusste Auswahl
+  oder das ausdrückliche Verwerfen als Nicht-Konflikt.
+- Suche und strukturierte Filter zeigen Ergebnisanzahl, Status, Bereich, Quellen und Gültigkeit.
+  Frühere Fassungen und Papierkorbeinträge bleiben als solche gekennzeichnet.
+- Speicher-, Validierungs-, Revisions-, Bestätigungs- und Importfehler werden verständlich und
+  sichtbar ausgegeben; es gibt keinen stillen Fallback.
+- Formular, Ergebnislisten und Aktionen brechen auf schmalen Ansichten auf eine Spalte um. Die
+  Browser-Smoke-Prüfung deckt Handy und Tablet im Hoch- und Querformat sowie Desktop ab.
+
 ## Sicherheits- und Kostengrenze
 
 Stufe 2 speichert keine vollständigen Chats automatisch, verwendet keine externe KI, führt keine

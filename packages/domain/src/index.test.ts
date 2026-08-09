@@ -31,9 +31,9 @@ const ids = {
   device: "99999999-9999-4999-8999-999999999999",
 } as const;
 
-describe("RHIA stage 1 domain foundation", () => {
+describe("RHIA stage 2 domain foundation", () => {
   it("activates IndexedDB as the only local source while cloud and AI stay disabled", () => {
-    expect(RHIA_STAGE).toBe(1);
+    expect(RHIA_STAGE).toBe(2);
     expect(RHIA_RUNTIME).toEqual({
       sourceOfTruth: "indexeddb",
       cloudRuntime: false,

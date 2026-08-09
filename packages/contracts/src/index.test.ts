@@ -72,7 +72,7 @@ describe("stage 1 contracts", () => {
     );
   });
 
-  it("permits only the local-first, API-disabled stage 1 status", () => {
+  it("permits only local-first, API-disabled persisted stage status", () => {
     expect(
       appStatusSchema.safeParse({
         version: "0.2.0",
@@ -92,6 +92,16 @@ describe("stage 1 contracts", () => {
         persistenceEnabled: true,
       }).success,
     ).toBe(false);
+
+    expect(
+      appStatusSchema.safeParse({
+        version: "0.2.0",
+        stage: 2,
+        mode: "local-first",
+        apiEnabled: false,
+        persistenceEnabled: true,
+      }).success,
+    ).toBe(true);
   });
 });
 

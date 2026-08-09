@@ -1,6 +1,6 @@
 export const RHIA_PRODUCT_NAME = "RHIA 2.0" as const;
 export const RHIA_VERSION = "0.2.0" as const;
-export const RHIA_STAGE = 1 as const;
+export const RHIA_STAGE = 2 as const;
 export const RHIA_SCHEMA_VERSION = 1 as const;
 
 export const RHIA_RUNTIME = {

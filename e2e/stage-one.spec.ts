@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test("stage 1 starts locally without old cloud dependencies", async ({ page }) => {
+test("stage 2 starts locally without old cloud dependencies", async ({ page }) => {
   const networkTargets: string[] = [];
   page.on("request", (request) => networkTargets.push(request.url()));
 
   await page.goto("/");
 
   await expect(page.getByRole("heading", { name: "RHIA 2.0" })).toBeVisible();
-  await expect(page.getByText("Das lokale Datenfundament wird aufgebaut.")).toBeVisible();
+  await expect(page.getByText("Bestätigtes Wissen bleibt unter deiner Kontrolle.")).toBeVisible();
   await expect(page.getByText("IndexedDB")).toBeVisible();
   await expect(page.getByRole("status")).toContainText("Kein stiller Rückfall");
 
@@ -23,7 +23,10 @@ test("local note survives edit, reload, trash and restore without reanimation", 
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByText("Bereit", { exact: true })).toBeVisible();
+  const notePanel = page.locator("section").filter({
+    has: page.getByRole("heading", { name: "Notizen testen" }),
+  });
+  await expect(notePanel.getByText("Bereit", { exact: true })).toBeVisible();
 
   await page.getByRole("textbox", { name: "Bereich" }).fill("RHIA Browser-Test");
   await page.getByRole("textbox", { name: "Titel" }).fill("Bordeaux 47");
@@ -59,4 +62,55 @@ test("local note survives edit, reload, trash and restore without reanimation", 
   await page.reload();
   await expect(page.getByText("Bordeaux 47 geändert")).not.toBeVisible();
   await expect(page.getByText("0 aktiv", { exact: false })).toBeVisible();
+});
+
+test("memory fact stays local through proposal, confirmation, reload and search", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const memoryPanel = page.locator("section").filter({
+    has: page.getByRole("heading", { name: "Fakten und Entscheidungen" }),
+  });
+  await expect(memoryPanel.getByText("Bereit", { exact: true })).toBeVisible();
+
+  await memoryPanel.getByRole("textbox", { name: "Eigenschaft" }).fill("preferred-address");
+  await memoryPanel
+    .getByRole("textbox", { name: "Konfliktschlüssel" })
+    .fill("sir.profile.preferred-address");
+  await memoryPanel.getByRole("textbox", { name: "Wert" }).fill("Sir");
+  await memoryPanel
+    .getByRole("textbox", { name: "Verständliche Anzeige" })
+    .fill("Die bevorzugte Anrede ist Sir.");
+  await memoryPanel.getByRole("button", { name: "Als Vorschlag speichern" }).click();
+  await memoryPanel.getByRole("button", { name: "Bestätigen" }).click();
+  await expect(memoryPanel.getByText("Bestätigt")).toBeVisible();
+
+  await page.reload();
+  await expect(memoryPanel.getByText("Die bevorzugte Anrede ist Sir.")).toBeVisible();
+  await memoryPanel.getByRole("searchbox", { name: "Gedächtnis durchsuchen" }).fill("anrede sir");
+  await memoryPanel.getByRole("button", { name: "Filter anwenden" }).click();
+  await expect(memoryPanel.getByText("1 Treffer · 0 offene Konflikte")).toBeVisible();
+});
+
+test("memory controls remain usable without horizontal overflow in portrait and landscape", async ({
+  page,
+}) => {
+  const viewports = [
+    { width: 412, height: 915 },
+    { width: 915, height: 412 },
+    { width: 800, height: 1280 },
+    { width: 1280, height: 800 },
+  ];
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Fakten und Entscheidungen" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Als Vorschlag speichern" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Filter anwenden" })).toBeVisible();
+    const hasHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth,
+    );
+    expect(hasHorizontalOverflow).toBe(false);
+  }
 });
