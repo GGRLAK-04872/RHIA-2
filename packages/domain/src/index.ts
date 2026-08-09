@@ -12,7 +12,15 @@ export const RHIA_RUNTIME = {
 
 export type RhiaRuntime = typeof RHIA_RUNTIME;
 
-export const ENTITY_TYPES = ["area", "source", "note", "audit-entry"] as const;
+export const ENTITY_TYPES = [
+  "area",
+  "source",
+  "note",
+  "audit-entry",
+  "memory-fact",
+  "decision",
+  "memory-conflict",
+] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];
 
 export interface EntityBase<TType extends EntityType> {
@@ -62,7 +70,69 @@ export interface AuditEntry extends EntityBase<"audit-entry"> {
   summary: string | null;
 }
 
-export type PersistedEntity = Area | Source | Note | AuditEntry;
+export type MemoryConfirmationActor = "sir";
+export type MemoryFactStatus = "proposed" | "confirmed" | "disputed" | "superseded" | "deleted";
+
+export interface MemoryFact extends EntityBase<"memory-fact"> {
+  areaId: string;
+  sourceIds: string[];
+  originDeviceId: string;
+  knowledgeType: string;
+  subject: string;
+  predicate: string;
+  value: string;
+  conflictKey: string;
+  displayText: string;
+  status: MemoryFactStatus;
+  validFrom: string | null;
+  validUntil: string | null;
+  confirmedAt: string | null;
+  confirmedBy: MemoryConfirmationActor | null;
+  supersedesId: string | null;
+}
+
+export type DecisionStatus = "proposed" | "confirmed" | "superseded" | "revoked" | "deleted";
+
+export interface Decision extends EntityBase<"decision"> {
+  areaId: string;
+  sourceIds: string[];
+  originDeviceId: string;
+  title: string;
+  decisionText: string;
+  rationale: string;
+  status: DecisionStatus;
+  validFrom: string | null;
+  validUntil: string | null;
+  confirmedAt: string | null;
+  confirmedBy: MemoryConfirmationActor | null;
+  supersedesId: string | null;
+}
+
+export type MemoryConflictStatus = "open" | "resolved" | "dismissed";
+export type MemoryConflictResolution = "keep-fact" | "replace-both" | "not-a-conflict";
+
+export interface MemoryConflict extends EntityBase<"memory-conflict"> {
+  areaId: string;
+  originDeviceId: string;
+  conflictKey: string;
+  factIds: string[];
+  status: MemoryConflictStatus;
+  detectedAt: string;
+  resolvedAt: string | null;
+  resolvedBy: MemoryConfirmationActor | null;
+  resolution: MemoryConflictResolution | null;
+  resolvedFactId: string | null;
+  note: string | null;
+}
+
+export type PersistedEntity =
+  | Area
+  | Source
+  | Note
+  | AuditEntry
+  | MemoryFact
+  | Decision
+  | MemoryConflict;
 
 export interface EntityFactoryOptions {
   id?: string;
@@ -96,6 +166,54 @@ export interface CreateAuditEntryInput {
   action: AuditAction;
   occurredAt?: string;
   summary?: string | null;
+}
+
+export interface MemoryEntityFactoryOptions extends EntityFactoryOptions {
+  originDeviceId: string;
+}
+
+export interface CreateMemoryFactInput {
+  areaId: string;
+  sourceIds: string[];
+  knowledgeType: string;
+  subject: string;
+  predicate: string;
+  value: string;
+  conflictKey: string;
+  displayText: string;
+  status?: MemoryFactStatus;
+  validFrom?: string | null;
+  validUntil?: string | null;
+  confirmedAt?: string | null;
+  confirmedBy?: MemoryConfirmationActor | null;
+  supersedesId?: string | null;
+}
+
+export interface CreateDecisionInput {
+  areaId: string;
+  sourceIds: string[];
+  title: string;
+  decisionText: string;
+  rationale: string;
+  status?: DecisionStatus;
+  validFrom?: string | null;
+  validUntil?: string | null;
+  confirmedAt?: string | null;
+  confirmedBy?: MemoryConfirmationActor | null;
+  supersedesId?: string | null;
+}
+
+export interface CreateMemoryConflictInput {
+  areaId: string;
+  conflictKey: string;
+  factIds: string[];
+  status?: MemoryConflictStatus;
+  detectedAt?: string;
+  resolvedAt?: string | null;
+  resolvedBy?: MemoryConfirmationActor | null;
+  resolution?: MemoryConflictResolution | null;
+  resolvedFactId?: string | null;
+  note?: string | null;
 }
 
 function createEnvelope<TType extends EntityType>(
@@ -159,6 +277,73 @@ export function createAuditEntry(
     action: input.action,
     occurredAt: input.occurredAt ?? envelope.createdAt,
     summary: input.summary ?? null,
+  };
+}
+
+export function createMemoryFact(
+  input: CreateMemoryFactInput,
+  options: MemoryEntityFactoryOptions,
+): MemoryFact {
+  return {
+    ...createEnvelope("memory-fact", options),
+    areaId: input.areaId,
+    sourceIds: [...input.sourceIds],
+    originDeviceId: options.originDeviceId,
+    knowledgeType: input.knowledgeType,
+    subject: input.subject,
+    predicate: input.predicate,
+    value: input.value,
+    conflictKey: input.conflictKey,
+    displayText: input.displayText,
+    status: input.status ?? "proposed",
+    validFrom: input.validFrom ?? null,
+    validUntil: input.validUntil ?? null,
+    confirmedAt: input.confirmedAt ?? null,
+    confirmedBy: input.confirmedBy ?? null,
+    supersedesId: input.supersedesId ?? null,
+  };
+}
+
+export function createDecision(
+  input: CreateDecisionInput,
+  options: MemoryEntityFactoryOptions,
+): Decision {
+  return {
+    ...createEnvelope("decision", options),
+    areaId: input.areaId,
+    sourceIds: [...input.sourceIds],
+    originDeviceId: options.originDeviceId,
+    title: input.title,
+    decisionText: input.decisionText,
+    rationale: input.rationale,
+    status: input.status ?? "proposed",
+    validFrom: input.validFrom ?? null,
+    validUntil: input.validUntil ?? null,
+    confirmedAt: input.confirmedAt ?? null,
+    confirmedBy: input.confirmedBy ?? null,
+    supersedesId: input.supersedesId ?? null,
+  };
+}
+
+export function createMemoryConflict(
+  input: CreateMemoryConflictInput,
+  options: MemoryEntityFactoryOptions,
+): MemoryConflict {
+  const envelope = createEnvelope("memory-conflict", options);
+
+  return {
+    ...envelope,
+    areaId: input.areaId,
+    originDeviceId: options.originDeviceId,
+    conflictKey: input.conflictKey,
+    factIds: [...input.factIds],
+    status: input.status ?? "open",
+    detectedAt: input.detectedAt ?? envelope.createdAt,
+    resolvedAt: input.resolvedAt ?? null,
+    resolvedBy: input.resolvedBy ?? null,
+    resolution: input.resolution ?? null,
+    resolvedFactId: input.resolvedFactId ?? null,
+    note: input.note ?? null,
   };
 }
 

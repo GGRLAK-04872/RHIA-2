@@ -6,11 +6,13 @@ Stand: 09.08.2026
 
 Stufe 1 – Local-first-Datenfundament ist vollständig abgeschlossen, von Sir am 09.08.2026 nach
 bestandenem Tablet- und Handytest abgenommen und durch den Squash-Merge von PR #1 in `main`
-integriert.
+integriert. Der Dokumentationsnachtrag aus PR #2 ist ebenfalls gemergt und veröffentlicht.
 
-Aktueller `main`-Commit: `e0abdce239f6eaaaf62b8ce9e02bcf4dde8dcebe`.
+Ausgangs-`main` für Stufe 2: `7578f79e627f9e0d298c734bba3040f9fef93049`.
 
-Stufe 2 – Gedächtnis v1 bleibt ausdrücklich gesperrt und wurde nicht begonnen.
+Stufe 2 – Gedächtnis v1 wurde am 09.08.2026 ausdrücklich freigegeben. Teilmeilenstein 2.0 ist grün;
+Teilmeilenstein 2.1 ist auf `feat/stufe-2-gedaechtnis-v1` umgesetzt und lokal vollständig grün.
+Stufe 2 ist noch nicht abgeschlossen oder zur Zusammenführung freigegeben.
 
 ## Umgesetzt
 
@@ -47,9 +49,9 @@ Stufe 2 – Gedächtnis v1 bleibt ausdrücklich gesperrt und wurde nicht begonne
 
 ## Nächster notwendiger Schritt
 
-1. Diesen Dokumentations-Mini-PR prüfen und erst nach gesonderter Freigabe in `main` einbauen.
-2. Nach dem Merge `main`, CI und GitHub Pages kontrollieren.
-3. Stufe 2 – Gedächtnis v1 erst nach eigener ausdrücklicher Freigabe beginnen.
+1. Teilmeilenstein 2.1 im Draft-PR durch GitHub-CI prüfen.
+2. Danach vor Teilmeilenstein 2.2 mit Dexie-Schema-Version 2 und Repositories halten.
+3. Stufe 2 erst nach vollständiger technischer und realer Abnahme zusammenführen.
 
 OpenAI API, Sprache, Android-App und Cloud-Sync bleiben deaktiviert. Das alte Repository `RHIA`
 bleibt unverändert.

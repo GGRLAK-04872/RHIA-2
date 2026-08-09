@@ -6,7 +6,8 @@ Dieses Repository ist der saubere Neustart ohne Cloudflare-, KV- oder Durable-Ob
 ## Aktueller Stand
 
 - Stufe 0: abgeschlossen und abgenommen
-- Stufe 1: Local-first-Datenfundament implementiert; realer Geräte-Praxistest ausstehend
+- Stufe 1: Local-first-Datenfundament abgeschlossen, real abgenommen und in `main` integriert
+- Stufe 2: Gedächtnis v1 freigegeben; Teilmeilenstein 2.0 abgeschlossen und 2.1 lokal grün
 - Betriebsart: lokale IndexedDB als einzige Datenquelle, ohne Cloud-Sync
 - Web/PWA: React, Vite und TypeScript Strict
 - Daten: Dexie, Zod, versionierte Migration, Export/Import und 30-Tage-Papierkorb
