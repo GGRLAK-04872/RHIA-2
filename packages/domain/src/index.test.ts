@@ -12,6 +12,9 @@ import {
   createMemoryFact,
   createNote,
   createSource,
+  revokeDecision,
+  supersedeDecision,
+  supersedeMemoryFact,
 } from "./index";
 
 const timestamp = "2026-08-08T16:00:00.000Z";
@@ -246,5 +249,65 @@ describe("RHIA stage 1 domain foundation", () => {
         confirmedAt,
       }),
     ).toThrow(expect.objectContaining({ code: "INVALID_STATE_TRANSITION" }));
+  });
+
+  it("supersedes only confirmed predecessors and revokes decisions without losing history", () => {
+    const proposedFact = createMemoryFact(
+      {
+        areaId: ids.area,
+        sourceIds: [ids.source],
+        knowledgeType: "profile",
+        subject: "sir",
+        predicate: "preferred-address",
+        value: "Sir",
+        conflictKey: "sir.profile.preferred-address",
+        displayText: "Die bevorzugte Anrede ist Sir.",
+      },
+      { id: ids.factOne, timestamp, originDeviceId: ids.device },
+    );
+    const proposedDecision = createDecision(
+      {
+        areaId: ids.area,
+        sourceIds: [ids.source],
+        title: "API deaktiviert lassen",
+        decisionText: "OpenAI bleibt in Stufe 2 deaktiviert.",
+        rationale: "Stufe 2 arbeitet vollständig lokal.",
+      },
+      { id: ids.decision, timestamp, originDeviceId: ids.device },
+    );
+
+    expect(() => supersedeMemoryFact(proposedFact)).toThrow(
+      expect.objectContaining({ code: "INVALID_STATE_TRANSITION" }),
+    );
+    expect(() => supersedeDecision(proposedDecision)).toThrow(
+      expect.objectContaining({ code: "INVALID_STATE_TRANSITION" }),
+    );
+
+    const confirmedFact = confirmMemoryFactProposal(proposedFact, {
+      actor: "sir",
+      explicitlyConfirmed: true,
+      confirmedAt,
+    });
+    const confirmedDecision = confirmDecisionProposal(proposedDecision, {
+      actor: "sir",
+      explicitlyConfirmed: true,
+      confirmedAt,
+    });
+
+    expect(supersedeMemoryFact(confirmedFact)).toMatchObject({
+      id: confirmedFact.id,
+      status: "superseded",
+      confirmedAt,
+    });
+    expect(supersedeDecision(confirmedDecision)).toMatchObject({
+      id: confirmedDecision.id,
+      status: "superseded",
+      confirmedAt,
+    });
+    expect(revokeDecision(confirmedDecision)).toMatchObject({
+      id: confirmedDecision.id,
+      status: "revoked",
+      confirmedAt,
+    });
   });
 });

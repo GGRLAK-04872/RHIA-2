@@ -3,6 +3,7 @@ import { createRhiaBrowserStorage, type RhiaBrowserStorage } from "@rhia/storage
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   type ExplicitSirConfirmation,
+  type ExplicitSirDiscard,
   type ExplicitSirRejection,
   LocalMemoryService,
 } from "./localMemoryService";
@@ -17,6 +18,7 @@ const ids = {
 
 const confirmation = { actor: "sir", explicitlyConfirmed: true } as const;
 const rejection = { actor: "sir", explicitlyRejected: true } as const;
+const discard = { actor: "sir", explicitlyDiscarded: true } as const;
 
 let storage: RhiaBrowserStorage;
 let service: LocalMemoryService;
@@ -71,6 +73,7 @@ describe("LocalMemoryService proposal workflow", () => {
       status: "confirmed",
       confirmedAt: timestamp,
       confirmedBy: "sir",
+      supersedesId: "55555555-5555-4555-8555-555555555555",
     };
 
     const fact = await service.proposeMemoryFact(untrustedInput, {
@@ -81,6 +84,7 @@ describe("LocalMemoryService proposal workflow", () => {
       status: "proposed",
       confirmedAt: null,
       confirmedBy: null,
+      supersedesId: null,
       revision: 1,
     });
     await expect(storage.memoryFacts.getById(fact.id)).resolves.toEqual(fact);
@@ -197,6 +201,190 @@ describe("LocalMemoryService proposal workflow", () => {
     await expect(storage.decisions.getById(decision.id)).resolves.toMatchObject({
       status: "proposed",
       revision: 1,
+    });
+  });
+
+  it("keeps the confirmed fact active until its correction is explicitly confirmed", async () => {
+    const proposal = await service.proposeMemoryFact(factInput(), {
+      originDeviceId: ids.device,
+    });
+    const original = await service.confirmMemoryFact(proposal.id, proposal.revision, confirmation);
+
+    const correction = await service.correctMemoryFact(
+      original.id,
+      original.revision,
+      {
+        ...factInput(),
+        value: "Sir, privat Mike",
+        displayText: "Die bevorzugte Anrede ist Sir, privat Mike.",
+      },
+      { originDeviceId: ids.device },
+    );
+
+    expect(correction).toMatchObject({
+      status: "proposed",
+      supersedesId: original.id,
+      confirmedAt: null,
+    });
+    await expect(storage.memoryFacts.getById(original.id)).resolves.toMatchObject({
+      status: "confirmed",
+      revision: 2,
+    });
+    await expect(service.getMemoryFactHistory(correction.id)).resolves.toMatchObject({
+      activeVersion: { id: original.id, status: "confirmed" },
+      versions: expect.arrayContaining([
+        expect.objectContaining({ id: original.id }),
+        expect.objectContaining({ id: correction.id }),
+      ]),
+    });
+    await expect(
+      service.correctMemoryFact(original.id, original.revision, factInput(), {
+        originDeviceId: ids.device,
+      }),
+    ).rejects.toMatchObject({ code: "INVALID_STATE_TRANSITION" });
+  });
+
+  it("atomically activates a correction and preserves its predecessor as superseded", async () => {
+    const proposal = await service.proposeMemoryFact(factInput(), {
+      originDeviceId: ids.device,
+    });
+    const original = await service.confirmMemoryFact(proposal.id, proposal.revision, confirmation);
+    const correction = await service.correctMemoryFact(
+      original.id,
+      original.revision,
+      {
+        ...factInput(),
+        value: "Sir, privat Mike",
+        displayText: "Die bevorzugte Anrede ist Sir, privat Mike.",
+      },
+      { originDeviceId: ids.device },
+    );
+
+    const confirmedCorrection = await service.confirmMemoryFact(
+      correction.id,
+      correction.revision,
+      confirmation,
+    );
+    const predecessor = await storage.memoryFacts.getById(original.id);
+    const history = await service.getMemoryFactHistory(original.id);
+
+    expect(confirmedCorrection).toMatchObject({
+      status: "confirmed",
+      supersedesId: original.id,
+      revision: 2,
+    });
+    expect(predecessor).toMatchObject({ status: "superseded", revision: 3 });
+    expect(history.activeVersion).toEqual(confirmedCorrection);
+    expect(history.versions).toHaveLength(2);
+    await expect(
+      service.correctMemoryFact(original.id, 3, factInput(), { originDeviceId: ids.device }),
+    ).rejects.toMatchObject({ code: "INVALID_STATE_TRANSITION" });
+  });
+
+  it("rolls back predecessor replacement when the correction revision is stale", async () => {
+    const proposal = await service.proposeMemoryFact(factInput(), {
+      originDeviceId: ids.device,
+    });
+    const original = await service.confirmMemoryFact(proposal.id, proposal.revision, confirmation);
+    const correction = await service.correctMemoryFact(
+      original.id,
+      original.revision,
+      { ...factInput(), value: "Neue Fassung" },
+      { originDeviceId: ids.device },
+    );
+    await storage.memoryFacts.replace(
+      { ...correction, displayText: "Extern geänderte Korrekturfassung." },
+      correction.revision,
+    );
+
+    await expect(
+      service.confirmMemoryFact(correction.id, correction.revision, confirmation),
+    ).rejects.toMatchObject({ code: "REVISION_CONFLICT" });
+    await expect(storage.memoryFacts.getById(original.id)).resolves.toMatchObject({
+      status: "confirmed",
+      revision: 2,
+    });
+    await expect(storage.memoryFacts.getById(correction.id)).resolves.toMatchObject({
+      status: "proposed",
+      revision: 2,
+    });
+  });
+
+  it("discards a correction without changing the confirmed predecessor", async () => {
+    const proposal = await service.proposeMemoryFact(factInput(), {
+      originDeviceId: ids.device,
+    });
+    const original = await service.confirmMemoryFact(proposal.id, proposal.revision, confirmation);
+    const correction = await service.correctMemoryFact(
+      original.id,
+      original.revision,
+      { ...factInput(), value: "Verworfener Wert" },
+      { originDeviceId: ids.device },
+    );
+
+    const rejected = await service.rejectMemoryFact(correction.id, correction.revision, rejection);
+    const history = await service.getMemoryFactHistory(original.id);
+
+    expect(rejected).toMatchObject({ status: "deleted", supersedesId: original.id });
+    expect(history.activeVersion).toEqual(original);
+    expect(history.versions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: original.id, status: "confirmed" }),
+        expect.objectContaining({ id: correction.id, status: "deleted" }),
+      ]),
+    );
+  });
+
+  it("replaces and revokes decisions while retaining their complete version history", async () => {
+    const proposal = await service.proposeDecision(decisionInput(), {
+      originDeviceId: ids.device,
+    });
+    const original = await service.confirmDecision(proposal.id, proposal.revision, confirmation);
+    const correction = await service.correctDecision(
+      original.id,
+      original.revision,
+      {
+        ...decisionInput(),
+        title: "OpenAI bis Stufe 5 deaktiviert lassen",
+        decisionText: "OpenAI bleibt mindestens bis Stufe 5 deaktiviert.",
+      },
+      { originDeviceId: ids.device },
+    );
+    const replacement = await service.confirmDecision(
+      correction.id,
+      correction.revision,
+      confirmation,
+    );
+    const revoked = await service.discardDecision(replacement.id, replacement.revision, discard);
+    const history = await service.getDecisionHistory(original.id);
+
+    await expect(storage.decisions.getById(original.id)).resolves.toMatchObject({
+      status: "superseded",
+    });
+    expect(revoked).toMatchObject({ status: "revoked", supersedesId: original.id });
+    expect(history.activeVersion).toBeNull();
+    expect(history.versions).toHaveLength(2);
+  });
+
+  it("requires Sir's explicit discard signal before deleting confirmed facts", async () => {
+    const proposal = await service.proposeMemoryFact(factInput(), {
+      originDeviceId: ids.device,
+    });
+    const confirmed = await service.confirmMemoryFact(proposal.id, proposal.revision, confirmation);
+    const implicitDiscard = {
+      actor: "sir",
+      explicitlyDiscarded: false,
+    } as unknown as ExplicitSirDiscard;
+
+    await expect(
+      service.discardMemoryFact(confirmed.id, confirmed.revision, implicitDiscard),
+    ).rejects.toMatchObject({ code: "CONFIRMATION_REQUIRED" });
+    const discarded = await service.discardMemoryFact(confirmed.id, confirmed.revision, discard);
+
+    expect(discarded).toMatchObject({ status: "deleted", revision: 3 });
+    await expect(service.getMemoryFactHistory(discarded.id)).resolves.toMatchObject({
+      activeVersion: null,
+      versions: [expect.objectContaining({ id: discarded.id, status: "deleted" })],
     });
   });
 });

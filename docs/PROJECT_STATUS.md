@@ -14,8 +14,9 @@ Stufe 2 – Gedächtnis v1 wurde am 09.08.2026 ausdrücklich freigegeben. Teilme
 Teilmeilenstein 2.1 ist auf `feat/stufe-2-gedaechtnis-v1` umgesetzt und über GitHub-CI bestätigt.
 Teilmeilenstein 2.2 ist mit der additiven Dexie-Migration und den Gedächtnis-Repositories umgesetzt
 und über GitHub-CI bestätigt. Teilmeilenstein 2.3 ist mit dem kontrollierten Vorschlags-,
-Bestätigungs- und Ablehnungsablauf umgesetzt und lokal vollständig grün. Stufe 2 ist noch nicht
-abgeschlossen oder zur Zusammenführung freigegeben.
+Bestätigungs- und Ablehnungsablauf umgesetzt und über GitHub-CI bestätigt. Teilmeilenstein 2.4 ist
+mit Korrektur-, Ersetzungs-, Verwerfungs- und Historienabläufen umgesetzt und lokal vollständig
+grün. Stufe 2 ist noch nicht abgeschlossen oder zur Zusammenführung freigegeben.
 
 ## Umgesetzt
 
@@ -64,11 +65,20 @@ abgeschlossen oder zur Zusammenführung freigegeben.
 - ungültige oder wiederholte Zustandswechsel werden sichtbar blockiert;
 - Bereichs- und Quellenbezüge werden transaktional geprüft; fehlerhafte Vorschläge hinterlassen
   weder Gedächtnisdatensatz noch Auditspur.
+- Korrekturen erzeugen eine neue inaktive Fassung mit kontrolliertem `supersedesId`;
+- bestätigte Vorgänger bleiben bis zur ausdrücklichen Bestätigung ihrer Korrektur aktiv;
+- Bestätigung ersetzt Vorgänger und Korrektur atomar; Revisionsfehler rollen beide Änderungen
+  vollständig zurück;
+- verworfene Korrekturen ändern die aktive Fassung nicht;
+- bestätigte Fakten können ausdrücklich in den Papierkorb verworfen und Entscheidungen
+  nachvollziehbar widerrufen werden;
+- vollständige Fassungshistorie einschließlich ersetzter und verworfener Fassungen mit höchstens
+  einer aktiven bestätigten Fassung.
 
 ## Nächster notwendiger Schritt
 
-1. Teilmeilenstein 2.3 im Draft-PR durch GitHub-CI prüfen.
-2. Danach vor Teilmeilenstein 2.4 mit Korrektur, Ersetzen, Verwerfen und Historie halten.
+1. Teilmeilenstein 2.4 im Draft-PR durch GitHub-CI prüfen.
+2. Danach vor Teilmeilenstein 2.5 mit Widerspruchserkennung über stabile Konfliktschlüssel halten.
 3. Stufe 2 erst nach vollständiger technischer und realer Abnahme zusammenführen.
 
 OpenAI API, Sprache, Android-App und Cloud-Sync bleiben deaktiviert. Das alte Repository `RHIA`

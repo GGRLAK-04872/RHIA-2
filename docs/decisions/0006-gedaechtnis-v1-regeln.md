@@ -50,6 +50,21 @@ Zod-Verträge gemeinsam validiert. Unvollständige oder widersprüchliche Zustä
 - Bereich und sämtliche Quellen werden innerhalb derselben Transaktion geprüft. Ein fehlender Bezug
   rollt Vorschlag und Audit vollständig zurück.
 
+## Korrektur und Historie ab Teilmeilenstein 2.4
+
+- Normale Vorschläge dürfen keinen selbst gesetzten Vorgängerbezug übernehmen. `supersedesId` wird
+  ausschließlich durch den kontrollierten Korrekturablauf gesetzt.
+- Eine Korrektur erzeugt eine neue Fassung im Status `proposed`. Die bestätigte Vorgängerfassung
+  bleibt aktiv, bis Sir die Korrektur ausdrücklich bestätigt.
+- Bei Bestätigung werden die neue Fassung und ihr Vorgänger in einer Transaktion auf `confirmed`
+  beziehungsweise `superseded` gesetzt. Ein Revisionsfehler rollt beide Änderungen zurück.
+- Pro aktiver Fassung darf nur ein nicht verworfener direkter Korrekturstand existieren.
+- Das Verwerfen einer Korrektur lässt die bestätigte Vorgängerfassung unverändert aktiv.
+- Ein bestätigter Fakt wird nach ausdrücklichem Sir-Signal in den Papierkorb verworfen. Eine
+  verworfene Entscheidung bleibt als `revoked` nachvollziehbar.
+- Die Historie umfasst auch ersetzte und verworfene Fassungen und weist höchstens eine aktive
+  bestätigte Fassung aus. Frühere Fassungen werden niemals still reaktiviert.
+
 ## Sicherheits- und Kostengrenze
 
 Stufe 2 speichert keine vollständigen Chats automatisch, verwendet keine externe KI, führt keine

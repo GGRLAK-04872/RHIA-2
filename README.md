@@ -7,7 +7,7 @@ Dieses Repository ist der saubere Neustart ohne Cloudflare-, KV- oder Durable-Ob
 
 - Stufe 0: abgeschlossen und abgenommen
 - Stufe 1: Local-first-Datenfundament abgeschlossen, real abgenommen und in `main` integriert
-- Stufe 2: Gedächtnis v1 freigegeben; Teilmeilensteine 2.0 bis 2.3 technisch umgesetzt
+- Stufe 2: Gedächtnis v1 freigegeben; Teilmeilensteine 2.0 bis 2.4 technisch umgesetzt
 - Betriebsart: lokale IndexedDB als einzige Datenquelle, ohne Cloud-Sync
 - Web/PWA: React, Vite und TypeScript Strict
 - Daten: Dexie, Zod, versionierte Migration, Export/Import und 30-Tage-Papierkorb
@@ -35,6 +35,11 @@ Der lokale Gedächtnisdienst legt Fakten und Entscheidungen ausschließlich als 
 an. Erst ein ausdrückliches Bestätigungssignal von Sir aktiviert sie; Ablehnungen bleiben im
 Papierkorb und in der Auditspur nachvollziehbar. Die Bedienoberfläche dafür folgt erst in
 Teilmeilenstein 2.8.
+
+Korrekturen erzeugen eine neue, zunächst inaktive Fassung. Bis zu deren ausdrücklicher Bestätigung
+bleibt die bisherige Fassung aktiv; danach werden neue Fassung und Vorgänger atomar als
+`confirmed` beziehungsweise `superseded` gespeichert. Verwerfen und die vollständige
+Fassungshistorie bleiben nachvollziehbar, ohne stilles Wiederbeleben älterer Inhalte.
 
 ## Prüfung
 

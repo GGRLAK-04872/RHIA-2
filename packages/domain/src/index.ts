@@ -381,6 +381,7 @@ export class RepositoryError extends Error {
 }
 
 export type MemoryProposal = MemoryFact | Decision;
+export type ConfirmedMemoryRecord = MemoryFact | Decision;
 
 export interface ExplicitMemoryConfirmation {
   actor: MemoryConfirmationActor;
@@ -393,6 +394,15 @@ export function assertPendingMemoryProposal(proposal: MemoryProposal): void {
     throw new RepositoryError(
       "INVALID_STATE_TRANSITION",
       "Nur ein offener Gedächtnisvorschlag kann bestätigt oder abgelehnt werden.",
+    );
+  }
+}
+
+export function assertActiveConfirmedMemoryRecord(record: ConfirmedMemoryRecord): void {
+  if (record.status !== "confirmed" || record.deletedAt !== null) {
+    throw new RepositoryError(
+      "INVALID_STATE_TRANSITION",
+      "Nur eine aktive bestätigte Gedächtnisfassung kann korrigiert, ersetzt oder verworfen werden.",
     );
   }
 }
@@ -433,5 +443,32 @@ export function confirmDecisionProposal(
     status: "confirmed",
     confirmedAt: confirmation.confirmedAt,
     confirmedBy: confirmation.actor,
+  };
+}
+
+export function supersedeMemoryFact(fact: MemoryFact): MemoryFact {
+  assertActiveConfirmedMemoryRecord(fact);
+
+  return {
+    ...fact,
+    status: "superseded",
+  };
+}
+
+export function supersedeDecision(decision: Decision): Decision {
+  assertActiveConfirmedMemoryRecord(decision);
+
+  return {
+    ...decision,
+    status: "superseded",
+  };
+}
+
+export function revokeDecision(decision: Decision): Decision {
+  assertActiveConfirmedMemoryRecord(decision);
+
+  return {
+    ...decision,
+    status: "revoked",
   };
 }
