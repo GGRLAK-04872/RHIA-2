@@ -14,13 +14,13 @@
 | Produktversion | `0.2.0` |
 | Aktive Stufe im Produkt | `2` |
 | Freigegebene Entwicklungsstufe | `3` |
-| Vorbereiteter Teilmeilenstein | `3.1 – Domänenmodell und Verträge der Arbeitszentrale` |
+| Aktueller Teilmeilenstein | `3.1 – Domänenmodell und Verträge der Arbeitszentrale; fachliche Abnahme blockiert` |
 | Datenbankschema | Dexie-Version 3 |
 | Sicherungsformat | `rhia-backup` Version 2 |
 | Testseite | <https://ggrlak-04872.github.io/RHIA-2/> |
 | Aktive Datenquelle | lokale IndexedDB des jeweiligen Browsers |
-| Projektphase | Stufe 3 freigegeben; Teilmeilenstein 3.1 vorbereitet; noch keine Stufe-3-Funktionalität implementiert |
-| Dokumentationsstand | Stufe-3-Freigabe und Teilmeilenstein 3.1 über PR #4 dokumentiert; keine Funktionsänderung |
+| Projektphase | Stufe 3.1 auf Draft-PR #5 umgesetzt und technisch grün; fachliche Abnahme wegen eines Zuordnungsfehlers noch nicht bestanden |
+| Dokumentationsstand | PR #5 und Implementierungscommit `b2ff0d081b05dade2fcceea635eefcff42ee9e4b` geprüft; Nachbesserung vor Abnahme und Merge erforderlich |
 
 Der Commit `16d1f47f409c7247da5f5bce717514a4f38332c3` bezeichnet den letzten technisch geprüften
 Funktionsstand von RHIA 2.0 auf `main`. Spätere reine Dokumentationsänderungen oder
@@ -30,9 +30,10 @@ welche späteren Commits hinzugekommen sind und ob spätere Funktionsänderungen
 Datei dokumentiert wurden. PR #3 ist geschlossen und gemergt. Das alte Repository
 `GGRLAK-04872/RHIA` bleibt unverändert und darf nicht beschrieben werden.
 
-Die Freigabe von Stufe 3 ändert den verifizierten Funktionsstand nicht. Bis ein Stufe-3-Teilmeilenstein
-implementiert, technisch geprüft, abgenommen und in `main` integriert wurde, bleibt der dokumentierte
-Funktionsstand bei Produktversion `0.2.0` und Stufe 2.
+Die Freigabe und die noch nicht gemergte Umsetzung von Stufe 3.1 ändern den verifizierten
+Funktionsstand auf `main` nicht. Bis ein Stufe-3-Teilmeilenstein implementiert, technisch geprüft,
+fachlich abgenommen und in `main` integriert wurde, bleibt der dokumentierte Funktionsstand bei
+Produktversion `0.2.0` und Stufe 2.
 
 ## Abgeschlossene Stufen
 
@@ -72,16 +73,23 @@ Enthalten sind:
 
 ## Aktueller Haltepunkt
 
-**Stufe 3 wurde von Sir am 09.08.2026 freigegeben. Vorbereitet ist ausschließlich Teilmeilenstein
-3.1 – Domänenmodell und Verträge der Arbeitszentrale.**
+**Stufe 3 wurde von Sir am 09.08.2026 freigegeben. Teilmeilenstein 3.1 wurde auf
+`feat/stufe-3-1-domaenenmodell-vertraege` umgesetzt, ist technisch grün, aber fachlich noch nicht
+abgenommen.**
 
-Es wurde noch keine Stufe-3-Funktionalität implementiert. Der bereits freigegebene erste
-Teilmeilenstein umfasst ausschließlich:
+Draft-PR #5 enthält mit Implementierungscommit
+`b2ff0d081b05dade2fcceea635eefcff42ee9e4b` ausschließlich:
 
 - `Project`, `Goal`, `Task` und `TaskDependency` in `packages/domain`;
 - Status- und Felddefinitionen, Erzeugungsfunktionen sowie Domänenregeln;
 - strikte Zod-Verträge in `packages/contracts`;
 - automatisierte Domänen- und Vertragstests.
+
+Die fachliche Prüfung ergab einen blockierenden Fehler in `assertTaskAssignment`: Eine gültige
+Inbox-Aufgabe ohne Projekt und Ziel wird bei `project === null` und `goal === null` fälschlich mit
+`INVALID_TASK_ASSIGNMENT` abgelehnt. Die vorhandenen Tests erfassen diesen Null-Zuordnungsfall
+nicht. Vor der Abnahme müssen die Null-Zuordnungen korrigiert, ein Regressionstest ergänzt und alle
+Prüfungen erneut ausgeführt werden.
 
 Nicht Bestandteil von Teilmeilenstein 3.1 sind Dexie-Migration, Speicherung, Repositories,
 Prioritätsalgorithmus, Benutzeroberfläche, Export/Import-Erweiterung oder weitere
@@ -90,6 +98,10 @@ Stufe-3-Teilmeilensteine. Der bestehende Datenweg
 
 ## Letzte technische Änderungen
 
+- PR #5 führt auf dem Stufe-3.1-Feature-Branch `Project`, `Goal`, `Task` und `TaskDependency`,
+  Fabriken, Domänenregeln, strikte Zod-Verträge und Tests ein. Diese Änderungen sind nicht in
+  `main` integriert.
+- Implementierungscommit von Stufe 3.1: `b2ff0d081b05dade2fcceea635eefcff42ee9e4b`.
 - Stufe 2.0–2.9 führte `MemoryFact`, `Decision` und `MemoryConflict` mit strikten Verträgen ein.
 - Das veröffentlichte Dexie-Schema wurde additiv auf Version 3 erweitert; Version 2 bleibt als
   Stufe-1-Migrationspfad erhalten.
@@ -110,6 +122,9 @@ Stufe-3-Teilmeilensteine. Der bestehende Datenweg
 
 | Prüfung | Ergebnis |
 |---|---|
+| Stufe-3.1-Feature-CI | CI #29 vollständig erfolgreich |
+| Stufe-3.1-Qualitätsprüfung | 60/60 Tests, Format/Lint, TypeScript, Builds, Audits und Secret-Scan am 09.08.2026 erneut bestanden |
+| Stufe-3.1-Fachabnahme | nicht bestanden; gültige Aufgabe ohne Projekt/Ziel wird fälschlich abgelehnt |
 | Tablet | bestanden am 09.08.2026 mit ausschließlich künstlichen Testdaten |
 | Handy | bestanden am 09.08.2026 mit ausschließlich künstlichen Testdaten |
 | Feature-CI | CI #24 vollständig erfolgreich |
@@ -126,16 +141,20 @@ Export, Gesamtlöschung, Import sowie Hoch- und Querformat.
 
 ## Offene Punkte
 
-1. Vor der Implementierung von Teilmeilenstein 3.1 müssen der tatsächliche `main`-Stand, die
-   Repository-Regeln und der aktuelle CI-Stand erneut geprüft werden.
-2. Teilmeilenstein 3.1 erhält einen eigenen Feature-Branch und Draft-PR.
-3. Vor Teilmeilenstein 3.2 wird gestoppt; dafür ist eine neue ausdrückliche Freigabe erforderlich.
-4. Jeder Merge in `main` benötigt weiterhin eine separate ausdrückliche Freigabe von Sir.
-5. Spätere Entscheidungen zu RHIA-PC, Integrationen, KI-Budget, Sprache und nativer App werden erst
+1. `assertTaskAssignment` muss Aufgaben ohne Projekt und Ziel korrekt akzeptieren.
+2. Ein Regressionstest muss den gültigen Inbox-Fall ohne Projekt- und Zielzuordnung absichern.
+3. Danach müssen die relevanten Tests und `pnpm check` erneut vollständig bestehen und die
+   fachliche Abnahme wiederholt werden.
+4. Vor Teilmeilenstein 3.2 wird gestoppt; dafür ist eine neue ausdrückliche Freigabe erforderlich.
+5. Jeder Merge in `main` benötigt weiterhin eine separate ausdrückliche Freigabe von Sir.
+6. Spätere Entscheidungen zu RHIA-PC, Integrationen, KI-Budget, Sprache und nativer App werden erst
    an ihrem im Masterplan definierten Freigabepunkt getroffen.
 
 ## Bekannte Fehler oder nicht blockierende Punkte
 
+- **Blockierend für die Abnahme von Stufe 3.1:** `assertTaskAssignment` vergleicht bei fehlender
+  Projekt- beziehungsweise Zielzuordnung `undefined` mit `null` und lehnt dadurch eine gültige
+  Inbox-Aufgabe ohne Zuordnung ab. `main` und die abgeschlossene Stufe 2 sind davon nicht betroffen.
 - Es sind keine offenen blockierenden Funktionsfehler aus Stufe 2 bekannt.
 - Nach einem erfolgreichen Sicherungsimport aktualisiert sich die Gedächtnisoberfläche noch nicht
   sofort. Die Daten sind bereits korrekt und persistent in IndexedDB gespeichert und werden nach
@@ -172,23 +191,22 @@ Export, Gesamtlöschung, Import sowie Hoch- und Querformat.
 
 ## Nächster geplanter Schritt
 
-1. tatsächlichen `main`-Stand, Repository-Regeln, Masterplan, diese Übergabe und CI lesend prüfen;
-2. einen getrennten Stufe-3.1-Feature-Branch vom dann aktuellen `main` anlegen;
-3. ausschließlich Domänenmodell, Verträge und zugehörige Tests für `Project`, `Goal`, `Task` und
-   `TaskDependency` umsetzen;
-4. die relevanten Qualitätsprüfungen ausführen und einen Draft-PR erstellen;
-5. vor Dexie-Migration, Speicherung, Priorisierung, UI und Teilmeilenstein 3.2 stoppen.
+1. auf dem bestehenden Stufe-3.1-Branch die Null-Zuordnungslogik in `assertTaskAssignment`
+   korrigieren;
+2. den gültigen Inbox-Fall ohne Projekt und Ziel durch einen Regressionstest absichern;
+3. relevante Tests und `pnpm check` erneut ausführen;
+4. PR #5 erneut fachlich prüfen und bei bestandenem Ergebnis diese Übergabe aktualisieren;
+5. vor Merge, Dexie-Migration, Speicherung, Priorisierung, UI und Teilmeilenstein 3.2 stoppen.
 
 ## Benötigte Freigabe von Sir
 
-Für den Beginn von Teilmeilenstein 3.1 ist keine weitere Stufenfreigabe erforderlich. Der nächste
-zulässige Entwicklungsbefehl lautet:
+Für die erforderliche Reparatur innerhalb des bereits freigegebenen Teilmeilensteins 3.1 ist keine
+neue Stufenfreigabe erforderlich. Der nächste zulässige Entwicklungsbefehl lautet:
 
-> Setze ausschließlich Stufe 3.1 – Domänenmodell und Verträge der Arbeitszentrale – auf einem
-> getrennten Feature-Branch vom aktuellen `main` um. Prüfe vorher Repository-Regeln, CI und den
-> tatsächlichen `main`-Stand. Ändere nur `packages/domain`, `packages/contracts` und zugehörige
-> Tests. Keine Dexie-Migration, Speicherung, Priorisierung, UI oder Export/Import-Erweiterung. Das
-> alte Repository `RHIA` bleibt unverändert. Stoppe vor Stufe 3.2 und vor jedem Merge.
+> Korrigiere auf dem bestehenden Stufe-3.1-Branch ausschließlich die Null-Zuordnungslogik von
+> `assertTaskAssignment`, sodass eine Aufgabe ohne Projekt und Ziel gültig bleibt. Ergänze den
+> passenden Regressionstest, führe die relevanten Tests und `pnpm check` aus und aktualisiere PR #5.
+> Keine weiteren Funktionsänderungen, kein Merge und kein Beginn von Stufe 3.2.
 
 Die Stufe-3-Freigabe erlaubt keinen Merge. Jeder Merge benötigt weiterhin eine separate
 ausdrückliche Freigabe.
@@ -255,15 +273,18 @@ Diese Regel ist verbindlich:
 > keine alten Chatprotokolle, alten Masterversionen oder historischen Dokumente an, solange die
 > beiden aktiven Dateien vorhanden und konsistent sind. Verändere weder das alte Repository `RHIA`
 > noch Sicherheits-, Datenschutz- oder Kostengrenzen. Stufe 3.1 ist freigegeben; alle späteren
-> Teilmeilensteine und Stufen bleiben gesperrt. Nenne vor jedem längeren Arbeitsschritt eine
-> realistische Dauer und stoppe an jedem dokumentierten Freigabepunkt.
+> Teilmeilensteine und Stufen bleiben gesperrt. PR #5 ist technisch grün, aber wegen der fehlerhaften
+> Null-Zuordnungsprüfung in `assertTaskAssignment` fachlich noch nicht abgenommen. Nenne vor jedem
+> längeren Arbeitsschritt eine realistische Dauer und stoppe an jedem dokumentierten Freigabepunkt.
 
 Nach diesem Starttext muss der neue Chat sofort melden:
 
 - aktueller Projektstand: Stufe 2 abgeschlossen;
 - letzter verifizierter Funktionsstand auf `main`:
   `16d1f47f409c7247da5f5bce717514a4f38332c3`;
-- Dokumentationsstand: gegebenenfalls spätere reine Übergabe- oder Planungscommits;
-- nächster erlaubter Schritt: Stufe 3.1 auf einem getrennten Feature-Branch beginnen;
+- Dokumentationsstand: Stufe 3.1 auf PR #5 umgesetzt, technisch grün und fachlich wegen des
+  Null-Zuordnungsfehlers noch nicht abgenommen;
+- nächster erlaubter Schritt: ausschließlich den dokumentierten Stufe-3.1-Fehler auf dem
+  bestehenden Feature-Branch korrigieren und erneut prüfen;
 - verboten: Stufe 3.2 oder spätere Stufen, jeder Merge sowie jede Änderung am alten Repository
   ohne passenden Auftrag.
