@@ -83,7 +83,9 @@ test("memory fact stays local through proposal, confirmation, reload and search"
     .fill("Die bevorzugte Anrede ist Sir.");
   await memoryPanel.getByRole("button", { name: "Als Vorschlag speichern" }).click();
   await memoryPanel.getByRole("button", { name: "Bestätigen" }).click();
-  await expect(memoryPanel.getByText("Bestätigt", { exact: true })).toBeVisible();
+  await expect(
+    memoryPanel.getByRole("listitem").getByText("Bestätigt", { exact: true }),
+  ).toBeVisible();
 
   await page.reload();
   await expect(memoryPanel.getByText("Die bevorzugte Anrede ist Sir.")).toBeVisible();
