@@ -1,5 +1,5 @@
 {
-  "name": "@rhia/contracts",
+  "name": "@rhia/storage-browser",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,11 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@rhia/contracts": "workspace:*",
     "@rhia/domain": "workspace:*",
-    "zod": "4.4.3"
+    "dexie": "4.4.4"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "6.2.5"
   }
 }

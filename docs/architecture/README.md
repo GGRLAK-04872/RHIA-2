@@ -3,10 +3,10 @@
 RHIA 2.0 ist ein modularer Monolith in einem TypeScript-Monorepository.
 
 ```text
-Web/PWA -> Anwendungs- und Domänendienste -> Repository-Schnittstellen
-                                               |-> IndexedDB ab Stufe 1
-                                               `-> RHIA-PC API ab Stufe 5
+Web/PWA -> Anwendungsdienst -> Repository-Schnittstellen -> Dexie -> IndexedDB
+                              später ab Stufe 5 -> RHIA-PC API -> SQLite
 ```
 
-Für Stufe 0 gilt: Die App-Shell besitzt keine Geschäftsdatenbank, ruft keine externe API auf und
-enthält keine alte Cloudflare-Laufzeit. Verbindliche Details stehen im Masterplan und in den ADRs.
+Für Stufe 1 gilt: IndexedDB ist die einzige Geschäftsdatenquelle des jeweiligen Browsers. Direkte
+UI-Zugriffe, alte Browserdaten, Cloud-Fallbacks und externe APIs sind ausgeschlossen. Verbindliche
+Details stehen im Masterplan sowie in ADR 0002 und ADR 0005.
