@@ -386,7 +386,7 @@ export const appStatusSchema = z.discriminatedUnion("stage", [
 
 export type AppStatus = z.infer<typeof appStatusSchema>;
 
-export const backupDataSchema = z
+export const backupDataV1Schema = z
   .object({
     areas: z.array(areaSchema),
     sources: z.array(sourceSchema),
@@ -395,7 +395,7 @@ export const backupDataSchema = z
   })
   .strict();
 
-export const backupRecordCountsSchema = z
+export const backupRecordCountsV1Schema = z
   .object({
     areas: z.number().int().nonnegative(),
     sources: z.number().int().nonnegative(),
@@ -404,7 +404,7 @@ export const backupRecordCountsSchema = z
   })
   .strict();
 
-export const backupManifestSchema = z
+export const backupManifestV1Schema = z
   .object({
     format: z.literal("rhia-backup"),
     formatVersion: z.literal(1),
@@ -412,14 +412,14 @@ export const backupManifestSchema = z
     createdAt: timestampSchema,
     checksumAlgorithm: z.literal("SHA-256"),
     checksum: z.string().regex(/^[a-f0-9]{64}$/),
-    recordCounts: backupRecordCountsSchema,
+    recordCounts: backupRecordCountsV1Schema,
   })
   .strict();
 
-export const rhiaBackupPackageSchema = z
+export const rhiaBackupPackageV1Schema = z
   .object({
-    manifest: backupManifestSchema,
-    data: backupDataSchema,
+    manifest: backupManifestV1Schema,
+    data: backupDataV1Schema,
   })
   .strict()
   .superRefine((backup, context) => {
@@ -434,5 +434,78 @@ export const rhiaBackupPackageSchema = z
     }
   });
 
-export type RhiaBackupData = z.infer<typeof backupDataSchema>;
+export const backupDataV2Schema = z
+  .object({
+    areas: z.array(areaSchema),
+    sources: z.array(sourceSchema),
+    notes: z.array(noteSchema),
+    auditEntries: z.array(auditEntrySchema),
+    memoryFacts: z.array(memoryFactSchema),
+    decisions: z.array(decisionSchema),
+    memoryConflicts: z.array(memoryConflictSchema),
+  })
+  .strict();
+
+export const backupRecordCountsV2Schema = z
+  .object({
+    areas: z.number().int().nonnegative(),
+    sources: z.number().int().nonnegative(),
+    notes: z.number().int().nonnegative(),
+    auditEntries: z.number().int().nonnegative(),
+    memoryFacts: z.number().int().nonnegative(),
+    decisions: z.number().int().nonnegative(),
+    memoryConflicts: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export const backupManifestV2Schema = z
+  .object({
+    format: z.literal("rhia-backup"),
+    formatVersion: z.literal(2),
+    schemaVersion: z.literal(RHIA_SCHEMA_VERSION),
+    createdAt: timestampSchema,
+    checksumAlgorithm: z.literal("SHA-256"),
+    checksum: z.string().regex(/^[a-f0-9]{64}$/),
+    recordCounts: backupRecordCountsV2Schema,
+  })
+  .strict();
+
+export const rhiaBackupPackageV2Schema = z
+  .object({
+    manifest: backupManifestV2Schema,
+    data: backupDataV2Schema,
+  })
+  .strict()
+  .superRefine((backup, context) => {
+    for (const key of [
+      "areas",
+      "sources",
+      "notes",
+      "auditEntries",
+      "memoryFacts",
+      "decisions",
+      "memoryConflicts",
+    ] as const) {
+      if (backup.manifest.recordCounts[key] !== backup.data[key].length) {
+        context.addIssue({
+          code: "custom",
+          path: ["manifest", "recordCounts", key],
+          message: `Die Datensatzanzahl für ${key} stimmt nicht.`,
+        });
+      }
+    }
+  });
+
+export const backupDataSchema = backupDataV2Schema;
+export const backupRecordCountsSchema = backupRecordCountsV2Schema;
+export const backupManifestSchema = backupManifestV2Schema;
+export const rhiaBackupPackageSchema = z.union([
+  rhiaBackupPackageV1Schema,
+  rhiaBackupPackageV2Schema,
+]);
+
+export type RhiaBackupDataV1 = z.infer<typeof backupDataV1Schema>;
+export type RhiaBackupPackageV1 = z.infer<typeof rhiaBackupPackageV1Schema>;
+export type RhiaBackupData = z.infer<typeof backupDataV2Schema>;
+export type RhiaBackupPackageV2 = z.infer<typeof rhiaBackupPackageV2Schema>;
 export type RhiaBackupPackage = z.infer<typeof rhiaBackupPackageSchema>;

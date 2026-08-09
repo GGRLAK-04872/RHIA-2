@@ -1,5 +1,12 @@
 import "fake-indexeddb/auto";
-import { areaSchema, auditEntrySchema, noteSchema, sourceSchema } from "@rhia/contracts";
+import {
+  areaSchema,
+  auditEntrySchema,
+  noteSchema,
+  rhiaBackupPackageV1Schema,
+  sourceSchema,
+  type RhiaBackupPackageV1,
+} from "@rhia/contracts";
 import {
   createArea,
   createAuditEntry,
@@ -111,6 +118,26 @@ function createTestMemoryRecords() {
   );
 
   return { factOne, factTwo, decision, conflict };
+}
+
+async function signV1Backup(backup: RhiaBackupPackageV1): Promise<RhiaBackupPackageV1> {
+  const normalized = rhiaBackupPackageV1Schema.parse(backup);
+  const checksumContent = JSON.stringify({
+    manifest: {
+      format: normalized.manifest.format,
+      formatVersion: normalized.manifest.formatVersion,
+      schemaVersion: normalized.manifest.schemaVersion,
+      createdAt: normalized.manifest.createdAt,
+      checksumAlgorithm: normalized.manifest.checksumAlgorithm,
+      recordCounts: normalized.manifest.recordCounts,
+    },
+    data: normalized.data,
+  });
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(checksumContent));
+  const checksum = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+  return { ...normalized, manifest: { ...normalized.manifest, checksum } };
 }
 
 describe("Dexie repositories", () => {
@@ -318,13 +345,18 @@ describe("Dexie repositories", () => {
     await expect(storage.memoryConflicts.list()).resolves.toEqual([]);
   });
 
-  it("exports, verifies and restores a complete backup", async () => {
+  it("exports, verifies and restores a complete v2 backup", async () => {
     const { area, source, note, audit } = createTestRecords();
+    const { factOne, factTwo, decision, conflict } = createTestMemoryRecords();
     await storage.transaction(async (repositories) => {
       await repositories.areas.create(area);
       await repositories.sources.create(source);
       await repositories.notes.create(note);
       await repositories.auditEntries.create(audit);
+      await repositories.memoryFacts.create(factOne);
+      await repositories.memoryFacts.create(factTwo);
+      await repositories.decisions.create(decision);
+      await repositories.memoryConflicts.create(conflict);
     });
 
     const backup = await storage.createBackup();
@@ -332,26 +364,78 @@ describe("Dexie repositories", () => {
     await storage.clearAllData(DELETE_ALL_CONFIRMATION);
 
     const preview = await storage.previewImport(serialized);
-    expect(preview.recordCounts).toEqual({ areas: 1, sources: 1, notes: 1, auditEntries: 1 });
+    expect(preview.sourceFormatVersion).toBe(2);
+    expect(preview.recordCounts).toEqual({
+      areas: 1,
+      sources: 1,
+      notes: 1,
+      auditEntries: 1,
+      memoryFacts: 2,
+      decisions: 1,
+      memoryConflicts: 1,
+    });
     expect(preview.conflicts).toEqual([]);
 
     await storage.importBackup(preview);
     await expect(storage.notes.getById(note.id)).resolves.toEqual(note);
+    await expect(storage.memoryFacts.getById(factOne.id)).resolves.toEqual(factOne);
+    await expect(storage.decisions.getById(decision.id)).resolves.toEqual(decision);
+    await expect(storage.memoryConflicts.getById(conflict.id)).resolves.toEqual(conflict);
+  });
+
+  it("migrates a verified v1 backup to v2 without inventing memory records", async () => {
+    const { area, source, note, audit } = createTestRecords();
+    const v1Backup = await signV1Backup({
+      manifest: {
+        format: "rhia-backup",
+        formatVersion: 1,
+        schemaVersion: 1,
+        createdAt: timestamp,
+        checksumAlgorithm: "SHA-256",
+        checksum: "0".repeat(64),
+        recordCounts: { areas: 1, sources: 1, notes: 1, auditEntries: 1 },
+      },
+      data: { areas: [area], sources: [source], notes: [note], auditEntries: [audit] },
+    });
+
+    const preview = await storage.previewImport(v1Backup);
+
+    expect(preview.sourceFormatVersion).toBe(1);
+    expect(preview.backup.manifest.formatVersion).toBe(2);
+    expect(preview.recordCounts).toMatchObject({
+      areas: 1,
+      sources: 1,
+      notes: 1,
+      auditEntries: 1,
+      memoryFacts: 0,
+      decisions: 0,
+      memoryConflicts: 0,
+    });
+    await storage.importBackup(preview);
+    await expect(storage.notes.getById(note.id)).resolves.toEqual(note);
+    await expect(storage.memoryFacts.list({ includeDeleted: true })).resolves.toEqual([]);
   });
 
   it("rejects changed backup content and reports existing-record conflicts", async () => {
-    const { area } = createTestRecords();
+    const { area, source } = createTestRecords();
+    const { factOne } = createTestMemoryRecords();
     await storage.areas.create(area);
+    await storage.sources.create(source);
+    await storage.memoryFacts.create(factOne);
     const backup = await storage.createBackup();
 
     const conflictPreview = await storage.previewImport(backup);
-    expect(conflictPreview.conflicts).toEqual([{ collection: "areas", id: area.id }]);
+    expect(conflictPreview.conflicts).toEqual([
+      { collection: "areas", id: area.id },
+      { collection: "sources", id: source.id },
+      { collection: "memoryFacts", id: factOne.id },
+    ]);
     await expect(storage.importBackup(conflictPreview)).rejects.toMatchObject({
       code: "IMPORT_CONFLICT",
     });
 
     const changedBackup = structuredClone(backup);
-    changedBackup.data.areas[0] = { ...area, name: "Manipuliert" };
+    changedBackup.data.memoryFacts[0] = { ...factOne, value: "Manipuliert" };
     await expect(storage.previewImport(changedBackup)).rejects.toMatchObject({
       code: "BACKUP_CHECKSUM_MISMATCH",
     });

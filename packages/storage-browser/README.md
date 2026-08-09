@@ -13,7 +13,11 @@ Dieses Paket stellt die einzige RHIA-Datenquelle der Stufen 1–4 bereit:
 
 Das veröffentlichte Stufe-1-Schema verwendet bereits Dexie-Version 2. Die additive
 Gedächtnismigration verwendet deshalb Dexie-Version 3; vorhandene Version-1- und
-Version-2-Datenbanken bleiben vollständig migrierbar. Der Sicherungsexport bleibt bis
-Teilmeilenstein 2.7 bewusst auf Format v1 begrenzt.
+Version-2-Datenbanken bleiben vollständig migrierbar.
+
+Sicherungsformat v2 enthält alle sieben Sammlungen einschließlich Fakten, Entscheidungen,
+Konflikten und ihrer gelöschten oder ersetzten Zustände. Gültige v1-Sicherungen werden nach
+Prüfsummen- und Vertragsprüfung mit leeren Gedächtnissammlungen auf v2 migriert. Importkonflikte
+werden für jede Sammlung vor der atomaren Übernahme sichtbar blockiert.
 
 OpenAI, Cloud-Synchronisation und alte RHIA-Speicherquellen sind nicht angebunden.

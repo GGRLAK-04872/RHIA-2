@@ -6,9 +6,12 @@ import {
   memoryFactSchema,
   noteSchema,
   rhiaBackupPackageSchema,
+  rhiaBackupPackageV2Schema,
   sourceSchema,
   type RhiaBackupData,
   type RhiaBackupPackage,
+  type RhiaBackupPackageV1,
+  type RhiaBackupPackageV2,
 } from "@rhia/contracts";
 import {
   ENTITY_TYPES,
@@ -31,7 +34,7 @@ import Dexie, { type Table, type TransactionMode } from "dexie";
 export const RHIA_BROWSER_DATABASE_NAME = "rhia-2" as const;
 export const RHIA_STAGE_ONE_BROWSER_DATABASE_VERSION = 2 as const;
 export const RHIA_BROWSER_DATABASE_VERSION = 3 as const;
-export const RHIA_BACKUP_FORMAT_VERSION = 1 as const;
+export const RHIA_BACKUP_FORMAT_VERSION = 2 as const;
 export const RHIA_TRASH_RETENTION_DAYS = 30 as const;
 export const DELETE_ALL_CONFIRMATION = "RHIA LOKALDATEN LÖSCHEN" as const;
 
@@ -290,7 +293,14 @@ export interface RhiaBrowserStorageOptions {
   now?: Clock;
 }
 
-export type BackupCollection = "areas" | "sources" | "notes" | "auditEntries";
+export type BackupCollection =
+  | "areas"
+  | "sources"
+  | "notes"
+  | "auditEntries"
+  | "memoryFacts"
+  | "decisions"
+  | "memoryConflicts";
 
 export interface ImportConflict {
   collection: BackupCollection;
@@ -298,9 +308,10 @@ export interface ImportConflict {
 }
 
 export interface ImportPreview {
-  backup: RhiaBackupPackage;
+  backup: RhiaBackupPackageV2;
   conflicts: ImportConflict[];
-  recordCounts: RhiaBackupPackage["manifest"]["recordCounts"];
+  recordCounts: RhiaBackupPackageV2["manifest"]["recordCounts"];
+  sourceFormatVersion: 1 | 2;
 }
 
 export type ImportConflictStrategy = "abort" | "replace";
@@ -336,6 +347,34 @@ async function sha256Hex(content: string): Promise<string> {
     new TextEncoder().encode(content),
   );
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function isV1Backup(backup: RhiaBackupPackage): backup is RhiaBackupPackageV1 {
+  return backup.manifest.formatVersion === 1;
+}
+
+async function migrateV1Backup(backup: RhiaBackupPackageV1): Promise<RhiaBackupPackageV2> {
+  const migrated: RhiaBackupPackageV2 = {
+    manifest: {
+      ...backup.manifest,
+      formatVersion: 2,
+      checksum: "0".repeat(64),
+      recordCounts: {
+        ...backup.manifest.recordCounts,
+        memoryFacts: 0,
+        decisions: 0,
+        memoryConflicts: 0,
+      },
+    },
+    data: {
+      ...backup.data,
+      memoryFacts: [],
+      decisions: [],
+      memoryConflicts: [],
+    },
+  };
+  migrated.manifest.checksum = await sha256Hex(checksumContent(migrated));
+  return migrated;
 }
 
 export class RhiaBrowserStorage {
@@ -453,14 +492,17 @@ export class RhiaBrowserStorage {
     );
   }
 
-  async createBackup(): Promise<RhiaBackupPackage> {
+  async createBackup(): Promise<RhiaBackupPackageV2> {
     const data: RhiaBackupData = {
       areas: sortById(await this.database.areas.toArray()),
       sources: sortById(await this.database.sources.toArray()),
       notes: sortById(await this.database.notes.toArray()),
       auditEntries: sortById(await this.database.auditEntries.toArray()),
+      memoryFacts: sortById(await this.database.memoryFacts.toArray()),
+      decisions: sortById(await this.database.decisions.toArray()),
+      memoryConflicts: sortById(await this.database.memoryConflicts.toArray()),
     };
-    const backup: RhiaBackupPackage = {
+    const backup: RhiaBackupPackageV2 = {
       manifest: {
         format: "rhia-backup",
         formatVersion: RHIA_BACKUP_FORMAT_VERSION,
@@ -473,13 +515,16 @@ export class RhiaBrowserStorage {
           sources: data.sources.length,
           notes: data.notes.length,
           auditEntries: data.auditEntries.length,
+          memoryFacts: data.memoryFacts.length,
+          decisions: data.decisions.length,
+          memoryConflicts: data.memoryConflicts.length,
         },
       },
       data,
     };
 
     backup.manifest.checksum = await sha256Hex(checksumContent(backup));
-    return rhiaBackupPackageSchema.parse(backup);
+    return rhiaBackupPackageV2Schema.parse(backup);
   }
 
   serializeBackup(backup: RhiaBackupPackage): string {
@@ -507,18 +552,22 @@ export class RhiaBrowserStorage {
       );
     }
 
-    const expectedChecksum = await sha256Hex(checksumContent(result.data));
-    if (expectedChecksum !== result.data.manifest.checksum) {
+    const sourceBackup = result.data;
+    const expectedChecksum = await sha256Hex(checksumContent(sourceBackup));
+    if (expectedChecksum !== sourceBackup.manifest.checksum) {
       throw new RepositoryError(
         "BACKUP_CHECKSUM_MISMATCH",
         "Die Prüfsumme der Sicherungsdatei stimmt nicht.",
       );
     }
 
+    const backup = isV1Backup(sourceBackup) ? await migrateV1Backup(sourceBackup) : sourceBackup;
+
     return {
-      backup: result.data,
-      conflicts: await this.findImportConflicts(result.data.data),
-      recordCounts: result.data.manifest.recordCounts,
+      backup,
+      conflicts: await this.findImportConflicts(backup.data),
+      recordCounts: backup.manifest.recordCounts,
+      sourceFormatVersion: sourceBackup.manifest.formatVersion,
     };
   }
 
@@ -537,11 +586,23 @@ export class RhiaBrowserStorage {
         );
       }
 
-      const method = conflictStrategy === "replace" ? "bulkPut" : "bulkAdd";
-      await this.database.areas[method](verified.backup.data.areas);
-      await this.database.sources[method](verified.backup.data.sources);
-      await this.database.notes[method](verified.backup.data.notes);
-      await this.database.auditEntries[method](verified.backup.data.auditEntries);
+      if (conflictStrategy === "replace") {
+        await this.database.areas.bulkPut(verified.backup.data.areas);
+        await this.database.sources.bulkPut(verified.backup.data.sources);
+        await this.database.notes.bulkPut(verified.backup.data.notes);
+        await this.database.auditEntries.bulkPut(verified.backup.data.auditEntries);
+        await this.database.memoryFacts.bulkPut(verified.backup.data.memoryFacts);
+        await this.database.decisions.bulkPut(verified.backup.data.decisions);
+        await this.database.memoryConflicts.bulkPut(verified.backup.data.memoryConflicts);
+      } else {
+        await this.database.areas.bulkAdd(verified.backup.data.areas);
+        await this.database.sources.bulkAdd(verified.backup.data.sources);
+        await this.database.notes.bulkAdd(verified.backup.data.notes);
+        await this.database.auditEntries.bulkAdd(verified.backup.data.auditEntries);
+        await this.database.memoryFacts.bulkAdd(verified.backup.data.memoryFacts);
+        await this.database.decisions.bulkAdd(verified.backup.data.decisions);
+        await this.database.memoryConflicts.bulkAdd(verified.backup.data.memoryConflicts);
+      }
     });
   }
 
@@ -585,16 +646,48 @@ export class RhiaBrowserStorage {
   }
 
   private async findImportConflicts(data: RhiaBackupData): Promise<ImportConflict[]> {
-    const groups = [
-      { collection: "areas", table: this.database.areas, records: data.areas },
-      { collection: "sources", table: this.database.sources, records: data.sources },
-      { collection: "notes", table: this.database.notes, records: data.notes },
+    type IdentifiedRecord = { id: string };
+    const groups: Array<{
+      collection: BackupCollection;
+      table: Table<IdentifiedRecord, string>;
+      records: IdentifiedRecord[];
+    }> = [
+      {
+        collection: "areas",
+        table: this.database.areas as unknown as Table<IdentifiedRecord, string>,
+        records: data.areas,
+      },
+      {
+        collection: "sources",
+        table: this.database.sources as unknown as Table<IdentifiedRecord, string>,
+        records: data.sources,
+      },
+      {
+        collection: "notes",
+        table: this.database.notes as unknown as Table<IdentifiedRecord, string>,
+        records: data.notes,
+      },
       {
         collection: "auditEntries",
-        table: this.database.auditEntries,
+        table: this.database.auditEntries as unknown as Table<IdentifiedRecord, string>,
         records: data.auditEntries,
       },
-    ] as const;
+      {
+        collection: "memoryFacts",
+        table: this.database.memoryFacts as unknown as Table<IdentifiedRecord, string>,
+        records: data.memoryFacts,
+      },
+      {
+        collection: "decisions",
+        table: this.database.decisions as unknown as Table<IdentifiedRecord, string>,
+        records: data.decisions,
+      },
+      {
+        collection: "memoryConflicts",
+        table: this.database.memoryConflicts as unknown as Table<IdentifiedRecord, string>,
+        records: data.memoryConflicts,
+      },
+    ];
     const conflicts: ImportConflict[] = [];
 
     for (const group of groups) {

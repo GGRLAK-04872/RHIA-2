@@ -19,7 +19,8 @@ mit Korrektur-, Ersetzungs-, Verwerfungs- und Historienabläufen umgesetzt und �
 bestätigt. Teilmeilenstein 2.5 ist mit stabiler Widerspruchserkennung und kontrollierter
 Konfliktauflösung umgesetzt und lokal vollständig grün. Stufe 2 ist noch nicht abgeschlossen oder
 zur Zusammenführung freigegeben. Teilmeilenstein 2.6 ist mit strukturierter lokaler Suche umgesetzt
-und lokal vollständig grün.
+und lokal vollständig grün. Teilmeilenstein 2.7 ist mit Sicherungsformat v2, erhaltener
+v1-Migration und vollständigem Konfliktschutz umgesetzt und lokal vollständig grün.
 
 ## Umgesetzt
 
@@ -61,7 +62,7 @@ und lokal vollständig grün.
 - verlustfreie Migration vom veröffentlichten Stufe-1-Schema auf die neuen Gedächtnistabellen;
 - Dexie-Version 3 statt der verkürzten Planangabe Version 2, weil Version 2 bereits das
   veröffentlichte Stufe-1-Schema ist;
-- Sicherungsformat v1 bleibt bis zum ausdrücklich vorgesehenen Teilmeilenstein 2.7 unverändert.
+- frühere Sicherungsformat-v1-Dateien bleiben über eine geprüfte Migration importierbar.
 - Fakten und Entscheidungen entstehen technisch ausschließlich als inaktive Vorschläge;
 - Aktivierung nur durch ausdrückliche Bestätigung von Sir mit Zeitstempel und Auditspur;
 - Ablehnung ausschließlich offener Vorschläge mit sicherem Übergang in den 30-Tage-Papierkorb;
@@ -86,11 +87,17 @@ und lokal vollständig grün.
 - strukturierte Filter nach Bereich, Typ, Status, Quelle, Gültigkeit und Änderungszeit;
 - normalisierte Suche einschließlich deutscher Akzentzeichen mit deterministischer Reihenfolge;
 - Treffer zeigen Bereich, Quellen und aktuellen Gültigkeitszustand nachvollziehbar an.
+- Sicherungsformat v2 umfasst alle sieben lokalen Sammlungen einschließlich vollständiger
+  Gedächtniszustände;
+- geprüfte v1-Sicherungen werden verlustfrei mit leeren Gedächtnissammlungen auf v2 migriert;
+- SHA-256-Manipulationsschutz und strikte versionsbezogene Datensatzanzahlen;
+- Importkonflikte für alle sieben Sammlungen blockieren stilles Überschreiben;
+- gemeinsamer atomarer v2-Import mit vollständigem Rollback bei Fehlern.
 
 ## Nächster notwendiger Schritt
 
-1. Teilmeilenstein 2.6 vollständig lokal prüfen und als isolierten Commit festhalten.
-2. Danach Teilmeilenstein 2.7 mit Sicherungsformat v2 und erhaltener v1-Migration umsetzen.
+1. Teilmeilenstein 2.7 vollständig lokal prüfen und als isolierten Commit festhalten.
+2. Danach Teilmeilenstein 2.8 mit responsiver Gedächtnisoberfläche umsetzen.
 3. Stufe 2 erst nach vollständiger technischer und realer Abnahme zusammenführen.
 
 OpenAI API, Sprache, Android-App und Cloud-Sync bleiben deaktiviert. Das alte Repository `RHIA`

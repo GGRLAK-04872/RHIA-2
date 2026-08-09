@@ -99,6 +99,23 @@ Zod-Verträge gemeinsam validiert. Unvollständige oder widersprüchliche Zustä
 - Jeder Treffer enthält den Datensatz, den lesbaren Bereich, die verknüpften Quellen und seinen
   Gültigkeitszustand. Die Reihenfolge ist deterministisch nach letzter Änderung und ID.
 
+## Sicherung und Wiederherstellung ab Teilmeilenstein 2.7
+
+- Neue Exporte verwenden ausschließlich `rhia-backup` Formatversion 2 und enthalten alle sieben
+  lokalen Sammlungen: Bereiche, Quellen, Notizen, Auditspuren, Fakten, Entscheidungen und
+  Gedächtniskonflikte.
+- Auch gelöschte, ersetzte, widerrufene und strittige Zustände werden gesichert. Eine Sicherung ist
+  keine gefilterte aktive Datenquelle.
+- Manifest und Datensatzanzahlen sind versionsspezifisch strikt. SHA-256 schützt den vollständigen
+  Inhalt vor unbemerkter Manipulation.
+- Gültige v1-Sicherungen bleiben importierbar. Nach erfolgreicher Prüfung werden sie intern auf v2
+  migriert; die drei damals nicht vorhandenen Gedächtnissammlungen starten leer.
+- Vor der Übernahme werden IDs in allen sieben Sammlungen erneut gegen den aktuellen Speicher
+  geprüft. Konflikte blockieren den Standardimport, statt bestehende oder gelöschte Inhalte still
+  zu überschreiben.
+- Die Übernahme aller sieben Sammlungen erfolgt in einer gemeinsamen Dexie-Transaktion. Ein Fehler
+  rollt den vollständigen Import zurück.
+
 ## Sicherheits- und Kostengrenze
 
 Stufe 2 speichert keine vollständigen Chats automatisch, verwendet keine externe KI, führt keine
