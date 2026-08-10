@@ -10,6 +10,16 @@ export interface ConfirmedTaskDraft {
   importance: TaskImportance;
 }
 
+export interface ProjectDraft {
+  areaId: string;
+  title: string;
+}
+
+export interface GoalDraft {
+  projectId: string;
+  title: string;
+}
+
 export interface TaskCorrection {
   title: string;
   status: TaskStatus;
@@ -17,6 +27,8 @@ export interface TaskCorrection {
 
 export interface WorkHubControlsProps {
   snapshot: LocalWorkHubSnapshot;
+  onCreateProject: (draft: ProjectDraft) => void | Promise<void>;
+  onCreateGoal: (draft: GoalDraft) => void | Promise<void>;
   onCreateConfirmedTask: (draft: ConfirmedTaskDraft) => void | Promise<void>;
   onUpdateTask: (task: Task, correction: TaskCorrection) => void | Promise<void>;
   onSetManualPriority: (task: Task, rank: number) => void | Promise<void>;
@@ -111,6 +123,8 @@ function TaskMaintenanceRow({
 
 export function WorkHubControls({
   snapshot,
+  onCreateProject,
+  onCreateGoal,
   onCreateConfirmedTask,
   onUpdateTask,
   onSetManualPriority,
@@ -119,11 +133,35 @@ export function WorkHubControls({
   onRestoreTask,
 }: WorkHubControlsProps) {
   const firstAreaId = snapshot.workspace.areas[0]?.id ?? "";
+  const [projectAreaId, setProjectAreaId] = useState(firstAreaId);
+  const [projectTitle, setProjectTitle] = useState("");
+  const [goalProjectId, setGoalProjectId] = useState(snapshot.workspace.projects[0]?.id ?? "");
+  const [goalTitle, setGoalTitle] = useState("");
   const [title, setTitle] = useState("");
   const [areaId, setAreaId] = useState(firstAreaId);
   const [projectId, setProjectId] = useState("");
   const [importance, setImportance] = useState<TaskImportance>("medium");
   const [confirmed, setConfirmed] = useState(false);
+
+  const handleProjectSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!projectAreaId || !projectTitle.trim()) {
+      return;
+    }
+    void Promise.resolve(onCreateProject({ areaId: projectAreaId, title: projectTitle.trim() })).then(
+      () => setProjectTitle(""),
+    );
+  };
+
+  const handleGoalSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!goalProjectId || !goalTitle.trim()) {
+      return;
+    }
+    void Promise.resolve(onCreateGoal({ projectId: goalProjectId, title: goalTitle.trim() })).then(
+      () => setGoalTitle(""),
+    );
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -145,6 +183,70 @@ export function WorkHubControls({
 
   return (
     <section className={styles.panel} aria-labelledby="work-hub-input-title">
+      <header>
+        <p>Arbeitsstruktur</p>
+        <h2>Projekt und Ziel anlegen</h2>
+      </header>
+
+      <form className={styles.createForm} onSubmit={handleProjectSubmit}>
+        <label>
+          <span>Projektbereich</span>
+          <select
+            required
+            value={projectAreaId}
+            onChange={(event) => setProjectAreaId(event.currentTarget.value)}
+          >
+            {snapshot.workspace.areas.map((area) => (
+              <option key={area.id} value={area.id}>
+                {area.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={styles.wideField}>
+          <span>Projekttitel</span>
+          <input
+            required
+            value={projectTitle}
+            onChange={(event) => setProjectTitle(event.currentTarget.value)}
+            placeholder="Projektname"
+          />
+        </label>
+        <button className={styles.wideField} type="submit" disabled={!projectAreaId || !projectTitle.trim()}>
+          Projekt anlegen
+        </button>
+      </form>
+
+      <form className={styles.createForm} onSubmit={handleGoalSubmit}>
+        <label>
+          <span>Zielprojekt</span>
+          <select
+            required
+            value={goalProjectId}
+            onChange={(event) => setGoalProjectId(event.currentTarget.value)}
+          >
+            <option value="">Projekt wählen</option>
+            {snapshot.workspace.projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={styles.wideField}>
+          <span>Zieltitel</span>
+          <input
+            required
+            value={goalTitle}
+            onChange={(event) => setGoalTitle(event.currentTarget.value)}
+            placeholder="Zielname"
+          />
+        </label>
+        <button className={styles.wideField} type="submit" disabled={!goalProjectId || !goalTitle.trim()}>
+          Ziel anlegen
+        </button>
+      </form>
+
       <header>
         <p>Bestätigte Eingabe</p>
         <h2 id="work-hub-input-title">Aufgabe übernehmen</h2>
