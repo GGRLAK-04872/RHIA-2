@@ -39,10 +39,14 @@ test("daily planning creates a local explained protection block", async ({ page 
   await expect(planningPanel.getByText(/Teilweise erledigt · Zeit war zu kurz/)).toBeVisible();
 
   await planningPanel.getByRole("button", { name: "Rückblick erstellen" }).click();
-  const eveningReview = planningPanel.locator("article").filter({
-    has: planningPanel.getByRole("heading", { name: "Abendrückblick", level: 4 }),
-  });
-  await expect(eveningReview.getByText(/1 teilweise/)).toBeVisible();
+  await expect(
+    planningPanel.getByRole("heading", { name: "Abendrückblick", level: 4 }),
+  ).toBeVisible();
+  await expect(
+    planningPanel
+      .getByText("0 erledigt, 1 teilweise, 0 ausgelassen, 0 ohne Rückmeldung.", { exact: true })
+      .first(),
+  ).toBeVisible();
 });
 
 test("weekly planning protects RHIA and Shadow Grown locally", async ({ page }) => {
