@@ -3,7 +3,9 @@
 **Planversion:** 2.2  
 **Freigegebene Planbasis:** 09.08.2026  
 **Projekt:** RHIA – RH Intelligent Assistant  
-**Aktives Repository:** `GGRLAK-04872/RHIA-2`
+**Aktives Repository:** `GGRLAK-04872/RHIA-2`  
+**Letzte Konsolidierung:** 10.08.2026 – Stufe 3 vollständig abgeschlossen  
+**Freigabestatus:** Stufen 0 bis 3 abgeschlossen; Stufe 4 gesperrt
 
 ## 1. Zweck und Geltung
 
@@ -482,6 +484,8 @@ keine Projekte/Aufgaben, keine Cloud-Synchronisation, keine Sprache und keine In
 
 ### Stufe 3 – Arbeitszentrale
 
+**Status:** am 10.08.2026 technisch vollständig geprüft, auf Tablet und Handy real abgenommen und über PR #5 per Squash-Merge in main integriert. Der genaue Funktions-, CI- und Deployment-Stand wird verbindlich in docs/RHIA_START_HERE.md geführt.
+
 Ziel: Projekte, Ziele, Aufgaben und Abhängigkeiten vollständig und erklärbar verwalten.
 
 Umfang:
@@ -499,6 +503,8 @@ Abnahme: Zuordnung, Abhängigkeit, begründete Priorität, manuelle Änderung, N
 Import, Korrektur, Löschung sowie Tablet- und Handytest.
 
 ### Stufe 4 – Planung und Briefings
+
+**Sperrstatus:** nicht freigegeben. Der Abschluss von Stufe 3 erteilt keine automatische Freigabe für Planung, Briefings oder sonstige Arbeiten der Stufe 4.
 
 Ziel: brauchbare, begründete Tages- und Wochenvorschläge ohne selbstständige Kalenderänderung.
 
