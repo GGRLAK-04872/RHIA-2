@@ -1,6 +1,9 @@
 import {
+  type Area,
   assertActiveConfirmedMemoryRecord,
   assertPendingMemoryProposal,
+  type CreateDecisionInput,
+  type CreateMemoryFactInput,
   confirmDecisionProposal,
   confirmMemoryFactProposal,
   createArea,
@@ -9,17 +12,15 @@ import {
   createMemoryConflict,
   createMemoryFact,
   createSource,
-  type Area,
-  type CreateDecisionInput,
-  type CreateMemoryFactInput,
   type Decision,
   type DecisionStatus,
+  getMissingWorkHubAreaNames,
   type MemoryConflict,
   type MemoryFact,
   type MemoryFactStatus,
   RepositoryError,
-  type Source,
   revokeDecision,
+  type Source,
   supersedeDecision,
   supersedeMemoryFact,
 } from "@rhia/domain";
@@ -923,7 +924,7 @@ export class LocalMemoryService {
       this.storage.areas.list(),
       this.storage.sources.list(),
     ]);
-    if (areas.length > 0 && sources.length > 0) {
+    if (getMissingWorkHubAreaNames(areas).length === 0 && sources.length > 0) {
       return { areas, sources };
     }
 
@@ -932,9 +933,12 @@ export class LocalMemoryService {
         repositories.areas.list(),
         repositories.sources.list(),
       ]);
-      if (currentAreas.length === 0) {
+      for (const name of getMissingWorkHubAreaNames(currentAreas)) {
         await repositories.areas.create(
-          createArea({ name: "Allgemein", description: "Lokales RHIA-Gedächtnis" }),
+          createArea({
+            name,
+            description: "Verbindlicher Bereich der lokalen RHIA-Arbeitszentrale.",
+          }),
         );
       }
       if (currentSources.length === 0) {

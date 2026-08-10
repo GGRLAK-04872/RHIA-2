@@ -1,9 +1,10 @@
-import { appStatusSchema, type AppStatus } from "@rhia/contracts";
+import { type AppStatus, appStatusSchema } from "@rhia/contracts";
 import { RHIA_PRODUCT_NAME, RHIA_RUNTIME, RHIA_STAGE, RHIA_VERSION } from "@rhia/domain";
 import { RHIA_SECURITY_POLICY } from "@rhia/security";
+import styles from "./App.module.css";
+import { LocalWorkHubPanel } from "./components/LocalWorkHubPanel";
 import { MemoryPanel } from "./components/MemoryPanel";
 import { StageOneDataPanel } from "./components/StageOneDataPanel";
-import styles from "./App.module.css";
 
 const status: AppStatus = appStatusSchema.parse({
   version: RHIA_VERSION,
@@ -47,9 +48,9 @@ export function App() {
         <div className={styles.copy}>
           <p className={styles.eyebrow}>RH Produktion · Stufe {RHIA_STAGE}</p>
           <h1 id="rhia-title">{RHIA_PRODUCT_NAME}</h1>
-          <p className={styles.lead}>Bestätigtes Wissen bleibt unter deiner Kontrolle.</p>
+          <p className={styles.lead}>Wissen und Arbeit bleiben unter deiner Kontrolle.</p>
           <p className={styles.explanation}>
-            Fakten, Entscheidungen, Konflikte und Sicherungen bleiben in deiner lokalen
+            Fakten, Entscheidungen, Projekte, Aufgaben und Sicherungen bleiben in deiner lokalen
             Browserdatenbank. Cloud-Dienste und kostenpflichtige KI-Aufrufe bleiben deaktiviert.
           </p>
         </div>
@@ -64,7 +65,7 @@ export function App() {
             </div>
             <span className={styles.readyBadge}>
               <span className={styles.readyDot} aria-hidden="true" />
-              Stufe 2 lokal
+              Stufe 3 lokal
             </span>
           </div>
 
@@ -85,13 +86,14 @@ export function App() {
         </section>
 
         <MemoryPanel />
+        <LocalWorkHubPanel />
         <StageOneDataPanel />
       </div>
 
       <footer className={styles.footer}>
         <span>Version {status.version}</span>
         <span aria-hidden="true">·</span>
-        <span>Aktueller Schritt: Gedächtnis v1</span>
+        <span>Aktueller Schritt: Arbeitszentrale</span>
       </footer>
     </main>
   );

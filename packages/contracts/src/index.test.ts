@@ -2,22 +2,35 @@ import {
   createArea,
   createAuditEntry,
   createDecision,
+  createGoal,
   createMemoryConflict,
   createMemoryFact,
   createNote,
+  createProject,
   createSource,
+  createTask,
+  createTaskDependency,
 } from "@rhia/domain";
 import { describe, expect, it } from "vitest";
 import {
+  activeWorkHubAreaSchema,
   appStatusSchema,
   areaSchema,
   auditEntrySchema,
   decisionSchema,
+  explicitTaskInputConfirmationSchema,
+  explicitTaskPriorityDecisionSchema,
+  goalSchema,
+  manualTaskPrioritySchema,
   memoryConflictSchema,
   memoryFactSchema,
   noteSchema,
   persistedEntitySchema,
+  projectSchema,
   sourceSchema,
+  taskDependencySchema,
+  taskSchema,
+  workHubAreaNameSchema,
 } from "./index";
 
 const timestamp = "2026-08-08T16:00:00.000Z";
@@ -31,6 +44,11 @@ const ids = {
   decision: "77777777-7777-4777-8777-777777777777",
   conflict: "88888888-8888-4888-8888-888888888888",
   device: "99999999-9999-4999-8999-999999999999",
+  project: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  goal: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+  taskOne: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+  taskTwo: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+  dependency: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
 } as const;
 
 describe("stage 1 contracts", () => {
@@ -87,6 +105,26 @@ describe("stage 1 contracts", () => {
       appStatusSchema.safeParse({
         version: "0.2.0",
         stage: 1,
+        mode: "local-first",
+        apiEnabled: true,
+        persistenceEnabled: true,
+      }).success,
+    ).toBe(false);
+
+    expect(
+      appStatusSchema.safeParse({
+        version: "0.3.0",
+        stage: 3,
+        mode: "local-first",
+        apiEnabled: false,
+        persistenceEnabled: true,
+      }).success,
+    ).toBe(true);
+
+    expect(
+      appStatusSchema.safeParse({
+        version: "0.3.0",
+        stage: 3,
         mode: "local-first",
         apiEnabled: true,
         persistenceEnabled: true,
@@ -273,6 +311,187 @@ describe("stage 2 memory contracts", () => {
     ).toBe(false);
     expect(
       memoryConflictSchema.safeParse({ ...conflict, factIds: [ids.factOne, ids.factOne] }).success,
+    ).toBe(false);
+  });
+});
+
+describe("stage 3.1 work hub contracts", () => {
+  const project = createProject(
+    { areaId: ids.area, title: "RHIA 2.0" },
+    { id: ids.project, timestamp },
+  );
+  const goal = createGoal(
+    {
+      projectId: project.id,
+      title: "Arbeitszentrale vorbereiten",
+      targetAt: "2026-08-31T18:00:00.000Z",
+    },
+    { id: ids.goal, timestamp },
+  );
+  const task = createTask(
+    {
+      areaId: ids.area,
+      projectId: project.id,
+      goalId: goal.id,
+      title: "Domänenmodell definieren",
+      status: "blocked",
+      blockedReason: "Verträge müssen zuerst feststehen.",
+      dueAt: "2026-08-10T18:00:00.000Z",
+      importance: "high",
+      estimatedMinutes: 60,
+      moneyImpact: "medium",
+      expectedIncomeCents: 25_000,
+      expectedIncomeAt: "2026-09-01T12:00:00.000Z",
+    },
+    { id: ids.taskOne, timestamp },
+  );
+  const prerequisite = createTask(
+    { areaId: ids.area, projectId: project.id, title: "Verträge definieren" },
+    { id: ids.taskTwo, timestamp },
+  );
+  const dependency = createTaskDependency(
+    { taskId: task.id, dependsOnTaskId: prerequisite.id },
+    { id: ids.dependency, timestamp },
+  );
+
+  it("validates all four work hub entities as strict persisted records", () => {
+    expect(projectSchema.parse(project)).toEqual(project);
+    expect(goalSchema.parse(goal)).toEqual(goal);
+    expect(taskSchema.parse(task)).toEqual(task);
+    expect(taskDependencySchema.parse(dependency)).toEqual(dependency);
+    expect(
+      [project, goal, task, dependency].every(
+        (entity) => persistedEntitySchema.safeParse(entity).success,
+      ),
+    ).toBe(true);
+    expect(projectSchema.safeParse({ ...project, unexpected: true }).success).toBe(false);
+  });
+
+  it("rejects incomplete assignments, block states and income data", () => {
+    expect(taskSchema.safeParse({ ...task, projectId: null }).success).toBe(false);
+    expect(taskSchema.safeParse({ ...task, blockedReason: null }).success).toBe(false);
+    expect(
+      taskSchema.safeParse({
+        ...task,
+        status: "planned",
+        blockedReason: "Alter Blockadegrund",
+      }).success,
+    ).toBe(false);
+    expect(
+      taskSchema.safeParse({
+        ...task,
+        moneyImpact: "none",
+      }).success,
+    ).toBe(false);
+    expect(
+      taskSchema.safeParse({
+        ...task,
+        expectedIncomeCents: null,
+      }).success,
+    ).toBe(false);
+    expect(taskSchema.safeParse({ ...task, estimatedMinutes: 0 }).success).toBe(false);
+  });
+
+  it("reserves manual priority for a complete explicit decision by Sir", () => {
+    const manualPriority = {
+      rank: 1,
+      decidedAt: "2026-08-08T16:05:00.000Z",
+      decidedBy: "sir",
+      rationale: "Ausdrückliche Entscheidung von Sir.",
+    } as const;
+
+    expect(manualTaskPrioritySchema.parse(manualPriority)).toEqual(manualPriority);
+    expect(taskSchema.safeParse({ ...task, manualPriority }).success).toBe(true);
+    expect(
+      taskSchema.safeParse({
+        ...task,
+        manualPriority: { ...manualPriority, decidedBy: "rhia" },
+      }).success,
+    ).toBe(false);
+    expect(
+      taskSchema.safeParse({
+        ...task,
+        manualPriority: { ...manualPriority, decidedAt: "2026-08-08T15:59:59.000Z" },
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects self-dependencies and malformed relationship identifiers", () => {
+    expect(
+      taskDependencySchema.safeParse({ ...dependency, dependsOnTaskId: dependency.taskId }).success,
+    ).toBe(false);
+    expect(taskDependencySchema.safeParse({ ...dependency, taskId: "not-a-uuid" }).success).toBe(
+      false,
+    );
+    expect(goalSchema.safeParse({ ...goal, projectId: "not-a-uuid" }).success).toBe(false);
+  });
+});
+
+describe("stage 3.2 required work hub area contracts", () => {
+  it("accepts exactly the four binding work hub area names", () => {
+    for (const name of ["Privat", "RH Produktion", "RHIA", "Shadow Grown"] as const) {
+      expect(workHubAreaNameSchema.parse(name)).toBe(name);
+    }
+
+    expect(workHubAreaNameSchema.safeParse("Allgemein").success).toBe(false);
+    expect(workHubAreaNameSchema.safeParse("Rhia").success).toBe(false);
+  });
+
+  it("requires a work hub area to be active and not deleted", () => {
+    const area = createArea({ name: "RHIA" }, { id: ids.area, timestamp });
+
+    expect(activeWorkHubAreaSchema.parse(area)).toEqual(area);
+    expect(activeWorkHubAreaSchema.safeParse({ ...area, name: "Allgemein" }).success).toBe(false);
+    expect(activeWorkHubAreaSchema.safeParse({ ...area, status: "archived" }).success).toBe(false);
+    expect(activeWorkHubAreaSchema.safeParse({ ...area, deletedAt: timestamp }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe("stage 3.5 manual priority decision contract", () => {
+  it("accepts only an explicit strict decision by Sir", () => {
+    const decision = {
+      actor: "sir",
+      explicitlyConfirmed: true,
+      decidedAt: "2026-08-09T11:00:00.000Z",
+      rationale: "Bewusst zuerst.",
+    } as const;
+
+    expect(explicitTaskPriorityDecisionSchema.parse(decision)).toEqual(decision);
+    expect(
+      explicitTaskPriorityDecisionSchema.safeParse({ ...decision, actor: "rhia" }).success,
+    ).toBe(false);
+    expect(
+      explicitTaskPriorityDecisionSchema.safeParse({ ...decision, explicitlyConfirmed: false })
+        .success,
+    ).toBe(false);
+    expect(
+      explicitTaskPriorityDecisionSchema.safeParse({ ...decision, unexpected: true }).success,
+    ).toBe(false);
+  });
+});
+
+describe("stage 3.8 task input confirmation contract", () => {
+  it("accepts only a strict explicit confirmation by Sir", () => {
+    const confirmation = {
+      actor: "sir",
+      explicitlyConfirmed: true,
+      confirmedAt: "2026-08-09T11:00:00.000Z",
+    } as const;
+
+    expect(explicitTaskInputConfirmationSchema.parse(confirmation)).toEqual(confirmation);
+    expect(
+      explicitTaskInputConfirmationSchema.safeParse({
+        ...confirmation,
+        explicitlyConfirmed: false,
+      }).success,
+    ).toBe(false);
+    expect(
+      explicitTaskInputConfirmationSchema.safeParse({ ...confirmation, actor: "rhia" }).success,
+    ).toBe(false);
+    expect(
+      explicitTaskInputConfirmationSchema.safeParse({ ...confirmation, unexpected: true }).success,
     ).toBe(false);
   });
 });

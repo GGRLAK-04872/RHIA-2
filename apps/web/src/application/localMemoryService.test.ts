@@ -1,4 +1,4 @@
-import { createArea, createSource } from "@rhia/domain";
+import { createArea, createSource, WORK_HUB_AREA_NAMES } from "@rhia/domain";
 import { createRhiaBrowserStorage, type RhiaBrowserStorage } from "@rhia/storage-browser";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -71,6 +71,21 @@ afterEach(async () => {
 });
 
 describe("LocalMemoryService proposal workflow", () => {
+  it("ensures all required work hub areas once and preserves additional areas", async () => {
+    await storage.areas.create(
+      createArea({ name: "Zusätzlicher Bereich" }, { id: ids.areaTwo, timestamp }),
+    );
+
+    const firstWorkspace = await service.getMemoryWorkspace();
+    const secondWorkspace = await service.getMemoryWorkspace();
+
+    for (const name of WORK_HUB_AREA_NAMES) {
+      expect(firstWorkspace.areas.filter((area) => area.name === name)).toHaveLength(1);
+      expect(secondWorkspace.areas.filter((area) => area.name === name)).toHaveLength(1);
+    }
+    expect(firstWorkspace.areas.some((area) => area.name === "Zusätzlicher Bereich")).toBe(true);
+  });
+
   it("stores untrusted fact input only as an inactive proposal", async () => {
     const untrustedInput = {
       ...factInput(),

@@ -1,0 +1,163 @@
+.panel {
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgb(38 17 29 / 84%), rgb(13 9 13 / 88%));
+}
+
+.panel header p {
+  margin: 0 0 6px;
+  color: #d985a6;
+  font-size: 0.67rem;
+  font-weight: 760;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.panel h2,
+.panel h3 {
+  margin: 0;
+}
+
+.createForm {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 18px;
+}
+
+.createForm label,
+.taskRow label {
+  display: grid;
+  gap: 5px;
+}
+
+.createForm label > span,
+.taskRow label > span {
+  color: #9f8993;
+  font-size: 0.65rem;
+}
+
+.createForm input,
+.createForm select,
+.taskRow input,
+.taskRow select,
+.panel button {
+  min-height: 40px;
+  padding: 0 11px;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 10px;
+  background: rgb(5 4 6 / 62%);
+  color: #f8ecf1;
+  font: inherit;
+  font-size: 0.75rem;
+}
+
+.panel button {
+  background: rgb(118 34 66 / 58%);
+  cursor: pointer;
+}
+
+.panel button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.wideField {
+  grid-column: 1 / -1;
+}
+
+.createForm .confirmation,
+.taskRow .confirmation {
+  display: flex;
+  align-items: center;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  color: #c9b3bc;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.confirmation input {
+  width: 18px;
+  min-height: 18px;
+  margin: 0;
+}
+
+.maintenance {
+  margin-top: 18px;
+  border-top: 1px solid rgb(255 255 255 / 7%);
+  padding-top: 14px;
+}
+
+.maintenance summary {
+  color: #bda7b0;
+  font-size: 0.76rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.maintenance ul {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.taskRow {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.4fr) minmax(110px, 0.7fr) auto;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 14px;
+  background: rgb(7 5 8 / 48%);
+}
+
+.manualPriority {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(100px, 0.6fr) minmax(180px, 1.2fr) auto auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.panel .dangerButton {
+  grid-column: 1 / -1;
+  border-color: rgb(255 99 123 / 25%);
+  background: rgb(105 21 42 / 64%);
+}
+
+.trash {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.trash h3 {
+  font-size: 0.85rem;
+}
+
+.trash > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #c9b3bc;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 620px) {
+  .createForm,
+  .taskRow,
+  .manualPriority {
+    grid-template-columns: 1fr;
+  }
+
+  .wideField,
+  .manualPriority,
+  .panel .dangerButton {
+    grid-column: auto;
+  }
+}

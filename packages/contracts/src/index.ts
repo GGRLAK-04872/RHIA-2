@@ -1,14 +1,23 @@
 import {
-  ENTITY_TYPES,
-  RHIA_SCHEMA_VERSION,
   type Area,
   type AuditEntry,
   type Decision,
+  ENTITY_TYPES,
+  type ExplicitTaskInputConfirmation,
+  type ExplicitTaskPriorityDecision,
+  type Goal,
+  type ManualTaskPriority,
   type MemoryConflict,
   type MemoryFact,
   type Note,
   type PersistedEntity,
+  type Project,
+  RHIA_SCHEMA_VERSION,
   type Source,
+  TASK_STATUSES,
+  type Task,
+  type TaskDependency,
+  WORK_HUB_AREA_NAMES,
 } from "@rhia/domain";
 import { z } from "zod";
 
@@ -150,6 +159,25 @@ export const areaSchema: z.ZodType<Area> = z
   })
   .strict()
   .superRefine(validateTimeline);
+
+export const workHubAreaNameSchema = z.enum(WORK_HUB_AREA_NAMES);
+
+export const activeWorkHubAreaSchema = areaSchema.superRefine((area, context) => {
+  if (!workHubAreaNameSchema.safeParse(area.name).success) {
+    context.addIssue({
+      code: "custom",
+      path: ["name"],
+      message: "Der Bereich gehört nicht zu den verbindlichen RHIA-Arbeitsbereichen.",
+    });
+  }
+  if (area.status !== "active" || area.deletedAt !== null) {
+    context.addIssue({
+      code: "custom",
+      path: ["status"],
+      message: "Ein RHIA-Arbeitsbereich muss aktiv sein und darf nicht gelöscht sein.",
+    });
+  }
+});
 
 export const sourceSchema: z.ZodType<Source> = z
   .object({
@@ -353,6 +381,146 @@ export const memoryConflictSchema: z.ZodType<MemoryConflict> = z
     }
   });
 
+export const projectSchema: z.ZodType<Project> = z
+  .object({
+    ...entityBaseShape,
+    type: z.literal("project"),
+    areaId: entityIdSchema,
+    title: z.string().trim().min(1).max(240),
+    description: z.string().trim().max(10_000).nullable(),
+    status: z.enum(["active", "on-hold", "completed", "archived"]),
+  })
+  .strict()
+  .superRefine(validateTimeline);
+
+export const goalSchema: z.ZodType<Goal> = z
+  .object({
+    ...entityBaseShape,
+    type: z.literal("goal"),
+    projectId: entityIdSchema,
+    title: z.string().trim().min(1).max(240),
+    description: z.string().trim().max(10_000).nullable(),
+    status: z.enum(["planned", "active", "achieved", "abandoned"]),
+    targetAt: timestampSchema.nullable(),
+  })
+  .strict()
+  .superRefine(validateTimeline);
+
+export const manualTaskPrioritySchema: z.ZodType<ManualTaskPriority> = z
+  .object({
+    rank: z.number().int().positive().max(10_000),
+    decidedAt: timestampSchema,
+    decidedBy: z.literal("sir"),
+    rationale: z.string().trim().max(2_000).nullable(),
+  })
+  .strict();
+
+export const explicitTaskPriorityDecisionSchema: z.ZodType<ExplicitTaskPriorityDecision> = z
+  .object({
+    actor: z.literal("sir"),
+    explicitlyConfirmed: z.literal(true),
+    decidedAt: timestampSchema,
+    rationale: z.string().trim().max(2_000).nullable(),
+  })
+  .strict();
+
+export const explicitTaskInputConfirmationSchema: z.ZodType<ExplicitTaskInputConfirmation> = z
+  .object({
+    actor: z.literal("sir"),
+    explicitlyConfirmed: z.literal(true),
+    confirmedAt: timestampSchema,
+  })
+  .strict();
+
+export const taskSchema: z.ZodType<Task> = z
+  .object({
+    ...entityBaseShape,
+    type: z.literal("task"),
+    areaId: entityIdSchema,
+    projectId: entityIdSchema.nullable(),
+    goalId: entityIdSchema.nullable(),
+    title: z.string().trim().min(1).max(240),
+    description: z.string().trim().max(10_000).nullable(),
+    status: z.enum(TASK_STATUSES),
+    dueAt: timestampSchema.nullable(),
+    importance: z.enum(["low", "medium", "high"]),
+    estimatedMinutes: z.number().int().positive().max(525_600).nullable(),
+    moneyImpact: z.enum(["none", "low", "medium", "high"]),
+    expectedIncomeCents: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).nullable(),
+    expectedIncomeAt: timestampSchema.nullable(),
+    blockedReason: z.string().trim().min(1).max(2_000).nullable(),
+    manualPriority: manualTaskPrioritySchema.nullable(),
+  })
+  .strict()
+  .superRefine((entity, context) => {
+    validateTimeline(entity, context);
+
+    if (entity.goalId !== null && entity.projectId === null) {
+      context.addIssue({
+        code: "custom",
+        path: ["projectId"],
+        message: "Eine Aufgabe mit Ziel benötigt auch das zugehörige Projekt.",
+      });
+    }
+
+    if ((entity.status === "blocked") !== (entity.blockedReason !== null)) {
+      context.addIssue({
+        code: "custom",
+        path: ["blockedReason"],
+        message: "Status Blockiert und Blockadegrund müssen gemeinsam gesetzt sein.",
+      });
+    }
+
+    if (
+      entity.moneyImpact === "none" &&
+      (entity.expectedIncomeCents !== null || entity.expectedIncomeAt !== null)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["moneyImpact"],
+        message: "Eine Aufgabe ohne Geldwirkung darf keine erwarteten Einnahmen enthalten.",
+      });
+    }
+
+    if (entity.expectedIncomeAt !== null && entity.expectedIncomeCents === null) {
+      context.addIssue({
+        code: "custom",
+        path: ["expectedIncomeCents"],
+        message: "Ein erwarteter Einnahmezeitpunkt benötigt einen Einnahmewert.",
+      });
+    }
+
+    if (
+      entity.manualPriority !== null &&
+      Date.parse(entity.manualPriority.decidedAt) < Date.parse(entity.createdAt)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["manualPriority", "decidedAt"],
+        message: "Eine manuelle Priorität darf nicht vor Erstellung der Aufgabe entschieden sein.",
+      });
+    }
+  });
+
+export const taskDependencySchema: z.ZodType<TaskDependency> = z
+  .object({
+    ...entityBaseShape,
+    type: z.literal("task-dependency"),
+    taskId: entityIdSchema,
+    dependsOnTaskId: entityIdSchema,
+  })
+  .strict()
+  .superRefine((entity, context) => {
+    validateTimeline(entity, context);
+    if (entity.taskId === entity.dependsOnTaskId) {
+      context.addIssue({
+        code: "custom",
+        path: ["dependsOnTaskId"],
+        message: "Eine Aufgabe darf nicht von sich selbst abhängen.",
+      });
+    }
+  });
+
 export const persistedEntitySchema: z.ZodType<PersistedEntity> = z.union([
   areaSchema,
   sourceSchema,
@@ -361,6 +529,10 @@ export const persistedEntitySchema: z.ZodType<PersistedEntity> = z.union([
   memoryFactSchema,
   decisionSchema,
   memoryConflictSchema,
+  projectSchema,
+  goalSchema,
+  taskSchema,
+  taskDependencySchema,
 ]);
 
 export const stageZeroAppStatusSchema = z.object({
@@ -387,10 +559,19 @@ export const stageTwoAppStatusSchema = z.object({
   persistenceEnabled: z.literal(true),
 });
 
+export const stageThreeAppStatusSchema = z.object({
+  version: z.string().min(1),
+  stage: z.literal(3),
+  mode: z.literal("local-first"),
+  apiEnabled: z.literal(false),
+  persistenceEnabled: z.literal(true),
+});
+
 export const appStatusSchema = z.discriminatedUnion("stage", [
   stageZeroAppStatusSchema,
   stageOneAppStatusSchema,
   stageTwoAppStatusSchema,
+  stageThreeAppStatusSchema,
 ]);
 
 export type AppStatus = z.infer<typeof appStatusSchema>;
@@ -505,16 +686,93 @@ export const rhiaBackupPackageV2Schema = z
     }
   });
 
-export const backupDataSchema = backupDataV2Schema;
-export const backupRecordCountsSchema = backupRecordCountsV2Schema;
-export const backupManifestSchema = backupManifestV2Schema;
+export const backupDataV3Schema = z
+  .object({
+    areas: z.array(areaSchema),
+    sources: z.array(sourceSchema),
+    notes: z.array(noteSchema),
+    auditEntries: z.array(auditEntrySchema),
+    memoryFacts: z.array(memoryFactSchema),
+    decisions: z.array(decisionSchema),
+    memoryConflicts: z.array(memoryConflictSchema),
+    projects: z.array(projectSchema),
+    goals: z.array(goalSchema),
+    tasks: z.array(taskSchema),
+    taskDependencies: z.array(taskDependencySchema),
+  })
+  .strict();
+
+export const backupRecordCountsV3Schema = z
+  .object({
+    areas: z.number().int().nonnegative(),
+    sources: z.number().int().nonnegative(),
+    notes: z.number().int().nonnegative(),
+    auditEntries: z.number().int().nonnegative(),
+    memoryFacts: z.number().int().nonnegative(),
+    decisions: z.number().int().nonnegative(),
+    memoryConflicts: z.number().int().nonnegative(),
+    projects: z.number().int().nonnegative(),
+    goals: z.number().int().nonnegative(),
+    tasks: z.number().int().nonnegative(),
+    taskDependencies: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export const backupManifestV3Schema = z
+  .object({
+    format: z.literal("rhia-backup"),
+    formatVersion: z.literal(3),
+    schemaVersion: z.literal(RHIA_SCHEMA_VERSION),
+    createdAt: timestampSchema,
+    checksumAlgorithm: z.literal("SHA-256"),
+    checksum: z.string().regex(/^[a-f0-9]{64}$/),
+    recordCounts: backupRecordCountsV3Schema,
+  })
+  .strict();
+
+export const rhiaBackupPackageV3Schema = z
+  .object({
+    manifest: backupManifestV3Schema,
+    data: backupDataV3Schema,
+  })
+  .strict()
+  .superRefine((backup, context) => {
+    for (const key of [
+      "areas",
+      "sources",
+      "notes",
+      "auditEntries",
+      "memoryFacts",
+      "decisions",
+      "memoryConflicts",
+      "projects",
+      "goals",
+      "tasks",
+      "taskDependencies",
+    ] as const) {
+      if (backup.manifest.recordCounts[key] !== backup.data[key].length) {
+        context.addIssue({
+          code: "custom",
+          path: ["manifest", "recordCounts", key],
+          message: `Die Datensatzanzahl für ${key} stimmt nicht.`,
+        });
+      }
+    }
+  });
+
+export const backupDataSchema = backupDataV3Schema;
+export const backupRecordCountsSchema = backupRecordCountsV3Schema;
+export const backupManifestSchema = backupManifestV3Schema;
 export const rhiaBackupPackageSchema = z.union([
   rhiaBackupPackageV1Schema,
   rhiaBackupPackageV2Schema,
+  rhiaBackupPackageV3Schema,
 ]);
 
 export type RhiaBackupDataV1 = z.infer<typeof backupDataV1Schema>;
 export type RhiaBackupPackageV1 = z.infer<typeof rhiaBackupPackageV1Schema>;
-export type RhiaBackupData = z.infer<typeof backupDataV2Schema>;
+export type RhiaBackupDataV2 = z.infer<typeof backupDataV2Schema>;
 export type RhiaBackupPackageV2 = z.infer<typeof rhiaBackupPackageV2Schema>;
+export type RhiaBackupData = z.infer<typeof backupDataV3Schema>;
+export type RhiaBackupPackageV3 = z.infer<typeof rhiaBackupPackageV3Schema>;
 export type RhiaBackupPackage = z.infer<typeof rhiaBackupPackageSchema>;

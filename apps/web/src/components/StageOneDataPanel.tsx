@@ -1,10 +1,10 @@
+import type { ImportPreview } from "@rhia/storage-browser";
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
-import type { ImportPreview } from "@rhia/storage-browser";
 import {
   DELETE_ALL_CONFIRMATION,
-  localDataService,
   type LocalDataSnapshot,
+  localDataService,
 } from "../application/localDataService";
 import styles from "./StageOneDataPanel.module.css";
 
@@ -264,6 +264,9 @@ export function StageOneDataPanel() {
               {pendingImport.recordCounts.notes} Notizen · {pendingImport.recordCounts.memoryFacts}{" "}
               Fakten · {pendingImport.recordCounts.decisions} Entscheidungen ·{" "}
               {pendingImport.recordCounts.memoryConflicts} Gedächtniskonflikte ·{" "}
+              {pendingImport.recordCounts.projects} Projekte · {pendingImport.recordCounts.goals}{" "}
+              Ziele · {pendingImport.recordCounts.tasks} Aufgaben ·{" "}
+              {pendingImport.recordCounts.taskDependencies} Abhängigkeiten ·{" "}
               {pendingImport.conflicts.length} Importkonflikte
             </p>
             <button

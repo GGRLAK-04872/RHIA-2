@@ -14,13 +14,13 @@
 | Produktversion | `0.2.0` |
 | Aktive Stufe im Produkt | `2` |
 | Freigegebene Entwicklungsstufe | `3` |
-| Vorbereiteter Teilmeilenstein | `3.1 – Domänenmodell und Verträge der Arbeitszentrale` |
+| Aktueller Teilmeilenstein | `3.1 – Domänenmodell und Verträge der Arbeitszentrale; fachlich abgeschlossen, Merge ausstehend` |
 | Datenbankschema | Dexie-Version 3 |
 | Sicherungsformat | `rhia-backup` Version 2 |
 | Testseite | <https://ggrlak-04872.github.io/RHIA-2/> |
 | Aktive Datenquelle | lokale IndexedDB des jeweiligen Browsers |
-| Projektphase | Stufe 3 freigegeben; Teilmeilenstein 3.1 vorbereitet; noch keine Stufe-3-Funktionalität implementiert |
-| Dokumentationsstand | Stufe-3-Freigabe und Teilmeilenstein 3.1 über PR #4 dokumentiert; keine Funktionsänderung |
+| Projektphase | Stufe 3.1 auf Draft-PR #5 umgesetzt, technisch geprüft und fachlich abgenommen; noch nicht in `main` integriert |
+| Dokumentationsstand | PR #5 und Feature-Head `ab129a0223f3929a3f033dbdeff425eaf940d0c8` geprüft; 61/61 Tests und CI #31 erfolgreich; separate Merge-Freigabe ausstehend |
 
 Der Commit `16d1f47f409c7247da5f5bce717514a4f38332c3` bezeichnet den letzten technisch geprüften
 Funktionsstand von RHIA 2.0 auf `main`. Spätere reine Dokumentationsänderungen oder
@@ -30,9 +30,10 @@ welche späteren Commits hinzugekommen sind und ob spätere Funktionsänderungen
 Datei dokumentiert wurden. PR #3 ist geschlossen und gemergt. Das alte Repository
 `GGRLAK-04872/RHIA` bleibt unverändert und darf nicht beschrieben werden.
 
-Die Freigabe von Stufe 3 ändert den verifizierten Funktionsstand nicht. Bis ein Stufe-3-Teilmeilenstein
-implementiert, technisch geprüft, abgenommen und in `main` integriert wurde, bleibt der dokumentierte
-Funktionsstand bei Produktversion `0.2.0` und Stufe 2.
+Die Freigabe und die noch nicht gemergte Umsetzung von Stufe 3.1 ändern den verifizierten
+Funktionsstand auf `main` nicht. Bis ein Stufe-3-Teilmeilenstein implementiert, technisch geprüft,
+fachlich abgenommen und in `main` integriert wurde, bleibt der dokumentierte Funktionsstand bei
+Produktversion `0.2.0` und Stufe 2.
 
 ## Abgeschlossene Stufen
 
@@ -72,16 +73,22 @@ Enthalten sind:
 
 ## Aktueller Haltepunkt
 
-**Stufe 3 wurde von Sir am 09.08.2026 freigegeben. Vorbereitet ist ausschließlich Teilmeilenstein
-3.1 – Domänenmodell und Verträge der Arbeitszentrale.**
+**Stufe 3 wurde von Sir am 09.08.2026 freigegeben. Teilmeilenstein 3.1 wurde auf
+`feat/stufe-3-1-domaenenmodell-vertraege` vollständig umgesetzt, technisch geprüft und fachlich
+abgenommen. Der Merge in `main` ist noch nicht freigegeben.**
 
-Es wurde noch keine Stufe-3-Funktionalität implementiert. Der bereits freigegebene erste
-Teilmeilenstein umfasst ausschließlich:
+Draft-PR #5 enthält mit dem fachlich abgenommenen Feature-Head
+`ab129a0223f3929a3f033dbdeff425eaf940d0c8` ausschließlich:
 
 - `Project`, `Goal`, `Task` und `TaskDependency` in `packages/domain`;
 - Status- und Felddefinitionen, Erzeugungsfunktionen sowie Domänenregeln;
 - strikte Zod-Verträge in `packages/contracts`;
 - automatisierte Domänen- und Vertragstests.
+
+Der bei der ersten fachlichen Prüfung gefundene Fehler in `assertTaskAssignment` ist behoben. Eine
+gültige Inbox-Aufgabe ohne Projekt und Ziel wird akzeptiert und durch einen Regressionstest
+abgesichert. Die erneute fachliche Prüfung sowie der vollständige Repository-Prüflauf sind
+bestanden.
 
 Nicht Bestandteil von Teilmeilenstein 3.1 sind Dexie-Migration, Speicherung, Repositories,
 Prioritätsalgorithmus, Benutzeroberfläche, Export/Import-Erweiterung oder weitere
@@ -90,6 +97,13 @@ Stufe-3-Teilmeilensteine. Der bestehende Datenweg
 
 ## Letzte technische Änderungen
 
+- PR #5 führt auf dem Stufe-3.1-Feature-Branch `Project`, `Goal`, `Task` und `TaskDependency`,
+  Fabriken, Domänenregeln, strikte Zod-Verträge und Tests ein. Diese Änderungen sind nicht in
+  `main` integriert.
+- Erster Implementierungscommit von Stufe 3.1:
+  `b2ff0d081b05dade2fcceea635eefcff42ee9e4b`.
+- Fachlich abgenommener Feature-Head nach der Null-Zuordnungskorrektur:
+  `ab129a0223f3929a3f033dbdeff425eaf940d0c8`.
 - Stufe 2.0–2.9 führte `MemoryFact`, `Decision` und `MemoryConflict` mit strikten Verträgen ein.
 - Das veröffentlichte Dexie-Schema wurde additiv auf Version 3 erweitert; Version 2 bleibt als
   Stufe-1-Migrationspfad erhalten.
@@ -110,6 +124,9 @@ Stufe-3-Teilmeilensteine. Der bestehende Datenweg
 
 | Prüfung | Ergebnis |
 |---|---|
+| Stufe-3.1-Feature-CI | CI #31 vollständig erfolgreich |
+| Stufe-3.1-Qualitätsprüfung | 61/61 Tests, Format/Lint, TypeScript, Builds, Audits, Secret-Scan und Abhängigkeitsprüfung am 09.08.2026 bestanden |
+| Stufe-3.1-Fachabnahme | bestanden; gültige Inbox-Aufgabe ohne Projekt/Ziel wird akzeptiert und widersprüchliche Zuordnungen bleiben gesperrt |
 | Tablet | bestanden am 09.08.2026 mit ausschließlich künstlichen Testdaten |
 | Handy | bestanden am 09.08.2026 mit ausschließlich künstlichen Testdaten |
 | Feature-CI | CI #24 vollständig erfolgreich |
@@ -126,16 +143,15 @@ Export, Gesamtlöschung, Import sowie Hoch- und Querformat.
 
 ## Offene Punkte
 
-1. Vor der Implementierung von Teilmeilenstein 3.1 müssen der tatsächliche `main`-Stand, die
-   Repository-Regeln und der aktuelle CI-Stand erneut geprüft werden.
-2. Teilmeilenstein 3.1 erhält einen eigenen Feature-Branch und Draft-PR.
+1. Für PR #5 ist eine separate ausdrückliche Merge-Freigabe von Sir erforderlich.
+2. Nach einem erlaubten Merge müssen der neue `main`-Stand und die zugehörige CI geprüft werden.
 3. Vor Teilmeilenstein 3.2 wird gestoppt; dafür ist eine neue ausdrückliche Freigabe erforderlich.
-4. Jeder Merge in `main` benötigt weiterhin eine separate ausdrückliche Freigabe von Sir.
-5. Spätere Entscheidungen zu RHIA-PC, Integrationen, KI-Budget, Sprache und nativer App werden erst
+4. Spätere Entscheidungen zu RHIA-PC, Integrationen, KI-Budget, Sprache und nativer App werden erst
    an ihrem im Masterplan definierten Freigabepunkt getroffen.
 
 ## Bekannte Fehler oder nicht blockierende Punkte
 
+- Es sind keine offenen blockierenden Fehler in Teilmeilenstein 3.1 bekannt.
 - Es sind keine offenen blockierenden Funktionsfehler aus Stufe 2 bekannt.
 - Nach einem erfolgreichen Sicherungsimport aktualisiert sich die Gedächtnisoberfläche noch nicht
   sofort. Die Daten sind bereits korrekt und persistent in IndexedDB gespeichert und werden nach
@@ -172,23 +188,17 @@ Export, Gesamtlöschung, Import sowie Hoch- und Querformat.
 
 ## Nächster geplanter Schritt
 
-1. tatsächlichen `main`-Stand, Repository-Regeln, Masterplan, diese Übergabe und CI lesend prüfen;
-2. einen getrennten Stufe-3.1-Feature-Branch vom dann aktuellen `main` anlegen;
-3. ausschließlich Domänenmodell, Verträge und zugehörige Tests für `Project`, `Goal`, `Task` und
-   `TaskDependency` umsetzen;
-4. die relevanten Qualitätsprüfungen ausführen und einen Draft-PR erstellen;
-5. vor Dexie-Migration, Speicherung, Priorisierung, UI und Teilmeilenstein 3.2 stoppen.
+1. auf die separate ausdrückliche Merge-Freigabe für PR #5 warten;
+2. erst nach dieser Freigabe PR #5 per Squash-Merge in `main` integrieren und den neuen
+   `main`-Stand prüfen;
+3. vor Dexie-Migration, Speicherung, Priorisierung, UI und Teilmeilenstein 3.2 stoppen.
 
 ## Benötigte Freigabe von Sir
 
-Für den Beginn von Teilmeilenstein 3.1 ist keine weitere Stufenfreigabe erforderlich. Der nächste
-zulässige Entwicklungsbefehl lautet:
+Teilmeilenstein 3.1 ist abgeschlossen. Der nächste zulässige Befehl lautet:
 
-> Setze ausschließlich Stufe 3.1 – Domänenmodell und Verträge der Arbeitszentrale – auf einem
-> getrennten Feature-Branch vom aktuellen `main` um. Prüfe vorher Repository-Regeln, CI und den
-> tatsächlichen `main`-Stand. Ändere nur `packages/domain`, `packages/contracts` und zugehörige
-> Tests. Keine Dexie-Migration, Speicherung, Priorisierung, UI oder Export/Import-Erweiterung. Das
-> alte Repository `RHIA` bleibt unverändert. Stoppe vor Stufe 3.2 und vor jedem Merge.
+> PR #5 darf per Squash-Merge in `main` integriert werden. Prüfe danach den neuen `main`-Stand und
+> die zugehörige CI. Keine Stufe 3.2 beginnen.
 
 Die Stufe-3-Freigabe erlaubt keinen Merge. Jeder Merge benötigt weiterhin eine separate
 ausdrückliche Freigabe.
@@ -255,15 +265,17 @@ Diese Regel ist verbindlich:
 > keine alten Chatprotokolle, alten Masterversionen oder historischen Dokumente an, solange die
 > beiden aktiven Dateien vorhanden und konsistent sind. Verändere weder das alte Repository `RHIA`
 > noch Sicherheits-, Datenschutz- oder Kostengrenzen. Stufe 3.1 ist freigegeben; alle späteren
-> Teilmeilensteine und Stufen bleiben gesperrt. Nenne vor jedem längeren Arbeitsschritt eine
-> realistische Dauer und stoppe an jedem dokumentierten Freigabepunkt.
+> Teilmeilensteine und Stufen bleiben gesperrt. PR #5 ist technisch grün und fachlich abgenommen;
+> der Merge in `main` benötigt weiterhin eine separate ausdrückliche Freigabe. Nenne vor jedem
+> längeren Arbeitsschritt eine realistische Dauer und stoppe an jedem dokumentierten Freigabepunkt.
 
 Nach diesem Starttext muss der neue Chat sofort melden:
 
 - aktueller Projektstand: Stufe 2 abgeschlossen;
 - letzter verifizierter Funktionsstand auf `main`:
   `16d1f47f409c7247da5f5bce717514a4f38332c3`;
-- Dokumentationsstand: gegebenenfalls spätere reine Übergabe- oder Planungscommits;
-- nächster erlaubter Schritt: Stufe 3.1 auf einem getrennten Feature-Branch beginnen;
+- Dokumentationsstand: Stufe 3.1 auf PR #5 umgesetzt, technisch grün und fachlich abgenommen;
+- nächster erlaubter Schritt: ausschließlich nach separater Freigabe PR #5 per Squash-Merge in
+  `main` integrieren und den neuen `main`-Stand prüfen;
 - verboten: Stufe 3.2 oder spätere Stufen, jeder Merge sowie jede Änderung am alten Repository
   ohne passenden Auftrag.
