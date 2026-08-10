@@ -1,4 +1,4 @@
-import type { TaskStatus } from "@rhia/domain";
+import type { TaskImportance, TaskMoneyImpact, TaskStatus } from "@rhia/domain";
 import { useMemo, useState } from "react";
 import {
   buildWorkHubViews,
@@ -23,6 +23,19 @@ const statusLabels: Record<TaskStatus, string> = {
   discarded: "Verworfen",
 };
 
+const importanceLabels: Record<TaskImportance, string> = {
+  low: "Niedrig",
+  medium: "Mittel",
+  high: "Hoch",
+};
+
+const moneyImpactLabels: Record<TaskMoneyImpact, string> = {
+  none: "Keine",
+  low: "Niedrig",
+  medium: "Mittel",
+  high: "Hoch",
+};
+
 const tabs: Array<{ id: WorkHubTab; label: string }> = [
   { id: "inbox", label: "Inbox" },
   { id: "projects", label: "Projekte" },
@@ -40,6 +53,13 @@ function formatDate(timestamp: string | null): string | null {
   }).format(new Date(timestamp));
 }
 
+function formatEuro(cents: number | null): string | null {
+  if (cents === null) {
+    return null;
+  }
+  return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(cents / 100);
+}
+
 function TaskCard({ view, showPriority }: { view: WorkHubTaskView; showPriority: boolean }) {
   return (
     <article className={styles.taskCard} data-blocked={view.priority.blocked || undefined}>
@@ -48,6 +68,7 @@ function TaskCard({ view, showPriority }: { view: WorkHubTaskView; showPriority:
           <p className={styles.taskContext}>
             {view.areaName}
             {view.projectTitle ? ` · ${view.projectTitle}` : " · Ohne Projekt"}
+            {view.goalTitle ? ` · Ziel: ${view.goalTitle}` : ""}
           </p>
           <h4>{view.task.title}</h4>
         </div>
@@ -64,10 +85,17 @@ function TaskCard({ view, showPriority }: { view: WorkHubTaskView; showPriority:
       {view.task.description ? <p className={styles.description}>{view.task.description}</p> : null}
 
       <div className={styles.metaRow}>
-        <span>{statusLabels[view.task.status]}</span>
-        <span>Wichtigkeit: {view.task.importance}</span>
+        <span>Status: {statusLabels[view.task.status]}</span>
+        <span>Wichtigkeit: {importanceLabels[view.task.importance]}</span>
         {view.task.dueAt ? <span>Frist: {formatDate(view.task.dueAt)}</span> : null}
-        {view.task.estimatedMinutes ? <span>{view.task.estimatedMinutes} Min.</span> : null}
+        {view.task.estimatedMinutes ? <span>Aufwand: {view.task.estimatedMinutes} Min.</span> : null}
+        <span>Geldwirkung: {moneyImpactLabels[view.task.moneyImpact]}</span>
+        {view.task.expectedIncomeCents !== null ? (
+          <span>Geldeingang: {formatEuro(view.task.expectedIncomeCents)}</span>
+        ) : null}
+        {view.task.expectedIncomeAt ? (
+          <span>Geldeingang bis: {formatDate(view.task.expectedIncomeAt)}</span>
+        ) : null}
       </div>
 
       {view.priority.blocked ? (
