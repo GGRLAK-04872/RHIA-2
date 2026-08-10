@@ -7,13 +7,15 @@ Dieses Repository ist der saubere Neustart ohne Cloudflare-, KV- oder Durable-Ob
 
 - Stufe 0: abgeschlossen und abgenommen
 - Stufe 1: Local-first-Datenfundament abgeschlossen, real abgenommen und in `main` integriert
-- Stufe 2: Gedächtnis v1; Teilmeilensteine 2.0 bis 2.8 technisch umgesetzt, Abnahme 2.9 vorbereitet
+- Stufe 2: Gedächtnis v1 abgeschlossen, real abgenommen und in `main` integriert
+- Stufe 3: Arbeitszentrale abgeschlossen, real abgenommen und in `main` integriert
+- Stufe 4: Planung und Briefings technisch in Umsetzung; reale Fünf-Tage-Abnahme offen
+- Produktstand des Stufe-4-Branches: Version 0.4.0, Dexie-Version 5, Sicherungsformat 4
 - Betriebsart: lokale IndexedDB als einzige Datenquelle, ohne Cloud-Sync
 - Web/PWA: React, Vite und TypeScript Strict
 - Daten: Dexie, Zod, versionierte Migration, Export/Import und 30-Tage-Papierkorb
 - Qualität: Biome, Vitest, Playwright, Build- und Secret-Audit
-- OpenAI API: deaktiviert; ein vorhandener Schlüssel wird erst später sicher und ausschließlich
-  serverseitig eingebunden
+- OpenAI API: deaktiviert; API-Budget 0 Euro
 
 Die verbindliche Grundlage wird in einem privaten Masterplan geführt. Eine Stufe gilt erst nach
 automatisierter Prüfung und dem vorgesehenen Praxistest als abgeschlossen.
@@ -49,17 +51,27 @@ Die Gedächtnissuche arbeitet vollständig lokal. Sie kombiniert normalisierten 
 für Bereich, Typ, Status, Quelle, Gültigkeit und Änderungszeit und zeigt bei jedem Treffer dessen
 Bereich, Quellen und Aktualität an.
 
-Sicherungen werden im Format v2 mit allen sieben lokalen Sammlungen erstellt. Gültige v1-Dateien
-bleiben importierbar und werden ohne erfundene Gedächtnisdaten migriert. Prüfsummenfehler oder
-vorhandene IDs blockieren den Import sichtbar.
+Die Arbeitszentrale verwaltet Projekte, Ziele, Aufgaben, Fristen und Abhängigkeiten vollständig
+lokal. Prioritätsvorschläge nennen ihre Kriterien; eine ausdrücklich bestätigte manuelle Rangfolge
+bleibt geschützt.
+
+Stufe 4 ergänzt begründete Tages- und Wochenplanung, Morgenbriefing, Abendrückblick und
+strukturiertes Planungsfeedback. Verfügbare Zeit wird ausdrücklich eingegeben. Ungefähr 20 Prozent
+werden als Schutzzeit vorgesehen; pro Woche bleiben mindestens 60 Minuten für RHIA und 60 Minuten
+für Shadow Grown geschützt.
+
+Sicherungen werden im Format v4 mit allen 14 lokalen Sammlungen erstellt. Gültige Dateien der
+Formate v1 bis v3 bleiben importierbar und werden ohne erfundene Daten migriert.
+Prüfsummenfehler oder vorhandene IDs blockieren den Import sichtbar.
 
 Die Gedächtnisoberfläche unterstützt Fakt- und Entscheidungsvorschläge, Bestätigung, Ablehnung,
 Korrektur, Papierkorb, Konfliktauflösung sowie Suche und Filter. Fehler bleiben sichtbar; die
 Bedienung ist für Handy, Tablet, Hoch- und Querformat ausgelegt.
 
-Das Abnahmeprotokoll für Stufe 2 trennt automatisierte Prüfung, Preview und reale Gerätetests. Bis
-GitHub-CI, Stufe-2-Testbuild sowie Tablet- und Handytest bestätigt sind, bleibt Draft-PR #3 offen
-und ungemergt; Stufe 3 bleibt gesperrt.
+Das Abnahmeprotokoll für Stufe 4 trennt automatisierte Prüfung, Preview und reale Nutzung. Auch nach
+technischer Fertigstellung bleibt Stufe 4 offen, bis Sir fünf aufeinanderfolgende Alltagstests
+bestätigt. Stufe 5 und ein Merge nach `main` bleiben bis zu einer gesonderten ausdrücklichen
+Freigabe gesperrt.
 
 ## Prüfung
 

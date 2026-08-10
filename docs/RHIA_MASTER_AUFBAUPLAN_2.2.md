@@ -5,7 +5,7 @@
 **Projekt:** RHIA – RH Intelligent Assistant  
 **Aktives Repository:** `GGRLAK-04872/RHIA-2`  
 **Letzte Konsolidierung:** 10.08.2026 – Stufe 3 vollständig abgeschlossen  
-**Freigabestatus:** Stufen 0 bis 3 abgeschlossen; Stufe 4 gesperrt
+**Freigabestatus:** Stufen 0 bis 3 abgeschlossen; Stufe 4 am 10.08.2026 ausdrücklich freigegeben
 
 ## 1. Zweck und Geltung
 
@@ -504,7 +504,9 @@ Import, Korrektur, Löschung sowie Tablet- und Handytest.
 
 ### Stufe 4 – Planung und Briefings
 
-**Sperrstatus:** nicht freigegeben. Der Abschluss von Stufe 3 erteilt keine automatische Freigabe für Planung, Briefings oder sonstige Arbeiten der Stufe 4.
+**Freigabestatus:** von Sir am 10.08.2026 ausdrücklich zur technischen Umsetzung freigegeben. Die
+endgültige Abnahme verlangt weiterhin fünf aufeinanderfolgende Alltagstests; Stufe 5 und ein Merge
+nach `main` bleiben bis zu einer jeweils gesonderten ausdrücklichen Freigabe gesperrt.
 
 Ziel: brauchbare, begründete Tages- und Wochenvorschläge ohne selbstständige Kalenderänderung.
 

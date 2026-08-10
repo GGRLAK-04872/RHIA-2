@@ -2,6 +2,7 @@ import { type AppStatus, appStatusSchema } from "@rhia/contracts";
 import { RHIA_PRODUCT_NAME, RHIA_RUNTIME, RHIA_STAGE, RHIA_VERSION } from "@rhia/domain";
 import { RHIA_SECURITY_POLICY } from "@rhia/security";
 import styles from "./App.module.css";
+import { LocalPlanningPanel } from "./components/LocalPlanningPanel";
 import { LocalWorkHubPanel } from "./components/LocalWorkHubPanel";
 import { MemoryPanel } from "./components/MemoryPanel";
 import { StageOneDataPanel } from "./components/StageOneDataPanel";
@@ -50,8 +51,9 @@ export function App() {
           <h1 id="rhia-title">{RHIA_PRODUCT_NAME}</h1>
           <p className={styles.lead}>Wissen und Arbeit bleiben unter deiner Kontrolle.</p>
           <p className={styles.explanation}>
-            Fakten, Entscheidungen, Projekte, Aufgaben und Sicherungen bleiben in deiner lokalen
-            Browserdatenbank. Cloud-Dienste und kostenpflichtige KI-Aufrufe bleiben deaktiviert.
+            Fakten, Entscheidungen, Projekte, Aufgaben, Planungen und Sicherungen bleiben in deiner
+            lokalen Browserdatenbank. Cloud-Dienste und kostenpflichtige KI-Aufrufe bleiben
+            deaktiviert.
           </p>
         </div>
       </section>
@@ -65,7 +67,7 @@ export function App() {
             </div>
             <span className={styles.readyBadge}>
               <span className={styles.readyDot} aria-hidden="true" />
-              Stufe 3 lokal
+              Stufe {RHIA_STAGE} lokal
             </span>
           </div>
 
@@ -87,13 +89,14 @@ export function App() {
 
         <MemoryPanel />
         <LocalWorkHubPanel />
+        <LocalPlanningPanel />
         <StageOneDataPanel />
       </div>
 
       <footer className={styles.footer}>
         <span>Version {status.version}</span>
         <span aria-hidden="true">·</span>
-        <span>Aktueller Schritt: Arbeitszentrale</span>
+        <span>Aktueller Schritt: Planung und Briefings</span>
       </footer>
     </main>
   );

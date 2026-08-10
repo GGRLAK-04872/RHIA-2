@@ -1,26 +1,31 @@
 import {
   areaSchema,
   auditEntrySchema,
+  briefingSchema,
   decisionSchema,
   goalSchema,
   memoryConflictSchema,
   memoryFactSchema,
   noteSchema,
+  planningFeedbackSchema,
   projectSchema,
   type RhiaBackupData,
   type RhiaBackupPackage,
   type RhiaBackupPackageV1,
   type RhiaBackupPackageV2,
   type RhiaBackupPackageV3,
+  type RhiaBackupPackageV4,
   rhiaBackupPackageSchema,
-  rhiaBackupPackageV3Schema,
+  rhiaBackupPackageV4Schema,
   sourceSchema,
   taskDependencySchema,
   taskSchema,
+  workBlockSchema,
 } from "@rhia/contracts";
 import {
   type Area,
   type AuditEntry,
+  type Briefing,
   type Decision,
   ENTITY_TYPES,
   type EntityRepository,
@@ -29,6 +34,7 @@ import {
   type MemoryConflict,
   type MemoryFact,
   type Note,
+  type PlanningFeedback,
   type PersistedEntity,
   type Project,
   RepositoryError,
@@ -37,14 +43,16 @@ import {
   type Source,
   type Task,
   type TaskDependency,
+  type WorkBlock,
 } from "@rhia/domain";
 import Dexie, { type Table, type TransactionMode } from "dexie";
 
 export const RHIA_BROWSER_DATABASE_NAME = "rhia-2" as const;
 export const RHIA_STAGE_ONE_BROWSER_DATABASE_VERSION = 2 as const;
 export const RHIA_STAGE_TWO_BROWSER_DATABASE_VERSION = 3 as const;
-export const RHIA_BROWSER_DATABASE_VERSION = 4 as const;
-export const RHIA_BACKUP_FORMAT_VERSION = 3 as const;
+export const RHIA_STAGE_THREE_BROWSER_DATABASE_VERSION = 4 as const;
+export const RHIA_BROWSER_DATABASE_VERSION = 5 as const;
+export const RHIA_BACKUP_FORMAT_VERSION = 4 as const;
 export const RHIA_TRASH_RETENTION_DAYS = 30 as const;
 export const DELETE_ALL_CONFIRMATION = "RHIA LOKALDATEN LÖSCHEN" as const;
 
@@ -83,6 +91,16 @@ const STAGE_THREE_STORES = {
     "&id, type, taskId, dependsOnTaskId, updatedAt, deletedAt, revision, [taskId+dependsOnTaskId]",
 } as const;
 
+const STAGE_FOUR_STORES = {
+  ...STAGE_THREE_STORES,
+  workBlocks:
+    "&id, type, briefingId, taskId, areaId, kind, status, startAt, endAt, updatedAt, deletedAt, revision, [briefingId+startAt], [areaId+startAt]",
+  briefings:
+    "&id, type, kind, status, periodStart, periodEnd, generatedAt, updatedAt, deletedAt, revision, [kind+generatedAt]",
+  planningFeedback:
+    "&id, type, briefingId, workBlockId, taskId, result, reason, recordedAt, updatedAt, deletedAt, revision, [workBlockId+recordedAt], [taskId+recordedAt]",
+} as const;
+
 type EntitySchema<TEntity> = {
   parse(value: unknown): TEntity;
 };
@@ -101,6 +119,9 @@ export class RhiaBrowserDatabase extends Dexie {
   goals!: Table<Goal, string>;
   tasks!: Table<Task, string>;
   taskDependencies!: Table<TaskDependency, string>;
+  workBlocks!: Table<WorkBlock, string>;
+  briefings!: Table<Briefing, string>;
+  planningFeedback!: Table<PlanningFeedback, string>;
 
   constructor(databaseName: string = RHIA_BROWSER_DATABASE_NAME) {
     super(databaseName);
@@ -169,7 +190,8 @@ export class RhiaBrowserDatabase extends Dexie {
           });
       });
     this.version(RHIA_STAGE_TWO_BROWSER_DATABASE_VERSION).stores(STAGE_TWO_STORES);
-    this.version(RHIA_BROWSER_DATABASE_VERSION).stores(STAGE_THREE_STORES);
+    this.version(RHIA_STAGE_THREE_BROWSER_DATABASE_VERSION).stores(STAGE_THREE_STORES);
+    this.version(RHIA_BROWSER_DATABASE_VERSION).stores(STAGE_FOUR_STORES);
   }
 }
 
@@ -330,7 +352,10 @@ export type BackupCollection =
   | "projects"
   | "goals"
   | "tasks"
-  | "taskDependencies";
+  | "taskDependencies"
+  | "workBlocks"
+  | "briefings"
+  | "planningFeedback";
 
 export interface ImportConflict {
   collection: BackupCollection;
@@ -338,10 +363,10 @@ export interface ImportConflict {
 }
 
 export interface ImportPreview {
-  backup: RhiaBackupPackageV3;
+  backup: RhiaBackupPackageV4;
   conflicts: ImportConflict[];
-  recordCounts: RhiaBackupPackageV3["manifest"]["recordCounts"];
-  sourceFormatVersion: 1 | 2 | 3;
+  recordCounts: RhiaBackupPackageV4["manifest"]["recordCounts"];
+  sourceFormatVersion: 1 | 2 | 3 | 4;
 }
 
 export type ImportConflictStrategy = "abort" | "replace";
@@ -387,9 +412,13 @@ function isV2Backup(backup: RhiaBackupPackage): backup is RhiaBackupPackageV2 {
   return backup.manifest.formatVersion === 2;
 }
 
+function isV3Backup(backup: RhiaBackupPackage): backup is RhiaBackupPackageV3 {
+  return backup.manifest.formatVersion === 3;
+}
+
 async function migrateLegacyBackup(
-  backup: RhiaBackupPackageV1 | RhiaBackupPackageV2,
-): Promise<RhiaBackupPackageV3> {
+  backup: RhiaBackupPackageV1 | RhiaBackupPackageV2 | RhiaBackupPackageV3,
+): Promise<RhiaBackupPackageV4> {
   const memoryData = isV1Backup(backup)
     ? { memoryFacts: [], decisions: [], memoryConflicts: [] }
     : {
@@ -397,29 +426,41 @@ async function migrateLegacyBackup(
         decisions: backup.data.decisions,
         memoryConflicts: backup.data.memoryConflicts,
       };
-  const migrated: RhiaBackupPackageV3 = {
+  const workHubData =
+    isV1Backup(backup) || isV2Backup(backup)
+      ? { projects: [], goals: [], tasks: [], taskDependencies: [] }
+      : {
+          projects: backup.data.projects,
+          goals: backup.data.goals,
+          tasks: backup.data.tasks,
+          taskDependencies: backup.data.taskDependencies,
+        };
+  const migrated: RhiaBackupPackageV4 = {
     manifest: {
       ...backup.manifest,
-      formatVersion: 3,
+      formatVersion: 4,
       checksum: "0".repeat(64),
       recordCounts: {
         ...backup.manifest.recordCounts,
         memoryFacts: memoryData.memoryFacts.length,
         decisions: memoryData.decisions.length,
         memoryConflicts: memoryData.memoryConflicts.length,
-        projects: 0,
-        goals: 0,
-        tasks: 0,
-        taskDependencies: 0,
+        projects: workHubData.projects.length,
+        goals: workHubData.goals.length,
+        tasks: workHubData.tasks.length,
+        taskDependencies: workHubData.taskDependencies.length,
+        workBlocks: 0,
+        briefings: 0,
+        planningFeedback: 0,
       },
     },
     data: {
       ...backup.data,
       ...memoryData,
-      projects: [],
-      goals: [],
-      tasks: [],
-      taskDependencies: [],
+      ...workHubData,
+      workBlocks: [],
+      briefings: [],
+      planningFeedback: [],
     },
   };
   migrated.manifest.checksum = await sha256Hex(checksumContent(migrated));
@@ -439,6 +480,9 @@ export class RhiaBrowserStorage {
   readonly goals: EntityRepository<Goal>;
   readonly tasks: EntityRepository<Task>;
   readonly taskDependencies: EntityRepository<TaskDependency>;
+  readonly workBlocks: EntityRepository<WorkBlock>;
+  readonly briefings: EntityRepository<Briefing>;
+  readonly planningFeedback: EntityRepository<PlanningFeedback>;
   private readonly now: Clock;
 
   constructor(options: RhiaBrowserStorageOptions = {}) {
@@ -529,6 +573,24 @@ export class RhiaBrowserStorage {
       taskDependencySchema,
       now,
     );
+    this.workBlocks = new DexieEntityRepository<WorkBlock>(
+      this.database,
+      this.database.workBlocks,
+      workBlockSchema,
+      now,
+    );
+    this.briefings = new DexieEntityRepository<Briefing>(
+      this.database,
+      this.database.briefings,
+      briefingSchema,
+      now,
+    );
+    this.planningFeedback = new DexieEntityRepository<PlanningFeedback>(
+      this.database,
+      this.database.planningFeedback,
+      planningFeedbackSchema,
+      now,
+    );
   }
 
   async open(): Promise<void> {
@@ -568,12 +630,15 @@ export class RhiaBrowserStorage {
         this.database.goals,
         this.database.tasks,
         this.database.taskDependencies,
+        this.database.workBlocks,
+        this.database.briefings,
+        this.database.planningFeedback,
       ],
       () => operation(this),
     );
   }
 
-  async createBackup(): Promise<RhiaBackupPackageV3> {
+  async createBackup(): Promise<RhiaBackupPackageV4> {
     const data: RhiaBackupData = {
       areas: sortById(await this.database.areas.toArray()),
       sources: sortById(await this.database.sources.toArray()),
@@ -586,8 +651,11 @@ export class RhiaBrowserStorage {
       goals: sortById(await this.database.goals.toArray()),
       tasks: sortById(await this.database.tasks.toArray()),
       taskDependencies: sortById(await this.database.taskDependencies.toArray()),
+      workBlocks: sortById(await this.database.workBlocks.toArray()),
+      briefings: sortById(await this.database.briefings.toArray()),
+      planningFeedback: sortById(await this.database.planningFeedback.toArray()),
     };
-    const backup: RhiaBackupPackageV3 = {
+    const backup: RhiaBackupPackageV4 = {
       manifest: {
         format: "rhia-backup",
         formatVersion: RHIA_BACKUP_FORMAT_VERSION,
@@ -607,13 +675,16 @@ export class RhiaBrowserStorage {
           goals: data.goals.length,
           tasks: data.tasks.length,
           taskDependencies: data.taskDependencies.length,
+          workBlocks: data.workBlocks.length,
+          briefings: data.briefings.length,
+          planningFeedback: data.planningFeedback.length,
         },
       },
       data,
     };
 
     backup.manifest.checksum = await sha256Hex(checksumContent(backup));
-    return rhiaBackupPackageV3Schema.parse(backup);
+    return rhiaBackupPackageV4Schema.parse(backup);
   }
 
   serializeBackup(backup: RhiaBackupPackage): string {
@@ -651,7 +722,7 @@ export class RhiaBrowserStorage {
     }
 
     const backup =
-      isV1Backup(sourceBackup) || isV2Backup(sourceBackup)
+      isV1Backup(sourceBackup) || isV2Backup(sourceBackup) || isV3Backup(sourceBackup)
         ? await migrateLegacyBackup(sourceBackup)
         : sourceBackup;
 
@@ -690,6 +761,9 @@ export class RhiaBrowserStorage {
         await this.database.goals.bulkPut(verified.backup.data.goals);
         await this.database.tasks.bulkPut(verified.backup.data.tasks);
         await this.database.taskDependencies.bulkPut(verified.backup.data.taskDependencies);
+        await this.database.workBlocks.bulkPut(verified.backup.data.workBlocks);
+        await this.database.briefings.bulkPut(verified.backup.data.briefings);
+        await this.database.planningFeedback.bulkPut(verified.backup.data.planningFeedback);
       } else {
         await this.database.areas.bulkAdd(verified.backup.data.areas);
         await this.database.sources.bulkAdd(verified.backup.data.sources);
@@ -702,6 +776,9 @@ export class RhiaBrowserStorage {
         await this.database.goals.bulkAdd(verified.backup.data.goals);
         await this.database.tasks.bulkAdd(verified.backup.data.tasks);
         await this.database.taskDependencies.bulkAdd(verified.backup.data.taskDependencies);
+        await this.database.workBlocks.bulkAdd(verified.backup.data.workBlocks);
+        await this.database.briefings.bulkAdd(verified.backup.data.briefings);
+        await this.database.planningFeedback.bulkAdd(verified.backup.data.planningFeedback);
       }
     });
   }
@@ -723,6 +800,9 @@ export class RhiaBrowserStorage {
         this.database.goals.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
         this.database.tasks.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
         this.database.taskDependencies.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
+        this.database.workBlocks.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
+        this.database.briefings.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
+        this.database.planningFeedback.where("deletedAt").belowOrEqual(cutoffTimestamp).delete(),
       ]);
       return removed.reduce((total, count) => total + count, 0);
     });
@@ -749,6 +829,9 @@ export class RhiaBrowserStorage {
         this.database.goals.clear(),
         this.database.tasks.clear(),
         this.database.taskDependencies.clear(),
+        this.database.workBlocks.clear(),
+        this.database.briefings.clear(),
+        this.database.planningFeedback.clear(),
       ]);
     });
   }
@@ -814,6 +897,21 @@ export class RhiaBrowserStorage {
         collection: "taskDependencies",
         table: this.database.taskDependencies as unknown as Table<IdentifiedRecord, string>,
         records: data.taskDependencies,
+      },
+      {
+        collection: "workBlocks",
+        table: this.database.workBlocks as unknown as Table<IdentifiedRecord, string>,
+        records: data.workBlocks,
+      },
+      {
+        collection: "briefings",
+        table: this.database.briefings as unknown as Table<IdentifiedRecord, string>,
+        records: data.briefings,
+      },
+      {
+        collection: "planningFeedback",
+        table: this.database.planningFeedback as unknown as Table<IdentifiedRecord, string>,
+        records: data.planningFeedback,
       },
     ];
     const conflicts: ImportConflict[] = [];
