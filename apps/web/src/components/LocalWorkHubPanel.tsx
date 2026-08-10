@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { type LocalWorkHubSnapshot, localWorkHubService } from "../application/localWorkHubService";
-import { type ConfirmedTaskDraft, type TaskCorrection, WorkHubControls } from "./WorkHubControls";
+import {
+  type ConfirmedTaskDraft,
+  type GoalDraft,
+  type ProjectDraft,
+  type TaskCorrection,
+  WorkHubControls,
+} from "./WorkHubControls";
 import { WorkHubPanel } from "./WorkHubPanel";
 import styles from "./WorkHubPanel.module.css";
 
@@ -51,6 +57,10 @@ export function LocalWorkHubPanel() {
     );
   }
 
+  const createProject = (draft: ProjectDraft) =>
+    run(() => localWorkHubService.createProject({ areaId: draft.areaId, title: draft.title }));
+  const createGoal = (draft: GoalDraft) =>
+    run(() => localWorkHubService.createGoal({ projectId: draft.projectId, title: draft.title }));
   const createConfirmedTask = (draft: ConfirmedTaskDraft) =>
     run(() =>
       localWorkHubService.createConfirmedTask(
@@ -100,6 +110,8 @@ export function LocalWorkHubPanel() {
       {error ? <p role="alert">Aktion fehlgeschlagen: {error}</p> : null}
       <WorkHubControls
         snapshot={snapshot}
+        onCreateProject={createProject}
+        onCreateGoal={createGoal}
         onCreateConfirmedTask={createConfirmedTask}
         onUpdateTask={updateTask}
         onSetManualPriority={(task, rank) =>
