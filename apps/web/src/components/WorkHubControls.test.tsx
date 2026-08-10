@@ -1,4 +1,4 @@
-import { createArea, createProject, createTask } from "@rhia/domain";
+import { createArea, createGoal, createProject, createTask } from "@rhia/domain";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { LocalWorkHubSnapshot } from "../application/localWorkHubService";
@@ -8,6 +8,7 @@ const timestamp = "2026-08-09T08:00:00.000Z";
 const ids = {
   area: "11111111-1111-4111-8111-111111111111",
   project: "22222222-2222-4222-8222-222222222222",
+  goal: "55555555-5555-4555-8555-555555555555",
   task: "33333333-3333-4333-8333-333333333333",
   trash: "44444444-4444-4444-8444-444444444444",
 } as const;
@@ -17,6 +18,10 @@ function snapshot(): LocalWorkHubSnapshot {
   const project = createProject(
     { areaId: area.id, title: "RHIA 2.0" },
     { id: ids.project, timestamp },
+  );
+  const goal = createGoal(
+    { projectId: project.id, title: "Tablet-Abnahme bestehen" },
+    { id: ids.goal, timestamp },
   );
   const task = createTask(
     { areaId: area.id, projectId: project.id, title: "Aktive Aufgabe", status: "planned" },
@@ -28,7 +33,7 @@ function snapshot(): LocalWorkHubSnapshot {
     deletedAt: "2026-08-09T09:00:00.000Z",
   };
   return {
-    workspace: { areas: [area], projects: [project], goals: [], tasks: [task], dependencies: [] },
+    workspace: { areas: [area], projects: [project], goals: [goal], tasks: [task], dependencies: [] },
     trash: { projects: [], goals: [], tasks: [trash], dependencies: [] },
     auditEntries: [],
   };
@@ -75,14 +80,42 @@ describe("WorkHubControls", () => {
     );
   });
 
-  it("submits a real task only after visible explicit confirmation", async () => {
+  it("submits all structured task fields only after visible explicit confirmation", async () => {
     const callbacks = handlers();
     render(<WorkHubControls snapshot={snapshot()} {...callbacks} />);
     const saveButton = screen.getByRole("button", { name: "Bestätigte Aufgabe speichern" });
 
     fireEvent.change(screen.getByRole("textbox", { name: "Aufgabe" }), {
-      target: { value: "Neue reale Aufgabe" },
+      target: { value: "Tablet Geldeingang prüfen" },
     });
+    fireEvent.change(screen.getByRole("combobox", { name: "Projekt" }), {
+      target: { value: ids.project },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Ziel" }), {
+      target: { value: ids.goal },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Status" }), {
+      target: { value: "planned" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Wichtigkeit" }), {
+      target: { value: "high" },
+    });
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Aufwand in Minuten" }), {
+      target: { value: "60" },
+    });
+    fireEvent.change(screen.getByLabelText("Frist"), {
+      target: { value: "2026-08-11" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Geldwirkung" }), {
+      target: { value: "high" },
+    });
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Erwarteter Geldeingang in Euro" }), {
+      target: { value: "100" },
+    });
+    fireEvent.change(screen.getByLabelText("Erwarteter Geldeingang bis"), {
+      target: { value: "2026-08-17" },
+    });
+
     expect(saveButton).toBeDisabled();
     fireEvent.click(
       screen.getByRole("checkbox", {
@@ -94,9 +127,16 @@ describe("WorkHubControls", () => {
     await waitFor(() =>
       expect(callbacks.onCreateConfirmedTask).toHaveBeenCalledWith({
         areaId: ids.area,
-        projectId: null,
-        title: "Neue reale Aufgabe",
-        importance: "medium",
+        projectId: ids.project,
+        goalId: ids.goal,
+        title: "Tablet Geldeingang prüfen",
+        status: "planned",
+        dueAt: "2026-08-11T12:00:00.000Z",
+        importance: "high",
+        estimatedMinutes: 60,
+        moneyImpact: "high",
+        expectedIncomeCents: 10000,
+        expectedIncomeAt: "2026-08-17T12:00:00.000Z",
       }),
     );
   });
