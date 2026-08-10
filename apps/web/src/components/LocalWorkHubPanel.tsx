@@ -67,8 +67,15 @@ export function LocalWorkHubPanel() {
         {
           areaId: draft.areaId,
           projectId: draft.projectId,
+          goalId: draft.goalId,
           title: draft.title,
+          status: draft.status,
+          dueAt: draft.dueAt,
           importance: draft.importance,
+          estimatedMinutes: draft.estimatedMinutes,
+          moneyImpact: draft.moneyImpact,
+          expectedIncomeCents: draft.expectedIncomeCents,
+          expectedIncomeAt: draft.expectedIncomeAt,
         },
         {
           actor: "sir",
