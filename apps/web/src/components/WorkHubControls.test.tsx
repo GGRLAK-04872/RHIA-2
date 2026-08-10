@@ -33,7 +33,13 @@ function snapshot(): LocalWorkHubSnapshot {
     deletedAt: "2026-08-09T09:00:00.000Z",
   };
   return {
-    workspace: { areas: [area], projects: [project], goals: [goal], tasks: [task], dependencies: [] },
+    workspace: {
+      areas: [area],
+      projects: [project],
+      goals: [goal],
+      tasks: [task],
+      dependencies: [],
+    },
     trash: { projects: [], goals: [], tasks: [trash], dependencies: [] },
     auditEntries: [],
   };
