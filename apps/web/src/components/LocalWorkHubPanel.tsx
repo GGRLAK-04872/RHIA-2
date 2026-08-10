@@ -121,6 +121,9 @@ export function LocalWorkHubPanel() {
         onCreateGoal={createGoal}
         onCreateConfirmedTask={createConfirmedTask}
         onUpdateTask={updateTask}
+        onAddDependency={(task, dependsOnTask) =>
+          run(() => localWorkHubService.addDependency(task.id, dependsOnTask.id))
+        }
         onSetManualPriority={(task, rank) =>
           run(() =>
             localWorkHubService.setTaskManualPriority(
