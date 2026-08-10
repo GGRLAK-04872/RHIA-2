@@ -46,15 +46,15 @@ Draft und ungemergt.
 |---|---|
 | lokaler Gesamtcheck | 102/102 Vitest-Tests, TypeScript, Build und Audits bestanden |
 | Browser-E2E | 18/18 auf Tablet-, Handy- und Desktopprojekten bestanden |
-| aktueller geprüfter PR-Head vor Regeländerung | `8062bb081be868456c0655dedaf336fb020e13ad` |
-| CI | CI #68 vollständig erfolgreich |
-| Pages | Deployment #52 vollständig erfolgreich |
+| geprüfter Regeländerungscommit | `4785ff061252a0e702783eca6b2c16244603f589` |
+| CI | CI #69 vollständig erfolgreich; 18/18 Browserfälle |
+| Pages | Deployment #53 vollständig erfolgreich |
 | Datenbank | additive Dexie-Migration 4 auf 5 automatisiert bestanden |
 | Sicherung | Format 4 und Migration der Formate 1 bis 3 automatisiert bestanden |
 | externe Quellen | öffentlicher Build-Audit ohne externe KI, Cloud-API oder versteckte Datenquelle |
 
-Die reine Dokumentationsänderung dieser Abnahmeregel muss vor Testbeginn ebenfalls grüne CI und
-Pages besitzen. Der begleitende Chat prüft dies direkt am PR.
+Die reine Dokumentationsänderung dieser Abnahmeregel besitzt grüne CI und Pages. Der begleitende
+Chat prüft vor Testbeginn zusätzlich, dass PR #6 weiterhin offen, Draft und ungemergt ist.
 
 ## Testvariablen
 

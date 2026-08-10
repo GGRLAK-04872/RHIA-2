@@ -13,6 +13,7 @@
 | Aktueller main-Commit | 25c445668651ccd6077b5ffcfce66d839c4f151d |
 | Letzter verifizierter Funktionsstand auf main | 4e86426870e7eba7e309a365a986be5a3a3e6a6e |
 | Letzter verifizierter Stufe-4-Funktionsstand | aec8c4e667703324813aa3818ce18a82cc19745c |
+| Geprüfter Dokumentationsstand der Schnellabnahmeregel | 4785ff061252a0e702783eca6b2c16244603f589 |
 | Draft-PR | #6 offen, ungemergt, gegen main |
 | Produktversion | 0.4.0 auf dem Stufe-4-Branch und der Testseite; 0.3.0 auf main |
 | Aktive Stufe im Produkt | 4 auf dem Stufe-4-Branch und der Testseite; 3 auf main |
@@ -23,7 +24,7 @@
 | Testseite | https://ggrlak-04872.github.io/RHIA-2/ |
 | Aktive Datenquelle | lokale IndexedDB des jeweiligen Browsers |
 | Projektphase | Stufe 4 technisch vollständig umgesetzt und geprüft; reale Abnahme offen |
-| Technische Grundlage vor Regeländerung | CI #68 und Pages #52 auf PR-Head 8062bb081be868456c0655dedaf336fb020e13ad vollständig erfolgreich |
+| Letzte technische Tore | CI #69 mit 18/18 Browserfällen und Pages #53 auf Regeländerungscommit 4785ff061252a0e702783eca6b2c16244603f589 vollständig erfolgreich |
 | Offene reale Abnahme | Schnellabnahme mit fünf Zyklen, Neustartpersistenz und Handy-Smoke durch Sir |
 
 Der Commit 4e86426870e7eba7e309a365a986be5a3a3e6a6e ist der letzte technisch geprüfte
