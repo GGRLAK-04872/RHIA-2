@@ -17,14 +17,14 @@
 | Produktversion | 0.4.0 auf dem Stufe-4-Branch und der Testseite; 0.3.0 auf main |
 | Aktive Stufe im Produkt | 4 auf dem Stufe-4-Branch und der Testseite; 3 auf main |
 | Abgeschlossene Entwicklungsstufen | 0, 1, 2 und 3 |
-| Nächster Abnahmeschritt | fünf aufeinanderfolgende Alltagstests und Handy-Smoke durch Sir |
+| Nächster Abnahmeschritt | fünf Planungs- und Feedbackzyklen in einer Schnellabnahme durch Sir |
 | Datenbankschema | Dexie-Version 5 auf dem Stufe-4-Branch |
 | Sicherungsformat | rhia-backup Version 4 auf dem Stufe-4-Branch |
 | Testseite | https://ggrlak-04872.github.io/RHIA-2/ |
 | Aktive Datenquelle | lokale IndexedDB des jeweiligen Browsers |
 | Projektphase | Stufe 4 technisch vollständig umgesetzt und geprüft; reale Abnahme offen |
-| Letzte technische Tore | CI #67 und Pages #51 vollständig erfolgreich |
-| Offene reale Abnahme | fünf aufeinanderfolgende Alltagstests und Handy-Smoke durch Sir |
+| Technische Grundlage vor Regeländerung | CI #68 und Pages #52 auf PR-Head 8062bb081be868456c0655dedaf336fb020e13ad vollständig erfolgreich |
+| Offene reale Abnahme | Schnellabnahme mit fünf Zyklen, Neustartpersistenz und Handy-Smoke durch Sir |
 
 Der Commit 4e86426870e7eba7e309a365a986be5a3a3e6a6e ist der letzte technisch geprüfte
 Funktionsstand auf main. Er enthält Stufe 3.1 bis 3.9 als Squash-Merge von PR #5. Spätere reine
@@ -140,15 +140,19 @@ erfolgreich gebaut, öffentlich geprüft und bereitgestellt.
 | Altes Repository | GGRLAK-04872/RHIA blieb ohne Schreibzugriff; main c6a92d5e226eef9b71940c5b6e699a8f0ec067c2 |
 | Offene technische Fehler | keine |
 
-Die endgültige Abnahme von Stufe 4 bleibt gesperrt, bis Sir fünf aufeinanderfolgende Alltagstests
-selbst durchgeführt und bestätigt hat. Ein Merge nach `main` benötigt weiterhin eine separate
-ausdrückliche Merge-Freigabe. Stufe 5 bleibt vollständig gesperrt.
+Sir hat am 10.08.2026 die frühere Abnahme über fünf reale Kalendertage ausdrücklich ersetzt. Die
+endgültige Abnahme von Stufe 4 bleibt gesperrt, bis Sir fünf logisch aufeinanderfolgende Planungs-
+und Feedbackzyklen innerhalb einer Testsitzung einschließlich vollständigem Schließen und
+Wiederöffnen selbst durchgeführt und bestätigt hat. Die Schnellabnahme weist Funktion und lokale
+Persistenz nach, nicht einen fünftägigen Langzeitbetrieb. Dieser Langzeitnachweis ist für Stufe 4
+nicht mehr erforderlich. Ein Merge nach `main` benötigt weiterhin eine separate ausdrückliche
+Merge-Freigabe. Stufe 5 bleibt vollständig gesperrt.
 
 ## Aktuelle Sperren
 
 - Stufe 5 und alle späteren Stufen bleiben gesperrt.
-- Stufe 4 darf nach technischer Fertigstellung nicht ohne fünf bestätigte Alltagstests als
-  endgültig abgeschlossen gelten.
+- Stufe 4 darf nach technischer Fertigstellung nicht ohne fünf bestätigte Planungs- und
+  Feedbackzyklen der Schnellabnahme als endgültig abgeschlossen gelten.
 - OpenAI API und andere externe KI bleiben technisch deaktiviert.
 - Das API-Budget bleibt bei 0 Euro, bis Sir einen Kostenrahmen ausdrücklich freigibt.
 - Keine Cloud- oder Mehrgerätesynchronisation vor der dafür vorgesehenen Stufe.
@@ -161,10 +165,11 @@ ausdrückliche Merge-Freigabe. Stufe 5 bleibt vollständig gesperrt.
 
 ## Nächster erlaubter Schritt
 
-Vor der realen Abnahme stoppen. Sir führt D01 bis D05 an fünf aufeinanderfolgenden Kalendertagen
-und den zusätzlichen Handy-Smoke gemäß `docs/tests/STUFE_4_ABNAHME.md` ausschließlich mit
-künstlichen Daten durch. Erst danach darf Sir Stufe 4 gesondert abnehmen; ein Merge benötigt eine
-weitere ausdrückliche Freigabe. Keine Stufe 5 und kein Merge nach `main`.
+Vor der realen Abnahme stoppen. Sir führt Z01 bis Z05 in einer zusammenhängenden Testsitzung und
+den zusätzlichen Handy-Smoke gemäß `docs/tests/STUFE_4_ABNAHME.md` ausschließlich mit künstlichen
+Daten durch. Zwischen Z02 und Z03 wird RHIA vollständig geschlossen und neu geöffnet. Erst danach
+darf Sir Stufe 4 gesondert abnehmen; ein Merge benötigt eine weitere ausdrückliche Freigabe. Keine
+Stufe 5 und kein Merge nach `main`.
 
 ## Dauerhafte Zwei-Dateien-Chatwechsel-Regel
 
@@ -193,8 +198,9 @@ Ein neuer Chat:
 > Dokumentationscommits, CI, Pages und alle Sperren. Stufe 3 ist vollständig abgeschlossen und
 > über PR #5 als Funktionscommit 4e86426870e7eba7e309a365a986be5a3a3e6a6e in main integriert.
 > Stufe 4 ist auf Funktionscommit aec8c4e667703324813aa3818ce18a82cc19745c technisch vollständig
-> umgesetzt und durch CI #67 sowie Pages #51 geprüft. Draft-PR #6 bleibt offen und ungemergt. Führe
-> jetzt keine Entwicklung aus, sondern begleite Sir durch D01 bis D05 aus
+> umgesetzt und durch CI #68 sowie Pages #52 geprüft. Draft-PR #6 bleibt offen und ungemergt. Die
+> frühere Fünf-Kalendertage-Regel ist aufgehoben. Führe jetzt keine Entwicklung aus, sondern
+> begleite Sir einzelschrittweise durch Z01 bis Z05 der Schnellabnahme aus
 > docs/tests/STUFE_4_ABNAHME.md. Verändere weder das alte Repository RHIA noch Sicherheits-,
 > Datenschutz- oder Kostengrenzen. Stufe 5 und Merge bleiben gesperrt.
 
@@ -205,5 +211,5 @@ Ein neuer Chat muss sofort melden:
 - letzter verifizierter Funktionsstand auf main:
   4e86426870e7eba7e309a365a986be5a3a3e6a6e;
 - Stufe 3.9 auf Tablet und Handy bestanden, keine offenen Abnahmefehler;
-- nächster erlaubter Schritt: reale D01-bis-D05-Abnahme und Handy-Smoke durch Sir;
+- nächster erlaubter Schritt: Schnellabnahme Z01 bis Z05 mit Neustartpersistenz und Handy-Smoke;
 - verboten: Stufe 5, Merge ohne separate Freigabe oder jede Änderung am alten Repository.

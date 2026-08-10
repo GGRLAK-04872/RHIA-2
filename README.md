@@ -9,7 +9,7 @@ Dieses Repository ist der saubere Neustart ohne Cloudflare-, KV- oder Durable-Ob
 - Stufe 1: Local-first-Datenfundament abgeschlossen, real abgenommen und in `main` integriert
 - Stufe 2: Gedächtnis v1 abgeschlossen, real abgenommen und in `main` integriert
 - Stufe 3: Arbeitszentrale abgeschlossen, real abgenommen und in `main` integriert
-- Stufe 4: Planung und Briefings technisch in Umsetzung; reale Fünf-Tage-Abnahme offen
+- Stufe 4: Planung und Briefings technisch umgesetzt; funktionale Schnellabnahme offen
 - Produktstand des Stufe-4-Branches: Version 0.4.0, Dexie-Version 5, Sicherungsformat 4
 - Betriebsart: lokale IndexedDB als einzige Datenquelle, ohne Cloud-Sync
 - Web/PWA: React, Vite und TypeScript Strict
@@ -69,8 +69,10 @@ Korrektur, Papierkorb, Konfliktauflösung sowie Suche und Filter. Fehler bleiben
 Bedienung ist für Handy, Tablet, Hoch- und Querformat ausgelegt.
 
 Das Abnahmeprotokoll für Stufe 4 trennt automatisierte Prüfung, Preview und reale Nutzung. Auch nach
-technischer Fertigstellung bleibt Stufe 4 offen, bis Sir fünf aufeinanderfolgende Alltagstests
-bestätigt. Stufe 5 und ein Merge nach `main` bleiben bis zu einer gesonderten ausdrücklichen
+technischer Fertigstellung bleibt Stufe 4 offen, bis Sir fünf logisch aufeinanderfolgende
+Planungs- und Feedbackzyklen einschließlich Neustartpersistenz innerhalb einer Testsitzung
+bestätigt. Das ist kein Nachweis eines fünftägigen Langzeitbetriebs; dieser wird für Stufe 4 nicht
+mehr verlangt. Stufe 5 und ein Merge nach `main` bleiben bis zu einer gesonderten ausdrücklichen
 Freigabe gesperrt.
 
 ## Prüfung

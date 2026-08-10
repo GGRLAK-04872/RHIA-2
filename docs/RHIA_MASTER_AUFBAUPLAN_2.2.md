@@ -4,8 +4,8 @@
 **Freigegebene Planbasis:** 09.08.2026  
 **Projekt:** RHIA – RH Intelligent Assistant  
 **Aktives Repository:** `GGRLAK-04872/RHIA-2`  
-**Letzte Konsolidierung:** 10.08.2026 – Stufe 3 vollständig abgeschlossen  
-**Freigabestatus:** Stufen 0 bis 3 abgeschlossen; Stufe 4 am 10.08.2026 ausdrücklich freigegeben
+**Letzte Konsolidierung:** 10.08.2026 – Stufe-4-Abnahmeregel ausdrücklich komprimiert
+**Freigabestatus:** Stufen 0 bis 3 abgeschlossen; Stufe 4 technisch umgesetzt, Schnellabnahme offen
 
 ## 1. Zweck und Geltung
 
@@ -504,16 +504,22 @@ Import, Korrektur, Löschung sowie Tablet- und Handytest.
 
 ### Stufe 4 – Planung und Briefings
 
-**Freigabestatus:** von Sir am 10.08.2026 ausdrücklich zur technischen Umsetzung freigegeben. Die
-endgültige Abnahme verlangt weiterhin fünf aufeinanderfolgende Alltagstests; Stufe 5 und ein Merge
-nach `main` bleiben bis zu einer jeweils gesonderten ausdrücklichen Freigabe gesperrt.
+**Freigabestatus:** von Sir am 10.08.2026 ausdrücklich zur technischen Umsetzung freigegeben. Sir
+hat am selben Tag die frühere Fünf-Kalendertage-Regel durch fünf logisch aufeinanderfolgende
+Planungs- und Feedbackzyklen innerhalb einer Testsitzung ersetzt. Zwischen geeigneten Zyklen muss
+RHIA mindestens einmal vollständig geschlossen und neu geöffnet werden. Stufe 5 und ein Merge nach
+`main` bleiben bis zu einer jeweils gesonderten ausdrücklichen Freigabe gesperrt.
 
 Ziel: brauchbare, begründete Tages- und Wochenvorschläge ohne selbstständige Kalenderänderung.
 
 Umfang: WorkBlock, Briefing, PlanningFeedback, Morgenbriefing, Wochenübersicht, Abendrückblick,
 Termine, Fristen, verfügbare Zeit, Blockaden und verbindliche Schutzzeitregeln.
 
-Abnahme: fünf aufeinanderfolgende Alltagstests; Rückmeldungen beeinflussen Folgevorschläge korrekt.
+Abnahme: fünf logisch aufeinanderfolgende Planungs- und Feedbackzyklen in einer Testsitzung;
+Rückmeldungen beeinflussen den unmittelbar folgenden Vorschlag korrekt, manuelle Entscheidungen
+bleiben erhalten und mindestens ein vollständiger Neustart weist die lokale Persistenz nach. Diese
+komprimierte Funktionsabnahme behauptet keinen fünftägigen Langzeitbetrieb; ein solcher Nachweis ist
+für den Abschluss von Stufe 4 nicht mehr erforderlich.
 
 ### Stufe 5 – RHIA-PC und zentrale Instanz
 

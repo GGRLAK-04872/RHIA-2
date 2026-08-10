@@ -60,5 +60,9 @@ Die Planung läuft ausschließlich als deterministischer Domänendienst:
 ## Folgen
 
 Vorschläge sind reproduzierbar, lokal prüfbar und für Sir begründet. Die technische Fertigstellung
-genügt noch nicht zur endgültigen Abnahme: Erst fünf aufeinanderfolgende, von Sir bestätigte
-Alltagstests dürfen Stufe 4 abschließen. Stufe 5 bleibt bis dahin vollständig gesperrt.
+genügt noch nicht zur endgültigen Abnahme. Sir hat am 10.08.2026 die frühere Fünf-Kalendertage-Regel
+ausdrücklich durch fünf logisch aufeinanderfolgende Planungs- und Feedbackzyklen innerhalb einer
+Testsitzung ersetzt. Mindestens ein vollständiges Schließen und Wiederöffnen zwischen geeigneten
+Zyklen weist die lokale Persistenz nach. Die Schnellabnahme ist kein Nachweis eines fünftägigen
+Langzeitbetriebs; ein solcher Nachweis wird für Stufe 4 nicht mehr verlangt. Stufe 5 bleibt bis zur
+bestätigten Schnellabnahme vollständig gesperrt.
