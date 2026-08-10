@@ -1,5 +1,8 @@
 # RHIA 2.0 – Projektstand
 
+> Historischer Projektstand. Für aktive Arbeit gelten ausschließlich
+> `docs/RHIA_START_HERE.md` und `docs/RHIA_MASTER_AUFBAUPLAN_2.2.md` nach Prüfung gegen GitHub.
+
 Stand: 09.08.2026
 
 ## Aktuelle Stufe

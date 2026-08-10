@@ -1,0 +1,278 @@
+.panel {
+  display: grid;
+  gap: 1.25rem;
+  padding: clamp(1rem, 2vw, 1.6rem);
+  border: 1px solid rgb(129 34 68 / 40%);
+  border-radius: 1.4rem;
+  background: linear-gradient(145deg, rgb(23 12 20 / 96%), rgb(12 8 13 / 96%));
+  box-shadow: 0 1.4rem 3rem rgb(0 0 0 / 22%);
+}
+
+.header,
+.briefingHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.header h2,
+.briefingCard h4,
+.blockCard h5,
+.planningForms h3 {
+  margin: 0;
+}
+
+.overline {
+  margin: 0 0 0.35rem;
+  color: #d68ba5;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.localBadge {
+  flex: none;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgb(216 113 149 / 38%);
+  border-radius: 999px;
+  color: #f3c3d3;
+  background: rgb(113 23 55 / 28%);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.intro,
+.planningForms p,
+.blockCard p,
+.briefingCard p {
+  margin: 0;
+  color: #d8cbd1;
+  line-height: 1.55;
+}
+
+.planningForms {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+}
+
+.planningForms form,
+.briefingCard,
+.blockCard,
+.history {
+  border: 1px solid rgb(142 78 101 / 30%);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 3%);
+}
+
+.planningForms form {
+  display: grid;
+  align-content: start;
+  gap: 0.8rem;
+  padding: 1rem;
+}
+
+.planningForms label,
+.feedbackForm label {
+  display: grid;
+  gap: 0.35rem;
+  color: #d9cbd1;
+  font-size: 0.82rem;
+}
+
+.planningForms input,
+.feedbackForm input,
+.feedbackForm select {
+  width: 100%;
+  min-width: 0;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid rgb(164 107 127 / 42%);
+  border-radius: 0.7rem;
+  color: #fff5f8;
+  background: #171015;
+  font: inherit;
+}
+
+.inlineFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.panel button {
+  padding: 0.68rem 0.85rem;
+  border: 1px solid rgb(224 125 159 / 45%);
+  border-radius: 0.75rem;
+  color: #fff5f8;
+  background: linear-gradient(145deg, #74233f, #4d152b);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.panel button:hover {
+  border-color: #e6a0b8;
+}
+
+.latest {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.latest > h3 {
+  margin: 0;
+}
+
+.briefingCard {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.briefingHeader span,
+.blockCard span {
+  color: #d68ba5;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.briefingHeader button {
+  background: transparent;
+}
+
+.explanation {
+  padding: 0.8rem;
+  border-left: 0.2rem solid #a4365d;
+  background: rgb(126 35 67 / 16%);
+}
+
+.blockCard .feedbackState {
+  margin-top: 0.65rem;
+  color: #f0b9cc;
+  font-weight: 700;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 0;
+}
+
+.metrics div {
+  padding: 0.7rem;
+  border-radius: 0.75rem;
+  background: rgb(255 255 255 / 4%);
+}
+
+.metrics dt {
+  color: #bcaeb4;
+  font-size: 0.76rem;
+}
+
+.metrics dd {
+  margin: 0.2rem 0 0;
+  font-weight: 800;
+}
+
+.blockList {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.blockCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 1.2fr);
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.blockCard[data-kind="protection"] {
+  border-color: rgb(201 119 57 / 56%);
+  background: linear-gradient(135deg, rgb(117 57 22 / 16%), rgb(255 255 255 / 3%));
+}
+
+.feedbackForm {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  align-content: start;
+}
+
+.feedbackNote,
+.feedbackForm button {
+  grid-column: 1 / -1;
+}
+
+.history {
+  padding: 0.85rem 1rem;
+}
+
+.history summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.history ul {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history li {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.7rem;
+  border-radius: 0.75rem;
+  background: rgb(255 255 255 / 4%);
+}
+
+.empty {
+  padding: 1rem;
+  border: 1px dashed rgb(184 116 140 / 35%);
+  border-radius: 0.8rem;
+}
+
+@media (max-width: 980px) {
+  .planningForms {
+    grid-template-columns: 1fr;
+  }
+
+  .blockCard {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .header,
+  .briefingHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .localBadge {
+    align-self: flex-start;
+  }
+
+  .inlineFields,
+  .metrics,
+  .feedbackForm {
+    grid-template-columns: 1fr;
+  }
+
+  .feedbackNote,
+  .feedbackForm button {
+    grid-column: auto;
+  }
+
+  .history li {
+    grid-template-columns: 1fr;
+  }
+}

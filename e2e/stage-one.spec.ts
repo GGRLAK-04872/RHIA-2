@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("stage 3 starts locally without old cloud dependencies", async ({ page }) => {
+test("stage 4 starts locally without old cloud dependencies", async ({ page }) => {
   const networkTargets: string[] = [];
   page.on("request", (request) => networkTargets.push(request.url()));
 
@@ -17,6 +17,55 @@ test("stage 3 starts locally without old cloud dependencies", async ({ page }) =
   });
 
   expect(foreignTargets).toEqual([]);
+});
+
+test("daily planning creates a local explained protection block", async ({ page }) => {
+  await page.goto("/");
+  const planningPanel = page.locator("section").filter({
+    has: page.getByRole("heading", { name: "Begründet planen" }),
+  });
+  await expect(planningPanel).toBeVisible();
+  await planningPanel.getByRole("button", { name: "Tagesplan vorschlagen" }).click();
+  await expect(
+    planningPanel.getByRole("heading", { name: "Morgenbriefing und Tagesplan", level: 4 }),
+  ).toBeVisible();
+  await expect(planningPanel.getByText("Schutzzeit", { exact: true }).first()).toBeVisible();
+  await expect(planningPanel.getByText(/Fristen, Wichtigkeit, Blockaden/)).toBeVisible();
+
+  await planningPanel.getByLabel(/^Ergebnis für/).selectOption("partial");
+  await planningPanel.getByLabel(/^Grund für/).selectOption("time-too-short");
+  await planningPanel.getByLabel(/^Tatsächliche Minuten für/).fill("15");
+  await planningPanel.getByRole("button", { name: "Rückmeldung speichern" }).click();
+  await expect(planningPanel.getByText(/Teilweise erledigt · Zeit war zu kurz/)).toBeVisible();
+
+  await planningPanel.getByRole("button", { name: "Rückblick erstellen" }).click();
+  await expect(
+    planningPanel.getByRole("heading", { name: "Abendrückblick", level: 4 }),
+  ).toBeVisible();
+  await expect(
+    planningPanel
+      .getByText("0 erledigt, 1 teilweise, 0 ausgelassen, 0 ohne Rückmeldung.", { exact: true })
+      .first(),
+  ).toBeVisible();
+});
+
+test("weekly planning protects RHIA and Shadow Grown locally", async ({ page }) => {
+  await page.goto("/");
+  const planningPanel = page.locator("section").filter({
+    has: page.getByRole("heading", { name: "Begründet planen" }),
+  });
+  await planningPanel.getByRole("button", { name: "Woche vorschlagen" }).click();
+  await expect(
+    planningPanel.getByRole("heading", { name: "Wochenplanung", level: 4 }),
+  ).toBeVisible();
+  await expect(
+    planningPanel.getByRole("heading", { name: "Schutzzeit RHIA" }).first(),
+  ).toBeVisible();
+  await expect(
+    planningPanel.getByRole("heading", { name: "Schutzzeit Shadow Grown" }),
+  ).toBeVisible();
+  const protectionMetric = planningPanel.locator("dt", { hasText: "Schutzzeit" }).locator("..");
+  await expect(protectionMetric.getByText("150 Min.", { exact: true })).toBeVisible();
 });
 
 test("local note survives edit, reload, trash and restore without reanimation", async ({
@@ -110,6 +159,7 @@ test("memory controls remain usable without horizontal overflow in portrait and 
     await expect(page.getByRole("heading", { name: "Fakten und Entscheidungen" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Als Vorschlag speichern" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Filter anwenden" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Tagesplan vorschlagen" })).toBeVisible();
     const hasHorizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth,
     );
