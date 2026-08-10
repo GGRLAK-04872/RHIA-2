@@ -36,6 +36,8 @@ function snapshot(): LocalWorkHubSnapshot {
 
 function handlers() {
   return {
+    onCreateProject: vi.fn(),
+    onCreateGoal: vi.fn(),
     onCreateConfirmedTask: vi.fn(),
     onUpdateTask: vi.fn(),
     onSetManualPriority: vi.fn(),
@@ -46,6 +48,33 @@ function handlers() {
 }
 
 describe("WorkHubControls", () => {
+  it("exposes visible project and goal creation for the work hub", async () => {
+    const callbacks = handlers();
+    render(<WorkHubControls snapshot={snapshot()} {...callbacks} />);
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Projekttitel" }), {
+      target: { value: "Stufe 3 Tablet-Test" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Projekt anlegen" }));
+    await waitFor(() =>
+      expect(callbacks.onCreateProject).toHaveBeenCalledWith({
+        areaId: ids.area,
+        title: "Stufe 3 Tablet-Test",
+      }),
+    );
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Zieltitel" }), {
+      target: { value: "Tablet-Abnahme bestehen" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Ziel anlegen" }));
+    await waitFor(() =>
+      expect(callbacks.onCreateGoal).toHaveBeenCalledWith({
+        projectId: ids.project,
+        title: "Tablet-Abnahme bestehen",
+      }),
+    );
+  });
+
   it("submits a real task only after visible explicit confirmation", async () => {
     const callbacks = handlers();
     render(<WorkHubControls snapshot={snapshot()} {...callbacks} />);
