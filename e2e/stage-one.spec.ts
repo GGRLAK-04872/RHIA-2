@@ -27,7 +27,7 @@ test("daily planning creates a local explained protection block", async ({ page 
   await expect(planningPanel).toBeVisible();
   await planningPanel.getByRole("button", { name: "Tagesplan vorschlagen" }).click();
   await expect(
-    planningPanel.getByText("Morgenbriefing und Tagesplan", { exact: true }),
+    planningPanel.getByRole("heading", { name: "Morgenbriefing und Tagesplan", level: 4 }),
   ).toBeVisible();
   await expect(planningPanel.getByText("Schutzzeit", { exact: true }).first()).toBeVisible();
   await expect(planningPanel.getByText(/Fristen, Wichtigkeit, Blockaden/)).toBeVisible();
@@ -39,7 +39,10 @@ test("daily planning creates a local explained protection block", async ({ page 
   await expect(planningPanel.getByText(/Teilweise erledigt · Zeit war zu kurz/)).toBeVisible();
 
   await planningPanel.getByRole("button", { name: "Rückblick erstellen" }).click();
-  await expect(planningPanel.getByText(/1 teilweise/)).toBeVisible();
+  const eveningReview = planningPanel.locator("article").filter({
+    has: planningPanel.getByRole("heading", { name: "Abendrückblick", level: 4 }),
+  });
+  await expect(eveningReview.getByText(/1 teilweise/)).toBeVisible();
 });
 
 test("weekly planning protects RHIA and Shadow Grown locally", async ({ page }) => {
@@ -48,14 +51,17 @@ test("weekly planning protects RHIA and Shadow Grown locally", async ({ page }) 
     has: page.getByRole("heading", { name: "Begründet planen" }),
   });
   await planningPanel.getByRole("button", { name: "Woche vorschlagen" }).click();
-  await expect(planningPanel.getByText("Wochenplanung", { exact: true })).toBeVisible();
+  await expect(
+    planningPanel.getByRole("heading", { name: "Wochenplanung", level: 4 }),
+  ).toBeVisible();
   await expect(
     planningPanel.getByRole("heading", { name: "Schutzzeit RHIA" }).first(),
   ).toBeVisible();
   await expect(
     planningPanel.getByRole("heading", { name: "Schutzzeit Shadow Grown" }),
   ).toBeVisible();
-  await expect(planningPanel.getByText("150 Min.", { exact: true })).toBeVisible();
+  const protectionMetric = planningPanel.locator("dt", { hasText: "Schutzzeit" }).locator("..");
+  await expect(protectionMetric.getByText("150 Min.", { exact: true })).toBeVisible();
 });
 
 test("local note survives edit, reload, trash and restore without reanimation", async ({
