@@ -29,7 +29,7 @@ test("local note survives edit, reload, trash and restore without reanimation", 
   await expect(notePanel.getByText("Bereit", { exact: true })).toBeVisible();
 
   await page.getByRole("textbox", { name: "Bereich" }).fill("RHIA Browser-Test");
-  await page.getByRole("textbox", { name: "Titel" }).fill("Bordeaux 47");
+  await page.getByRole("textbox", { name: "Titel", exact: true }).fill("Bordeaux 47");
   await page.getByRole("textbox", { name: "Notiz" }).fill("Nur künstliche E2E-Testdaten");
   await page.getByRole("button", { name: "Lokal speichern" }).click();
   await expect(page.getByText("Bordeaux 47")).toBeVisible();
