@@ -25,18 +25,23 @@ der Stufe-4-PR ungemergt.
 | Prüfung | Erwartung | Stand |
 |---|---|---|
 | lokale Gesamtprüfung | Format/Lint, TypeScript, 102 Vitest-Tests, Build und Audits | bestanden |
-| Browser-E2E | kompletter Playwright-Lauf einschließlich Planung, Feedback und vier Größen | offen bis CI |
-| Stufe-4-CI | Qualität/Build und Browser-Smoke auf dem finalen Feature-Commit | offen bis Upload |
-| öffentlicher Build | keine Secrets, internen Dateien, Alt-APIs oder Cloud-Abhängigkeiten | lokal bestanden; CI offen |
-| Preview | Version 0.4.0 und Stufe 4 unter der getrennten Testadresse | offen bis Upload |
+| Browser-E2E | kompletter Playwright-Lauf einschließlich Planung, Feedback und vier Größen | 18/18 in CI #67 bestanden |
+| Stufe-4-CI | Qualität/Build und Browser-Smoke auf aec8c4e667703324813aa3818ce18a82cc19745c | CI #67 bestanden |
+| öffentlicher Build | keine Secrets, internen Dateien, Alt-APIs oder Cloud-Abhängigkeiten | CI #67 bestanden |
+| Preview | Version 0.4.0 und Stufe 4 unter der getrennten Testadresse | Pages #51 bestanden |
 | Backup | Format 4; geprüfte Migration der Formate 1 bis 3 | automatisiert bestanden |
 | Datenbank | additive Dexie-Migration von Version 4 auf Version 5 | automatisiert bestanden |
-| altes Repository | `GGRLAK-04872/RHIA` unverändert | vor Übergabe erneut prüfen |
+| altes Repository | `GGRLAK-04872/RHIA` unverändert | ohne Schreibzugriff; main c6a92d5e226eef9b71940c5b6e699a8f0ec067c2 |
 
 Der lokale Playwright-Lauf konnte in der Work-Umgebung nicht starten, weil kein Chromium vorhanden
 ist und der erlaubte Downloadweg ein leeres Archiv liefert. Es wurde kein Browser-Test als
-bestanden behandelt. GitHub Actions installiert Chromium und muss diesen offenen Lauf vollständig
-nachholen.
+bestanden behandelt. GitHub Actions hat Chromium installiert und den Lauf in CI #67 mit 18 von 18
+bestandenen Browserfällen vollständig nachgeholt.
+
+CI #64 und #65 waren sichtbar fehlgeschlagen, weil neue Playwright-Selektoren gleichlautende Texte
+mehrdeutig beziehungsweise relativ zum falschen Element gesucht hatten. Nach der Korrektur prüft
+CI #67 dieselben Tages-, Wochen-, Feedback-, Abend- und Responsive-Abläufe vollständig grün. Die
+Fehlläufe werden nicht als bestanden gewertet.
 
 ## Künstliches Testszenario
 
@@ -160,9 +165,9 @@ Geschätzte Dauer: 5 Minuten; einmal während D01 bis D05 möglich.
 
 ## Abschluss
 
-- [ ] finaler Feature-Commit vollständig lokal geprüft
-- [ ] GitHub-CI einschließlich aller Browser-E2E-Tests grün
-- [ ] Preview zeigt exakt den geprüften Feature-Commit und Version 0.4.0
+- [x] finaler Feature-Commit vollständig lokal geprüft
+- [x] GitHub-CI einschließlich aller Browser-E2E-Tests grün
+- [x] Preview zeigt exakt den geprüften Feature-Commit und Version 0.4.0
 - [ ] D01 bis D05 an fünf aufeinanderfolgenden Tagen bestanden
 - [ ] zusätzlicher Handy-Smoke bestanden
 - [ ] Sir bestätigt Stufe 4 ausdrücklich

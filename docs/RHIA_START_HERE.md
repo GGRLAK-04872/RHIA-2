@@ -12,17 +12,18 @@
 | Verbindlicher Branch | agent/stufe-4-planung-briefings |
 | Aktueller main-Commit | 25c445668651ccd6077b5ffcfce66d839c4f151d |
 | Letzter verifizierter Funktionsstand auf main | 4e86426870e7eba7e309a365a986be5a3a3e6a6e |
-| Stufe-4-Funktionsstand | lokal vollständig geprüft; Feature-Commit und GitHub-Prüfung folgen |
-| Produktversion | 0.4.0 auf dem Stufe-4-Branch; 0.3.0 auf main/Pages |
-| Aktive Stufe im Produkt | 4 auf dem Stufe-4-Branch; 3 auf main/Pages |
+| Letzter verifizierter Stufe-4-Funktionsstand | aec8c4e667703324813aa3818ce18a82cc19745c |
+| Draft-PR | #6 offen, ungemergt, gegen main |
+| Produktversion | 0.4.0 auf dem Stufe-4-Branch und der Testseite; 0.3.0 auf main |
+| Aktive Stufe im Produkt | 4 auf dem Stufe-4-Branch und der Testseite; 3 auf main |
 | Abgeschlossene Entwicklungsstufen | 0, 1, 2 und 3 |
-| Nächster Abnahmeschritt | GitHub-CI und Preview, danach fünf Alltagstests durch Sir |
+| Nächster Abnahmeschritt | fünf aufeinanderfolgende Alltagstests und Handy-Smoke durch Sir |
 | Datenbankschema | Dexie-Version 5 auf dem Stufe-4-Branch |
 | Sicherungsformat | rhia-backup Version 4 auf dem Stufe-4-Branch |
 | Testseite | https://ggrlak-04872.github.io/RHIA-2/ |
 | Aktive Datenquelle | lokale IndexedDB des jeweiligen Browsers |
-| Projektphase | Stufe 4 lokal technisch umgesetzt; GitHub-Tore und reale Abnahme offen |
-| Offene technische Prüfung | Playwright-E2E in CI; lokaler Chromium-Download blockiert |
+| Projektphase | Stufe 4 technisch vollständig umgesetzt und geprüft; reale Abnahme offen |
+| Letzte technische Tore | CI #67 und Pages #51 vollständig erfolgreich |
 | Offene reale Abnahme | fünf aufeinanderfolgende Alltagstests und Handy-Smoke durch Sir |
 
 Der Commit 4e86426870e7eba7e309a365a986be5a3a3e6a6e ist der letzte technisch geprüfte
@@ -105,7 +106,7 @@ Querformat auf Tablet und Handy.
   Gedächtniseinträge auf beiden Geräten sind deshalb derzeit kein Fehler.
 - Eine bereits geöffnete oder installierte PWA kann nach einem Deployment vorübergehend einen
   älteren Cache anzeigen. Vor einer Fehlerbewertung alle RHIA-Tabs und den Browser schließen und
-  die Seite neu öffnen.
+  die Seite neu öffnen. Falls weiterhin eine alte Version erscheint, einen privaten Tab verwenden.
 
 ## Technisch umgesetzte Stufe 4
 
@@ -117,9 +118,27 @@ umgesetzt. Dexie-Version 5 und Sicherungsformat 4 erweitern den Stufe-3-Stand ad
 
 Der vollständige lokale Prüflauf ist mit Format/Lint, TypeScript, 102 Vitest-Tests,
 Produktions-/PWA-Build, öffentlichem Build-Audit, Secret-Scan und Dependency-Audit grün. Der lokale
-Playwright-Lauf wurde nicht ausgeführt, weil in der Work-Umgebung kein Chromium vorhanden ist und
-der erlaubte Downloadweg ein leeres Archiv liefert. Die Browser-E2E-Tests bleiben deshalb bis zur
-GitHub-CI ausdrücklich offen und werden nicht als bestanden behandelt.
+Playwright-Lauf konnte nicht starten, weil in der Work-Umgebung kein Chromium vorhanden ist und der
+erlaubte Downloadweg ein leeres Archiv liefert. GitHub-CI #67 hat diesen offenen Lauf mit
+installiertem Chromium nachgeholt: Qualität/Build und 18 von 18 Browser-/Responsive-Tests sind
+erfolgreich. Pages #51 hat exakt Funktionscommit aec8c4e667703324813aa3818ce18a82cc19745c
+erfolgreich gebaut, öffentlich geprüft und bereitgestellt.
+
+## Technische Nachweise Stufe 4
+
+| Prüfung | Ergebnis |
+|---|---|
+| Verifizierter Feature-Commit | aec8c4e667703324813aa3818ce18a82cc19745c |
+| Draft-PR | #6 offen, Draft, ungemergt; Basis main 25c445668651ccd6077b5ffcfce66d839c4f151d |
+| Lokale Gesamtprüfung | 102/102 Vitest-Tests, TypeScript, Build und alle Audits erfolgreich |
+| Feature-CI | CI #67: Qualität/Build und Browser-Smoke vollständig erfolgreich |
+| Browser-/Responsive-Test | 18/18 auf Tablet-, Handy- und Desktopprojekten; vier Viewports geprüft |
+| Pages | Deployment #51 vollständig erfolgreich |
+| Öffentliche Testseite | HTTP 200; Version 0.4.0, Stufe 4, IndexedDB und Planung ausgeliefert |
+| Live-Funktionsprüfung | Tagesplan und begründeter Schutzblock auf der Testseite erfolgreich |
+| PWA-Cache | alte Version im offenen Testtab reproduziert; frischer Build nach vollständigem Tabwechsel |
+| Altes Repository | GGRLAK-04872/RHIA blieb ohne Schreibzugriff; main c6a92d5e226eef9b71940c5b6e699a8f0ec067c2 |
+| Offene technische Fehler | keine |
 
 Die endgültige Abnahme von Stufe 4 bleibt gesperrt, bis Sir fünf aufeinanderfolgende Alltagstests
 selbst durchgeführt und bestätigt hat. Ein Merge nach `main` benötigt weiterhin eine separate
@@ -142,9 +161,10 @@ ausdrückliche Merge-Freigabe. Stufe 5 bleibt vollständig gesperrt.
 
 ## Nächster erlaubter Schritt
 
-Den lokal geprüften Stufe-4-Stand committen, als Draft-PR bereitstellen und GitHub-CI einschließlich
-Playwright sowie die getrennte Preview prüfen. Danach stoppt die Entwicklung vor der realen
-Fünf-Tage-Abnahme gemäß `docs/tests/STUFE_4_ABNAHME.md`. Keine Stufe 5 und kein Merge nach `main`.
+Vor der realen Abnahme stoppen. Sir führt D01 bis D05 an fünf aufeinanderfolgenden Kalendertagen
+und den zusätzlichen Handy-Smoke gemäß `docs/tests/STUFE_4_ABNAHME.md` ausschließlich mit
+künstlichen Daten durch. Erst danach darf Sir Stufe 4 gesondert abnehmen; ein Merge benötigt eine
+weitere ausdrückliche Freigabe. Keine Stufe 5 und kein Merge nach `main`.
 
 ## Dauerhafte Zwei-Dateien-Chatwechsel-Regel
 
@@ -172,10 +192,11 @@ Ein neuer Chat:
 > docs/RHIA_MASTER_AUFBAUPLAN_2.2.md. Prüfe anschließend lesend main, spätere reine
 > Dokumentationscommits, CI, Pages und alle Sperren. Stufe 3 ist vollständig abgeschlossen und
 > über PR #5 als Funktionscommit 4e86426870e7eba7e309a365a986be5a3a3e6a6e in main integriert.
-> Stufe 4 ist seit dem 10.08.2026 ausdrücklich freigegeben und auf dem Feature-Branch lokal
-> technisch umgesetzt. Prüfe zuerst den aktuellen Draft-PR, seine CI und die Preview. Verändere
-> weder das alte Repository RHIA noch Sicherheits-, Datenschutz- oder Kostengrenzen. Nenne vor
-> jedem längeren Arbeitsschritt eine realistische Dauer und stoppe vor der realen Fünf-Tage-Abnahme.
+> Stufe 4 ist auf Funktionscommit aec8c4e667703324813aa3818ce18a82cc19745c technisch vollständig
+> umgesetzt und durch CI #67 sowie Pages #51 geprüft. Draft-PR #6 bleibt offen und ungemergt. Führe
+> jetzt keine Entwicklung aus, sondern begleite Sir durch D01 bis D05 aus
+> docs/tests/STUFE_4_ABNAHME.md. Verändere weder das alte Repository RHIA noch Sicherheits-,
+> Datenschutz- oder Kostengrenzen. Stufe 5 und Merge bleiben gesperrt.
 
 Ein neuer Chat muss sofort melden:
 
@@ -184,5 +205,5 @@ Ein neuer Chat muss sofort melden:
 - letzter verifizierter Funktionsstand auf main:
   4e86426870e7eba7e309a365a986be5a3a3e6a6e;
 - Stufe 3.9 auf Tablet und Handy bestanden, keine offenen Abnahmefehler;
-- nächster erlaubter Schritt: GitHub-CI, Preview und danach Übergabe der Stufe-4-Alltagstests;
+- nächster erlaubter Schritt: reale D01-bis-D05-Abnahme und Handy-Smoke durch Sir;
 - verboten: Stufe 5, Merge ohne separate Freigabe oder jede Änderung am alten Repository.
