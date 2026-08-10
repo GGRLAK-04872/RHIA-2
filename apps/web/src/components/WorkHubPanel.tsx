@@ -88,7 +88,9 @@ function TaskCard({ view, showPriority }: { view: WorkHubTaskView; showPriority:
         <span>Status: {statusLabels[view.task.status]}</span>
         <span>Wichtigkeit: {importanceLabels[view.task.importance]}</span>
         {view.task.dueAt ? <span>Frist: {formatDate(view.task.dueAt)}</span> : null}
-        {view.task.estimatedMinutes ? <span>Aufwand: {view.task.estimatedMinutes} Min.</span> : null}
+        {view.task.estimatedMinutes ? (
+          <span>Aufwand: {view.task.estimatedMinutes} Min.</span>
+        ) : null}
         <span>Geldwirkung: {moneyImpactLabels[view.task.moneyImpact]}</span>
         {view.task.expectedIncomeCents !== null ? (
           <span>Geldeingang: {formatEuro(view.task.expectedIncomeCents)}</span>
