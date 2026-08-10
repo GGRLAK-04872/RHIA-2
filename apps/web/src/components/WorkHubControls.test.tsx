@@ -100,7 +100,7 @@ describe("WorkHubControls", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Ziel" }), {
       target: { value: ids.goal },
     });
-    fireEvent.change(screen.getByRole("combobox", { name: "Status" }), {
+    fireEvent.change(screen.getAllByRole("combobox", { name: "Status" })[0], {
       target: { value: "planned" },
     });
     fireEvent.change(screen.getByRole("combobox", { name: "Wichtigkeit" }), {
