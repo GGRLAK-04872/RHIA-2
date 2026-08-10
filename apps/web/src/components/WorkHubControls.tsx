@@ -38,6 +38,7 @@ export interface WorkHubControlsProps {
   onCreateGoal: (draft: GoalDraft) => void | Promise<void>;
   onCreateConfirmedTask: (draft: ConfirmedTaskDraft) => void | Promise<void>;
   onUpdateTask: (task: Task, correction: TaskCorrection) => void | Promise<void>;
+  onAddDependency: (task: Task, dependsOnTask: Task) => void | Promise<void>;
   onSetManualPriority: (task: Task, rank: number) => void | Promise<void>;
   onClearManualPriority: (task: Task) => void | Promise<void>;
   onTrashTask: (task: Task) => void | Promise<void>;
@@ -66,18 +67,42 @@ function euroInputToCents(value: string): number | null {
 
 function TaskMaintenanceRow({
   task,
+  snapshot,
   onUpdateTask,
+  onAddDependency,
   onSetManualPriority,
   onClearManualPriority,
   onTrashTask,
 }: Pick<
   WorkHubControlsProps,
-  "onUpdateTask" | "onSetManualPriority" | "onClearManualPriority" | "onTrashTask"
+  | "snapshot"
+  | "onUpdateTask"
+  | "onAddDependency"
+  | "onSetManualPriority"
+  | "onClearManualPriority"
+  | "onTrashTask"
 > & { task: Task }) {
   const [title, setTitle] = useState(task.title);
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [rank, setRank] = useState(String(task.manualPriority?.rank ?? 1));
   const [manualConfirmed, setManualConfirmed] = useState(false);
+  const [dependsOnTaskId, setDependsOnTaskId] = useState("");
+
+  const existingDependencies = snapshot.workspace.dependencies.filter(
+    (dependency) => dependency.taskId === task.id,
+  );
+  const existingDependencyIds = new Set(
+    existingDependencies.map((dependency) => dependency.dependsOnTaskId),
+  );
+  const dependencyCandidates = snapshot.workspace.tasks.filter(
+    (candidate) =>
+      candidate.id !== task.id &&
+      candidate.deletedAt === null &&
+      !existingDependencyIds.has(candidate.id),
+  );
+  const selectedDependencyTask = snapshot.workspace.tasks.find(
+    (candidate) => candidate.id === dependsOnTaskId,
+  );
 
   return (
     <li className={styles.taskRow}>
@@ -102,6 +127,49 @@ function TaskMaintenanceRow({
       <button type="button" onClick={() => void onUpdateTask(task, { title, status })}>
         Korrektur speichern
       </button>
+      <div className={styles.manualPriority}>
+        <label>
+          <span>Wartet auf</span>
+          <select
+            aria-label={`Wartet auf für ${task.title}`}
+            value={dependsOnTaskId}
+            onChange={(event) => setDependsOnTaskId(event.currentTarget.value)}
+          >
+            <option value="">Abhängigkeit wählen</option>
+            {dependencyCandidates.map((candidate) => (
+              <option key={candidate.id} value={candidate.id}>
+                {candidate.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          disabled={!selectedDependencyTask}
+          onClick={() => {
+            if (!selectedDependencyTask) {
+              return;
+            }
+            void Promise.resolve(onAddDependency(task, selectedDependencyTask)).then(() =>
+              setDependsOnTaskId(""),
+            );
+          }}
+        >
+          Abhängigkeit anlegen
+        </button>
+        {existingDependencies.length > 0 ? (
+          <p>
+            Offene Abhängigkeit: {existingDependencies
+              .map(
+                (dependency) =>
+                  snapshot.workspace.tasks.find(
+                    (candidate) => candidate.id === dependency.dependsOnTaskId,
+                  )?.title ?? "Unbekannte Aufgabe",
+              )
+              .join(", ")}
+          </p>
+        ) : null}
+      </div>
       <div className={styles.manualPriority}>
         <label>
           <span>Manueller Rang</span>
@@ -146,6 +214,7 @@ export function WorkHubControls({
   onCreateGoal,
   onCreateConfirmedTask,
   onUpdateTask,
+  onAddDependency,
   onSetManualPriority,
   onClearManualPriority,
   onTrashTask,
@@ -466,13 +535,15 @@ export function WorkHubControls({
       </form>
 
       <details className={styles.maintenance}>
-        <summary>Korrektur, manuelle Priorität und Papierkorb</summary>
+        <summary>Korrektur, Abhängigkeit, manuelle Priorität und Papierkorb</summary>
         <ul>
           {snapshot.workspace.tasks.map((task) => (
             <TaskMaintenanceRow
               key={task.id}
               task={task}
+              snapshot={snapshot}
               onUpdateTask={onUpdateTask}
+              onAddDependency={onAddDependency}
               onSetManualPriority={onSetManualPriority}
               onClearManualPriority={onClearManualPriority}
               onTrashTask={onTrashTask}
