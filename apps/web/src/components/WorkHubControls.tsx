@@ -159,7 +159,8 @@ function TaskMaintenanceRow({
         </button>
         {existingDependencies.length > 0 ? (
           <p>
-            Offene Abhängigkeit: {existingDependencies
+            Offene Abhängigkeit:{" "}
+            {existingDependencies
               .map(
                 (dependency) =>
                   snapshot.workspace.tasks.find(
@@ -535,7 +536,7 @@ export function WorkHubControls({
       </form>
 
       <details className={styles.maintenance}>
-        <summary>Korrektur, Abhängigkeit, manuelle Priorität und Papierkorb</summary>
+        <summary>Korrektur, manuelle Priorität und Papierkorb</summary>
         <ul>
           {snapshot.workspace.tasks.map((task) => (
             <TaskMaintenanceRow
