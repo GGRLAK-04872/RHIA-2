@@ -164,7 +164,7 @@ describe("WorkHubControls", () => {
     current.workspace.tasks.push(prerequisite);
 
     render(<WorkHubControls snapshot={current} {...callbacks} />);
-    fireEvent.click(screen.getByText("Korrektur, Abhängigkeit, manuelle Priorität und Papierkorb"));
+    fireEvent.click(screen.getByText("Korrektur, manuelle Priorität und Papierkorb"));
     fireEvent.change(screen.getByRole("combobox", { name: "Wartet auf für Aktive Aufgabe" }), {
       target: { value: ids.prerequisite },
     });
@@ -181,7 +181,7 @@ describe("WorkHubControls", () => {
   it("exposes correction, protected manual rank, trash and restore actions", () => {
     const callbacks = handlers();
     render(<WorkHubControls snapshot={snapshot()} {...callbacks} />);
-    fireEvent.click(screen.getByText("Korrektur, Abhängigkeit, manuelle Priorität und Papierkorb"));
+    fireEvent.click(screen.getByText("Korrektur, manuelle Priorität und Papierkorb"));
 
     fireEvent.change(screen.getByDisplayValue("Aktive Aufgabe"), {
       target: { value: "Korrigierte Aufgabe" },
