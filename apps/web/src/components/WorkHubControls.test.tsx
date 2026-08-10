@@ -10,6 +10,7 @@ const ids = {
   project: "22222222-2222-4222-8222-222222222222",
   goal: "55555555-5555-4555-8555-555555555555",
   task: "33333333-3333-4333-8333-333333333333",
+  prerequisite: "66666666-6666-4666-8666-666666666666",
   trash: "44444444-4444-4444-8444-444444444444",
 } as const;
 
@@ -51,6 +52,7 @@ function handlers() {
     onCreateGoal: vi.fn(),
     onCreateConfirmedTask: vi.fn(),
     onUpdateTask: vi.fn(),
+    onAddDependency: vi.fn(),
     onSetManualPriority: vi.fn(),
     onClearManualPriority: vi.fn(),
     onTrashTask: vi.fn(),
@@ -147,10 +149,39 @@ describe("WorkHubControls", () => {
     );
   });
 
+  it("exposes visible task dependency creation", async () => {
+    const callbacks = handlers();
+    const current = snapshot();
+    const prerequisite = createTask(
+      {
+        areaId: ids.area,
+        projectId: ids.project,
+        title: "Tablet Frist zuerst",
+        status: "planned",
+      },
+      { id: ids.prerequisite, timestamp },
+    );
+    current.workspace.tasks.push(prerequisite);
+
+    render(<WorkHubControls snapshot={current} {...callbacks} />);
+    fireEvent.click(screen.getByText("Korrektur, Abhängigkeit, manuelle Priorität und Papierkorb"));
+    fireEvent.change(screen.getByRole("combobox", { name: "Wartet auf für Aktive Aufgabe" }), {
+      target: { value: ids.prerequisite },
+    });
+    fireEvent.click(screen.getAllByRole("button", { name: "Abhängigkeit anlegen" })[0]!);
+
+    await waitFor(() =>
+      expect(callbacks.onAddDependency).toHaveBeenCalledWith(
+        expect.objectContaining({ id: ids.task }),
+        expect.objectContaining({ id: ids.prerequisite }),
+      ),
+    );
+  });
+
   it("exposes correction, protected manual rank, trash and restore actions", () => {
     const callbacks = handlers();
     render(<WorkHubControls snapshot={snapshot()} {...callbacks} />);
-    fireEvent.click(screen.getByText("Korrektur, manuelle Priorität und Papierkorb"));
+    fireEvent.click(screen.getByText("Korrektur, Abhängigkeit, manuelle Priorität und Papierkorb"));
 
     fireEvent.change(screen.getByDisplayValue("Aktive Aufgabe"), {
       target: { value: "Korrigierte Aufgabe" },
