@@ -1,9 +1,4 @@
-import type {
-  Task,
-  TaskImportance,
-  TaskMoneyImpact,
-  TaskStatus,
-} from "@rhia/domain";
+import type { Task, TaskImportance, TaskMoneyImpact, TaskStatus } from "@rhia/domain";
 import { type FormEvent, useState } from "react";
 import type { LocalWorkHubSnapshot } from "../application/localWorkHubService";
 import styles from "./WorkHubControls.module.css";
@@ -211,8 +206,7 @@ export function WorkHubControls({
         estimatedMinutes: estimatedMinutes ? Number(estimatedMinutes) : null,
         moneyImpact,
         expectedIncomeCents: moneyImpact === "none" ? null : euroInputToCents(expectedIncomeEuro),
-        expectedIncomeAt:
-          moneyImpact === "none" ? null : dateInputToIso(expectedIncomeDate),
+        expectedIncomeAt: moneyImpact === "none" ? null : dateInputToIso(expectedIncomeDate),
       }),
     ).then(() => {
       setTitle("");
@@ -373,7 +367,10 @@ export function WorkHubControls({
         </label>
         <label>
           <span>Status</span>
-          <select value={status} onChange={(event) => setStatus(event.currentTarget.value as TaskStatus)}>
+          <select
+            value={status}
+            onChange={(event) => setStatus(event.currentTarget.value as TaskStatus)}
+          >
             {editableStatuses.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -405,7 +402,11 @@ export function WorkHubControls({
         </label>
         <label>
           <span>Frist</span>
-          <input type="date" value={dueDate} onChange={(event) => setDueDate(event.currentTarget.value)} />
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(event) => setDueDate(event.currentTarget.value)}
+          />
         </label>
         <label>
           <span>Geldwirkung</span>
