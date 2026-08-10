@@ -148,9 +148,9 @@ export function WorkHubControls({
     if (!projectAreaId || !projectTitle.trim()) {
       return;
     }
-    void Promise.resolve(onCreateProject({ areaId: projectAreaId, title: projectTitle.trim() })).then(
-      () => setProjectTitle(""),
-    );
+    void Promise.resolve(
+      onCreateProject({ areaId: projectAreaId, title: projectTitle.trim() }),
+    ).then(() => setProjectTitle(""));
   };
 
   const handleGoalSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -212,7 +212,11 @@ export function WorkHubControls({
             placeholder="Projektname"
           />
         </label>
-        <button className={styles.wideField} type="submit" disabled={!projectAreaId || !projectTitle.trim()}>
+        <button
+          className={styles.wideField}
+          type="submit"
+          disabled={!projectAreaId || !projectTitle.trim()}
+        >
           Projekt anlegen
         </button>
       </form>
@@ -242,7 +246,11 @@ export function WorkHubControls({
             placeholder="Zielname"
           />
         </label>
-        <button className={styles.wideField} type="submit" disabled={!goalProjectId || !goalTitle.trim()}>
+        <button
+          className={styles.wideField}
+          type="submit"
+          disabled={!goalProjectId || !goalTitle.trim()}
+        >
           Ziel anlegen
         </button>
       </form>
