@@ -1,0 +1,426 @@
+.panel {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 0;
+  min-height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.header {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.briefingHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.header h2,
+.briefingCard h4,
+.blockCard h5,
+.planningForms h3 {
+  margin: 0;
+}
+
+.overline {
+  margin: 0 0 0.35rem;
+  color: #d68ba5;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.localBadge {
+  flex: none;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgb(216 113 149 / 38%);
+  border-radius: 999px;
+  color: #f3c3d3;
+  background: rgb(113 23 55 / 28%);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.intro,
+.planningForms p,
+.blockCard p,
+.briefingCard p {
+  margin: 0;
+  color: #d8cbd1;
+  line-height: 1.55;
+}
+
+.intro {
+  order: 2;
+  margin: 10px 14px 0;
+  padding: 9px 12px;
+  border-left: 2px solid rgb(218 48 112 / 62%);
+  background: rgb(112 17 53 / 10%);
+  color: #a58d97;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.viewTabs {
+  order: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid rgb(142 78 101 / 24%);
+  border-radius: 0;
+  background: rgb(5 3 5 / 42%);
+}
+
+.viewTabs button {
+  position: relative;
+  min-height: 2.7rem;
+  padding: 0.6rem 0.5rem;
+  border: 0;
+  border-right: 1px solid rgb(255 255 255 / 3%);
+  border-radius: 0;
+  background: transparent;
+  color: #a18a94;
+  font-size: 0.7rem;
+  font-weight: 640;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.viewTabs button::after {
+  position: absolute;
+  content: "";
+  right: 20%;
+  bottom: 0;
+  left: 20%;
+  height: 1px;
+  background: transparent;
+}
+
+.viewTabs button[aria-selected="true"] {
+  background: linear-gradient(180deg, rgb(103 19 51 / 12%), rgb(101 16 49 / 4%));
+  color: #f7dce6;
+  box-shadow: inset 0 0 18px rgb(210 43 102 / 5%);
+}
+
+.viewTabs button[aria-selected="true"]::after {
+  background: #ee3e7f;
+  box-shadow: 0 0 10px #ee3e7f;
+}
+
+.planningForms {
+  order: 3;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 10px 14px 0;
+}
+
+.planningForms form,
+.briefingCard,
+.blockCard,
+.history {
+  border: 1px solid rgb(142 78 101 / 24%);
+  border-radius: 0.65rem;
+  background: linear-gradient(135deg, rgb(41 20 30 / 62%), rgb(20 13 18 / 64%));
+}
+
+.planningForms form {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.8fr) repeat(2, minmax(105px, 1fr));
+  align-content: start;
+  align-items: end;
+  gap: 0.55rem;
+  padding: 0.75rem;
+}
+
+.planningForms form > h3,
+.planningForms form > p {
+  grid-column: 1 / -1;
+}
+
+.planningForms form > button {
+  grid-column: 1 / -1;
+}
+
+.feedbackGuide {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.8rem;
+  border: 1px solid rgb(142 78 101 / 24%);
+  border-radius: 0.65rem;
+  background: rgb(255 255 255 / 2%);
+}
+
+.feedbackGuide h3 {
+  margin: 0;
+}
+
+.planningForms label,
+.feedbackForm label {
+  display: grid;
+  gap: 0.35rem;
+  color: #d9cbd1;
+  font-size: 0.72rem;
+}
+
+.planningForms input,
+.feedbackForm input,
+.feedbackForm select {
+  width: 100%;
+  min-width: 0;
+  padding: 0.56rem 0.6rem;
+  border: 1px solid rgb(164 107 127 / 34%);
+  border-radius: 0.5rem;
+  color: #fff5f8;
+  background: #171015;
+  font: inherit;
+}
+
+.inlineFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.planningForms form > .inlineFields {
+  grid-column: span 2;
+}
+
+.panel button {
+  padding: 0.58rem 0.72rem;
+  border: 1px solid rgb(224 125 159 / 38%);
+  border-radius: 0.5rem;
+  color: #fff5f8;
+  background: linear-gradient(145deg, #681d39, #3f1025);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.panel button:hover {
+  border-color: #e6a0b8;
+}
+
+.latest {
+  order: 4;
+  display: grid;
+  gap: 0.65rem;
+  margin: 12px 14px 14px;
+}
+
+.latest > h3 {
+  margin: 0;
+  color: #e7cfd8;
+  font-size: 0.78rem;
+  font-weight: 720;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.briefingCard {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.8rem;
+}
+
+.briefingHeader span,
+.blockCard span {
+  color: #d68ba5;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.briefingHeader button {
+  background: transparent;
+}
+
+.explanation {
+  padding: 0.65rem;
+  border-left: 0.15rem solid #a4365d;
+  background: rgb(126 35 67 / 16%);
+}
+
+.blockCard .feedbackState {
+  margin-top: 0.65rem;
+  color: #f0b9cc;
+  font-weight: 700;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.metrics div {
+  padding: 0.55rem;
+  border-radius: 0.5rem;
+  background: rgb(255 255 255 / 4%);
+}
+
+.metrics dt {
+  color: #bcaeb4;
+  font-size: 0.76rem;
+}
+
+.metrics dd {
+  margin: 0.2rem 0 0;
+  font-weight: 800;
+}
+
+.blockList {
+  position: relative;
+  display: grid;
+  gap: 0.48rem;
+  padding-left: 1rem;
+}
+
+.blockList::before {
+  position: absolute;
+  content: "";
+  top: 0.8rem;
+  bottom: 0.8rem;
+  left: 0.25rem;
+  width: 1px;
+  background: linear-gradient(#f04583, #55d9ce 62%, rgb(240 69 131 / 16%));
+}
+
+.blockCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.95fr);
+  gap: 0.7rem;
+  padding: 0.7rem;
+  border-radius: 0.45rem;
+}
+
+.blockCard::before {
+  position: absolute;
+  content: "";
+  top: 1rem;
+  left: -1.05rem;
+  width: 7px;
+  height: 7px;
+  border: 2px solid #171015;
+  border-radius: 50%;
+  background: #ef3d7e;
+  box-shadow: 0 0 8px #ef3d7e;
+}
+
+.blockCard[data-kind="protection"] {
+  border-color: rgb(201 119 57 / 56%);
+  background: linear-gradient(135deg, rgb(117 57 22 / 16%), rgb(255 255 255 / 3%));
+}
+
+.feedbackForm {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  align-content: start;
+}
+
+.feedbackNote,
+.feedbackForm button {
+  grid-column: 1 / -1;
+}
+
+.history {
+  order: 5;
+  margin: 0 14px 14px;
+  padding: 0.7rem 0.8rem;
+}
+
+.history summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.history ul {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history li {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.7rem;
+  border-radius: 0.75rem;
+  background: rgb(255 255 255 / 4%);
+}
+
+.empty {
+  padding: 0.8rem;
+  border: 1px dashed rgb(184 116 140 / 35%);
+  border-radius: 0.8rem;
+}
+
+@media (max-width: 980px) {
+  .planningForms {
+    grid-template-columns: 1fr;
+  }
+
+  .blockCard {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .briefingHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .localBadge {
+    align-self: flex-start;
+  }
+
+  .inlineFields,
+  .metrics,
+  .feedbackForm {
+    grid-template-columns: 1fr;
+  }
+
+  .planningForms form {
+    grid-template-columns: 1fr;
+  }
+
+  .planningForms form > .inlineFields {
+    grid-column: auto;
+  }
+
+  .feedbackNote,
+  .feedbackForm button {
+    grid-column: auto;
+  }
+
+  .history li {
+    grid-template-columns: 1fr;
+  }
+
+  .viewTabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

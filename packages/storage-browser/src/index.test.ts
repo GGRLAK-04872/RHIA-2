@@ -2,29 +2,37 @@ import "fake-indexeddb/auto";
 import {
   areaSchema,
   auditEntrySchema,
+  briefingSchema,
   goalSchema,
   noteSchema,
+  planningFeedbackSchema,
   projectSchema,
   type RhiaBackupPackageV1,
   type RhiaBackupPackageV2,
+  type RhiaBackupPackageV3,
   rhiaBackupPackageV1Schema,
   rhiaBackupPackageV2Schema,
+  rhiaBackupPackageV3Schema,
   sourceSchema,
   taskDependencySchema,
   taskSchema,
+  workBlockSchema,
 } from "@rhia/contracts";
 import {
   createArea,
   createAuditEntry,
+  createBriefing,
   createDecision,
   createGoal,
   createMemoryConflict,
   createMemoryFact,
   createNote,
+  createPlanningFeedback,
   createProject,
   createSource,
   createTask,
   createTaskDependency,
+  createWorkBlock,
 } from "@rhia/domain";
 import Dexie from "dexie";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -33,6 +41,7 @@ import {
   DELETE_ALL_CONFIRMATION,
   RHIA_BROWSER_DATABASE_VERSION,
   RHIA_STAGE_ONE_BROWSER_DATABASE_VERSION,
+  RHIA_STAGE_THREE_BROWSER_DATABASE_VERSION,
   RHIA_STAGE_TWO_BROWSER_DATABASE_VERSION,
   type RhiaBrowserStorage,
 } from "./index";
@@ -54,6 +63,9 @@ const ids = {
   taskOne: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
   taskTwo: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
   dependency: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+  briefing: "f1111111-1111-4111-8111-111111111111",
+  workBlock: "f2222222-2222-4222-8222-222222222222",
+  feedback: "f3333333-3333-4333-8333-333333333333",
 } as const;
 
 let storage: RhiaBrowserStorage;
@@ -167,6 +179,52 @@ function createTestWorkHubRecords() {
   return { project, goal, taskOne, taskTwo, dependency };
 }
 
+function createTestPlanningRecords() {
+  const briefing = createBriefing(
+    {
+      kind: "morning",
+      periodStart: "2026-08-10T00:00:00.000Z",
+      periodEnd: "2026-08-11T00:00:00.000Z",
+      availableMinutes: 120,
+      plannedMinutes: 60,
+      protectionMinutes: 60,
+      title: "Künstliches Morgenbriefing",
+      summary: "Ein künstlicher Schutzblock.",
+      explanation: "Nur künstliche Daten.",
+      generatedAt: "2026-08-10T08:00:00.000Z",
+    },
+    { id: ids.briefing, timestamp },
+  );
+  const workBlock = createWorkBlock(
+    {
+      briefingId: briefing.id,
+      taskId: ids.taskOne,
+      areaId: ids.area,
+      kind: "protection",
+      title: "Künstliche RHIA-Schutzzeit",
+      startAt: "2026-08-10T09:00:00.000Z",
+      endAt: "2026-08-10T10:00:00.000Z",
+      durationMinutes: 60,
+      explanation: "Künstlicher Schutzzeit-Test.",
+    },
+    { id: ids.workBlock, timestamp },
+  );
+  const feedback = createPlanningFeedback(
+    {
+      briefingId: briefing.id,
+      workBlockId: workBlock.id,
+      taskId: workBlock.taskId,
+      result: "completed",
+      reason: "none",
+      actualMinutes: 60,
+      recordedBy: "sir",
+      recordedAt: "2026-08-10T10:00:00.000Z",
+    },
+    { id: ids.feedback },
+  );
+  return { briefing, workBlock, feedback };
+}
+
 async function signV1Backup(backup: RhiaBackupPackageV1): Promise<RhiaBackupPackageV1> {
   const normalized = rhiaBackupPackageV1Schema.parse(backup);
   const checksumContent = JSON.stringify({
@@ -189,6 +247,26 @@ async function signV1Backup(backup: RhiaBackupPackageV1): Promise<RhiaBackupPack
 
 async function signV2Backup(backup: RhiaBackupPackageV2): Promise<RhiaBackupPackageV2> {
   const normalized = rhiaBackupPackageV2Schema.parse(backup);
+  const checksumContent = JSON.stringify({
+    manifest: {
+      format: normalized.manifest.format,
+      formatVersion: normalized.manifest.formatVersion,
+      schemaVersion: normalized.manifest.schemaVersion,
+      createdAt: normalized.manifest.createdAt,
+      checksumAlgorithm: normalized.manifest.checksumAlgorithm,
+      recordCounts: normalized.manifest.recordCounts,
+    },
+    data: normalized.data,
+  });
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(checksumContent));
+  const checksum = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+  return { ...normalized, manifest: { ...normalized.manifest, checksum } };
+}
+
+async function signV3Backup(backup: RhiaBackupPackageV3): Promise<RhiaBackupPackageV3> {
+  const normalized = rhiaBackupPackageV3Schema.parse(backup);
   const checksumContent = JSON.stringify({
     manifest: {
       format: normalized.manifest.format,
@@ -265,6 +343,33 @@ describe("Dexie repositories", () => {
     expect(deleted).toMatchObject({ revision: 2, deletedAt: changedAt });
     await expect(storage.tasks.getById(taskTwo.id)).resolves.toBeUndefined();
     await expect(storage.tasks.restore(taskTwo.id, 2)).resolves.toMatchObject({
+      revision: 3,
+      deletedAt: null,
+    });
+  });
+
+  it("stores, updates, deletes and restores all stage 4 planning entity types", async () => {
+    const { briefing, workBlock, feedback } = createTestPlanningRecords();
+
+    await storage.transaction(async (repositories) => {
+      await repositories.briefings.create(briefing);
+      await repositories.workBlocks.create(workBlock);
+      await repositories.planningFeedback.create(feedback);
+    });
+
+    expect(briefingSchema.parse(await storage.briefings.getById(briefing.id))).toEqual(briefing);
+    expect(workBlockSchema.parse(await storage.workBlocks.getById(workBlock.id))).toEqual(
+      workBlock,
+    );
+    expect(
+      planningFeedbackSchema.parse(await storage.planningFeedback.getById(feedback.id)),
+    ).toEqual(feedback);
+
+    const updated = await storage.workBlocks.replace({ ...workBlock, status: "completed" }, 1);
+    expect(updated).toMatchObject({ status: "completed", revision: 2 });
+    const deleted = await storage.briefings.softDelete(briefing.id, 1);
+    expect(deleted).toMatchObject({ revision: 2, deletedAt: changedAt });
+    await expect(storage.briefings.restore(briefing.id, 2)).resolves.toMatchObject({
       revision: 3,
       deletedAt: null,
     });
@@ -489,10 +594,66 @@ describe("Dexie repositories", () => {
     await expect(storage.taskDependencies.list()).resolves.toEqual([]);
   });
 
-  it("exports, verifies and restores a complete v3 backup", async () => {
+  it("migrates the complete stage 3 database to stage 4 without data loss", async () => {
+    const databaseName = storage.database.name;
+    await storage.deleteDatabase();
+    const { area, source, note, audit } = createTestRecords();
+    const { factOne, decision, conflict } = createTestMemoryRecords();
+    const { project, goal, taskOne, taskTwo, dependency } = createTestWorkHubRecords();
+    const stageThree = new Dexie(databaseName);
+    stageThree.version(RHIA_STAGE_THREE_BROWSER_DATABASE_VERSION).stores({
+      areas: "&id, type, name, status, updatedAt, deletedAt, revision",
+      sources: "&id, type, kind, label, updatedAt, deletedAt, revision",
+      notes:
+        "&id, type, areaId, sourceId, status, updatedAt, deletedAt, revision, [areaId+updatedAt]",
+      auditEntries:
+        "&id, type, entityType, entityId, action, occurredAt, updatedAt, [entityType+entityId]",
+      memoryFacts:
+        "&id, type, areaId, status, conflictKey, updatedAt, deletedAt, revision, [areaId+updatedAt], [conflictKey+status]",
+      decisions: "&id, type, areaId, status, updatedAt, deletedAt, revision, [areaId+updatedAt]",
+      memoryConflicts:
+        "&id, type, areaId, status, conflictKey, detectedAt, updatedAt, deletedAt, revision, [conflictKey+status]",
+      projects: "&id, type, areaId, status, updatedAt, deletedAt, revision, [areaId+updatedAt]",
+      goals:
+        "&id, type, projectId, status, targetAt, updatedAt, deletedAt, revision, [projectId+updatedAt]",
+      tasks:
+        "&id, type, areaId, projectId, goalId, status, dueAt, importance, updatedAt, deletedAt, revision, [areaId+updatedAt], [projectId+updatedAt], [status+dueAt]",
+      taskDependencies:
+        "&id, type, taskId, dependsOnTaskId, updatedAt, deletedAt, revision, [taskId+dependsOnTaskId]",
+    });
+    await stageThree.open();
+    await stageThree.table("areas").add(area);
+    await stageThree.table("sources").add(source);
+    await stageThree.table("notes").add(note);
+    await stageThree.table("auditEntries").add(audit);
+    await stageThree.table("memoryFacts").add(factOne);
+    await stageThree.table("decisions").add(decision);
+    await stageThree.table("memoryConflicts").add(conflict);
+    await stageThree.table("projects").add(project);
+    await stageThree.table("goals").add(goal);
+    await stageThree.table("tasks").bulkAdd([taskOne, taskTwo]);
+    await stageThree.table("taskDependencies").add(dependency);
+    stageThree.close();
+
+    storage = createRhiaBrowserStorage({ databaseName, now: () => changedAt });
+    await storage.open();
+
+    expect(storage.database.verno).toBe(RHIA_BROWSER_DATABASE_VERSION);
+    await expect(storage.notes.getById(note.id)).resolves.toEqual(note);
+    await expect(storage.memoryFacts.getById(factOne.id)).resolves.toEqual(factOne);
+    await expect(storage.projects.getById(project.id)).resolves.toEqual(project);
+    await expect(storage.tasks.getById(taskOne.id)).resolves.toEqual(taskOne);
+    await expect(storage.taskDependencies.getById(dependency.id)).resolves.toEqual(dependency);
+    await expect(storage.workBlocks.list()).resolves.toEqual([]);
+    await expect(storage.briefings.list()).resolves.toEqual([]);
+    await expect(storage.planningFeedback.list()).resolves.toEqual([]);
+  });
+
+  it("exports, verifies and restores a complete v4 backup", async () => {
     const { area, source, note, audit } = createTestRecords();
     const { factOne, factTwo, decision, conflict } = createTestMemoryRecords();
     const { project, goal, taskOne, taskTwo, dependency } = createTestWorkHubRecords();
+    const { briefing, workBlock, feedback } = createTestPlanningRecords();
     await storage.transaction(async (repositories) => {
       await repositories.areas.create(area);
       await repositories.sources.create(source);
@@ -507,6 +668,9 @@ describe("Dexie repositories", () => {
       await repositories.tasks.create(taskOne);
       await repositories.tasks.create(taskTwo);
       await repositories.taskDependencies.create(dependency);
+      await repositories.briefings.create(briefing);
+      await repositories.workBlocks.create(workBlock);
+      await repositories.planningFeedback.create(feedback);
     });
 
     const backup = await storage.createBackup();
@@ -514,7 +678,7 @@ describe("Dexie repositories", () => {
     await storage.clearAllData(DELETE_ALL_CONFIRMATION);
 
     const preview = await storage.previewImport(serialized);
-    expect(preview.sourceFormatVersion).toBe(3);
+    expect(preview.sourceFormatVersion).toBe(4);
     expect(preview.recordCounts).toEqual({
       areas: 1,
       sources: 1,
@@ -527,6 +691,9 @@ describe("Dexie repositories", () => {
       goals: 1,
       tasks: 2,
       taskDependencies: 1,
+      workBlocks: 1,
+      briefings: 1,
+      planningFeedback: 1,
     });
     expect(preview.conflicts).toEqual([]);
 
@@ -539,9 +706,12 @@ describe("Dexie repositories", () => {
     await expect(storage.goals.getById(goal.id)).resolves.toEqual(goal);
     await expect(storage.tasks.getById(taskOne.id)).resolves.toEqual(taskOne);
     await expect(storage.taskDependencies.getById(dependency.id)).resolves.toEqual(dependency);
+    await expect(storage.briefings.getById(briefing.id)).resolves.toEqual(briefing);
+    await expect(storage.workBlocks.getById(workBlock.id)).resolves.toEqual(workBlock);
+    await expect(storage.planningFeedback.getById(feedback.id)).resolves.toEqual(feedback);
   });
 
-  it("migrates a verified v1 backup to v3 without inventing later-stage records", async () => {
+  it("migrates a verified v1 backup to v4 without inventing later-stage records", async () => {
     const { area, source, note, audit } = createTestRecords();
     const v1Backup = await signV1Backup({
       manifest: {
@@ -559,7 +729,7 @@ describe("Dexie repositories", () => {
     const preview = await storage.previewImport(v1Backup);
 
     expect(preview.sourceFormatVersion).toBe(1);
-    expect(preview.backup.manifest.formatVersion).toBe(3);
+    expect(preview.backup.manifest.formatVersion).toBe(4);
     expect(preview.recordCounts).toMatchObject({
       areas: 1,
       sources: 1,
@@ -572,6 +742,9 @@ describe("Dexie repositories", () => {
       goals: 0,
       tasks: 0,
       taskDependencies: 0,
+      workBlocks: 0,
+      briefings: 0,
+      planningFeedback: 0,
     });
     await storage.importBackup(preview);
     await expect(storage.notes.getById(note.id)).resolves.toEqual(note);
@@ -579,7 +752,7 @@ describe("Dexie repositories", () => {
     await expect(storage.tasks.list({ includeDeleted: true })).resolves.toEqual([]);
   });
 
-  it("migrates a verified v2 backup to v3 while preserving all memory records", async () => {
+  it("migrates a verified v2 backup to v4 while preserving all memory records", async () => {
     const { area, source, note, audit } = createTestRecords();
     const { factOne, decision, conflict } = createTestMemoryRecords();
     const v2Backup = await signV2Backup({
@@ -614,7 +787,7 @@ describe("Dexie repositories", () => {
     const preview = await storage.previewImport(v2Backup);
 
     expect(preview.sourceFormatVersion).toBe(2);
-    expect(preview.backup.manifest.formatVersion).toBe(3);
+    expect(preview.backup.manifest.formatVersion).toBe(4);
     expect(preview.recordCounts).toMatchObject({
       memoryFacts: 1,
       decisions: 1,
@@ -623,11 +796,75 @@ describe("Dexie repositories", () => {
       goals: 0,
       tasks: 0,
       taskDependencies: 0,
+      workBlocks: 0,
+      briefings: 0,
+      planningFeedback: 0,
     });
     await storage.importBackup(preview);
     await expect(storage.memoryFacts.getById(factOne.id)).resolves.toEqual(factOne);
     await expect(storage.decisions.getById(decision.id)).resolves.toEqual(decision);
     await expect(storage.memoryConflicts.getById(conflict.id)).resolves.toEqual(conflict);
+  });
+
+  it("migrates a verified v3 backup to v4 while preserving all work hub records", async () => {
+    const { area, source, note, audit } = createTestRecords();
+    const { factOne, decision, conflict } = createTestMemoryRecords();
+    const { project, goal, taskOne, taskTwo, dependency } = createTestWorkHubRecords();
+    const v3Backup = await signV3Backup({
+      manifest: {
+        format: "rhia-backup",
+        formatVersion: 3,
+        schemaVersion: 1,
+        createdAt: timestamp,
+        checksumAlgorithm: "SHA-256",
+        checksum: "0".repeat(64),
+        recordCounts: {
+          areas: 1,
+          sources: 1,
+          notes: 1,
+          auditEntries: 1,
+          memoryFacts: 1,
+          decisions: 1,
+          memoryConflicts: 1,
+          projects: 1,
+          goals: 1,
+          tasks: 2,
+          taskDependencies: 1,
+        },
+      },
+      data: {
+        areas: [area],
+        sources: [source],
+        notes: [note],
+        auditEntries: [audit],
+        memoryFacts: [factOne],
+        decisions: [decision],
+        memoryConflicts: [conflict],
+        projects: [project],
+        goals: [goal],
+        tasks: [taskOne, taskTwo],
+        taskDependencies: [dependency],
+      },
+    });
+
+    const preview = await storage.previewImport(v3Backup);
+
+    expect(preview.sourceFormatVersion).toBe(3);
+    expect(preview.backup.manifest.formatVersion).toBe(4);
+    expect(preview.recordCounts).toMatchObject({
+      projects: 1,
+      goals: 1,
+      tasks: 2,
+      taskDependencies: 1,
+      workBlocks: 0,
+      briefings: 0,
+      planningFeedback: 0,
+    });
+    await storage.importBackup(preview);
+    await expect(storage.projects.getById(project.id)).resolves.toEqual(project);
+    await expect(storage.goals.getById(goal.id)).resolves.toEqual(goal);
+    await expect(storage.tasks.getById(taskOne.id)).resolves.toEqual(taskOne);
+    await expect(storage.taskDependencies.getById(dependency.id)).resolves.toEqual(dependency);
   });
 
   it("rejects changed backup content and reports existing-record conflicts", async () => {

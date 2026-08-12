@@ -1,6 +1,7 @@
 import {
   type Area,
   type AuditEntry,
+  type Briefing,
   type Decision,
   ENTITY_TYPES,
   type ExplicitTaskInputConfirmation,
@@ -10,6 +11,7 @@ import {
   type MemoryConflict,
   type MemoryFact,
   type Note,
+  type PlanningFeedback,
   type PersistedEntity,
   type Project,
   RHIA_SCHEMA_VERSION,
@@ -17,6 +19,7 @@ import {
   TASK_STATUSES,
   type Task,
   type TaskDependency,
+  type WorkBlock,
   WORK_HUB_AREA_NAMES,
 } from "@rhia/domain";
 import { z } from "zod";
@@ -521,6 +524,119 @@ export const taskDependencySchema: z.ZodType<TaskDependency> = z
     }
   });
 
+export const workBlockSchema: z.ZodType<WorkBlock> = z
+  .object({
+    ...entityBaseShape,
+    type: z.literal("work-block"),
+    briefingId: entityIdSchema,
+    taskId: entityIdSchema.nullable(),
+    areaId: entityIdSchema,
+    kind: z.enum(["task", "protection"]),
+    title: z.string().trim().min(1).max(240),
+    startAt: timestampSchema,
+    endAt: timestampSchema,
+    durationMinutes: z.number().int().positive().max(10_080),
+    status: z.enum(["proposed", "accepted", "completed", "partial", "skipped"]),
+    explanation: z.string().trim().min(1).max(10_000),
+  })
+  .strict()
+  .superRefine((entity, context) => {
+    validateTimeline(entity, context);
+    const calculatedMinutes = (Date.parse(entity.endAt) - Date.parse(entity.startAt)) / 60_000;
+    if (calculatedMinutes !== entity.durationMinutes || calculatedMinutes <= 0) {
+      context.addIssue({
+        code: "custom",
+        path: ["durationMinutes"],
+        message: "Dauer und Zeitraum des Arbeitsblocks müssen übereinstimmen.",
+      });
+    }
+    if (entity.kind === "task" && entity.taskId === null) {
+      context.addIssue({
+        code: "custom",
+        path: ["taskId"],
+        message: "Ein Aufgabenblock benötigt eine Aufgabe.",
+      });
+    }
+  });
+
+export const briefingSchema: z.ZodType<Briefing> = z
+  .object({
+    ...entityBaseShape,
+    type: z.literal("briefing"),
+    kind: z.enum(["morning", "week", "evening"]),
+    periodStart: timestampSchema,
+    periodEnd: timestampSchema,
+    availableMinutes: z.number().int().nonnegative().max(525_600),
+    plannedMinutes: z.number().int().nonnegative().max(525_600),
+    protectionMinutes: z.number().int().nonnegative().max(525_600),
+    title: z.string().trim().min(1).max(240),
+    summary: z.string().trim().min(1).max(10_000),
+    explanation: z.string().trim().min(1).max(10_000),
+    status: z.enum(["proposed", "confirmed", "archived"]),
+    generatedAt: timestampSchema,
+  })
+  .strict()
+  .superRefine((entity, context) => {
+    validateTimeline(entity, context);
+    if (Date.parse(entity.periodEnd) <= Date.parse(entity.periodStart)) {
+      context.addIssue({
+        code: "custom",
+        path: ["periodEnd"],
+        message: "Das Ende des Briefing-Zeitraums muss nach dem Beginn liegen.",
+      });
+    }
+    if (
+      entity.plannedMinutes > entity.availableMinutes ||
+      entity.protectionMinutes > entity.plannedMinutes
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["plannedMinutes"],
+        message: "Geplante, verfügbare und geschützte Zeit widersprechen sich.",
+      });
+    }
+  });
+
+export const planningFeedbackSchema: z.ZodType<PlanningFeedback> = z
+  .object({
+    ...entityBaseShape,
+    type: z.literal("planning-feedback"),
+    briefingId: entityIdSchema,
+    workBlockId: entityIdSchema,
+    taskId: entityIdSchema.nullable(),
+    result: z.enum(["completed", "partial", "skipped"]),
+    reason: z.enum([
+      "none",
+      "time-too-short",
+      "time-too-long",
+      "blocked",
+      "priority-wrong",
+      "other",
+    ]),
+    actualMinutes: z.number().int().nonnegative().max(10_080).nullable(),
+    note: z.string().trim().max(10_000).nullable(),
+    recordedBy: z.literal("sir"),
+    recordedAt: timestampSchema,
+  })
+  .strict()
+  .superRefine((entity, context) => {
+    validateTimeline(entity, context);
+    if (Date.parse(entity.recordedAt) < Date.parse(entity.createdAt)) {
+      context.addIssue({
+        code: "custom",
+        path: ["recordedAt"],
+        message: "Eine Rückmeldung darf nicht vor ihrer Erstellung aufgezeichnet sein.",
+      });
+    }
+    if (entity.result === "completed" && entity.reason === "blocked") {
+      context.addIssue({
+        code: "custom",
+        path: ["reason"],
+        message: "Ein erledigter Block kann nicht zugleich wegen einer Blockade ausgelassen sein.",
+      });
+    }
+  });
+
 export const persistedEntitySchema: z.ZodType<PersistedEntity> = z.union([
   areaSchema,
   sourceSchema,
@@ -533,6 +649,9 @@ export const persistedEntitySchema: z.ZodType<PersistedEntity> = z.union([
   goalSchema,
   taskSchema,
   taskDependencySchema,
+  workBlockSchema,
+  briefingSchema,
+  planningFeedbackSchema,
 ]);
 
 export const stageZeroAppStatusSchema = z.object({
@@ -567,11 +686,20 @@ export const stageThreeAppStatusSchema = z.object({
   persistenceEnabled: z.literal(true),
 });
 
+export const stageFourAppStatusSchema = z.object({
+  version: z.string().min(1),
+  stage: z.literal(4),
+  mode: z.literal("local-first"),
+  apiEnabled: z.literal(false),
+  persistenceEnabled: z.literal(true),
+});
+
 export const appStatusSchema = z.discriminatedUnion("stage", [
   stageZeroAppStatusSchema,
   stageOneAppStatusSchema,
   stageTwoAppStatusSchema,
   stageThreeAppStatusSchema,
+  stageFourAppStatusSchema,
 ]);
 
 export type AppStatus = z.infer<typeof appStatusSchema>;
@@ -760,19 +888,105 @@ export const rhiaBackupPackageV3Schema = z
     }
   });
 
-export const backupDataSchema = backupDataV3Schema;
-export const backupRecordCountsSchema = backupRecordCountsV3Schema;
-export const backupManifestSchema = backupManifestV3Schema;
+export const backupDataV4Schema = z
+  .object({
+    areas: z.array(areaSchema),
+    sources: z.array(sourceSchema),
+    notes: z.array(noteSchema),
+    auditEntries: z.array(auditEntrySchema),
+    memoryFacts: z.array(memoryFactSchema),
+    decisions: z.array(decisionSchema),
+    memoryConflicts: z.array(memoryConflictSchema),
+    projects: z.array(projectSchema),
+    goals: z.array(goalSchema),
+    tasks: z.array(taskSchema),
+    taskDependencies: z.array(taskDependencySchema),
+    workBlocks: z.array(workBlockSchema),
+    briefings: z.array(briefingSchema),
+    planningFeedback: z.array(planningFeedbackSchema),
+  })
+  .strict();
+
+export const backupRecordCountsV4Schema = z
+  .object({
+    areas: z.number().int().nonnegative(),
+    sources: z.number().int().nonnegative(),
+    notes: z.number().int().nonnegative(),
+    auditEntries: z.number().int().nonnegative(),
+    memoryFacts: z.number().int().nonnegative(),
+    decisions: z.number().int().nonnegative(),
+    memoryConflicts: z.number().int().nonnegative(),
+    projects: z.number().int().nonnegative(),
+    goals: z.number().int().nonnegative(),
+    tasks: z.number().int().nonnegative(),
+    taskDependencies: z.number().int().nonnegative(),
+    workBlocks: z.number().int().nonnegative(),
+    briefings: z.number().int().nonnegative(),
+    planningFeedback: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export const backupManifestV4Schema = z
+  .object({
+    format: z.literal("rhia-backup"),
+    formatVersion: z.literal(4),
+    schemaVersion: z.literal(RHIA_SCHEMA_VERSION),
+    createdAt: timestampSchema,
+    checksumAlgorithm: z.literal("SHA-256"),
+    checksum: z.string().regex(/^[a-f0-9]{64}$/),
+    recordCounts: backupRecordCountsV4Schema,
+  })
+  .strict();
+
+export const rhiaBackupPackageV4Schema = z
+  .object({
+    manifest: backupManifestV4Schema,
+    data: backupDataV4Schema,
+  })
+  .strict()
+  .superRefine((backup, context) => {
+    for (const key of [
+      "areas",
+      "sources",
+      "notes",
+      "auditEntries",
+      "memoryFacts",
+      "decisions",
+      "memoryConflicts",
+      "projects",
+      "goals",
+      "tasks",
+      "taskDependencies",
+      "workBlocks",
+      "briefings",
+      "planningFeedback",
+    ] as const) {
+      if (backup.manifest.recordCounts[key] !== backup.data[key].length) {
+        context.addIssue({
+          code: "custom",
+          path: ["manifest", "recordCounts", key],
+          message: `Die Datensatzanzahl für ${key} stimmt nicht.`,
+        });
+      }
+    }
+  });
+
+export const backupDataSchema = backupDataV4Schema;
+export const backupRecordCountsSchema = backupRecordCountsV4Schema;
+export const backupManifestSchema = backupManifestV4Schema;
 export const rhiaBackupPackageSchema = z.union([
   rhiaBackupPackageV1Schema,
   rhiaBackupPackageV2Schema,
   rhiaBackupPackageV3Schema,
+  rhiaBackupPackageV4Schema,
 ]);
 
 export type RhiaBackupDataV1 = z.infer<typeof backupDataV1Schema>;
 export type RhiaBackupPackageV1 = z.infer<typeof rhiaBackupPackageV1Schema>;
 export type RhiaBackupDataV2 = z.infer<typeof backupDataV2Schema>;
 export type RhiaBackupPackageV2 = z.infer<typeof rhiaBackupPackageV2Schema>;
-export type RhiaBackupData = z.infer<typeof backupDataV3Schema>;
+export type RhiaBackupDataV3 = z.infer<typeof backupDataV3Schema>;
 export type RhiaBackupPackageV3 = z.infer<typeof rhiaBackupPackageV3Schema>;
+export type RhiaBackupData = z.infer<typeof backupDataV4Schema>;
+export type RhiaBackupPackageV4 = z.infer<typeof rhiaBackupPackageV4Schema>;
 export type RhiaBackupPackage = z.infer<typeof rhiaBackupPackageSchema>;

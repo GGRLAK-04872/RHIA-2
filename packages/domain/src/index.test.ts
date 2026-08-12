@@ -12,9 +12,12 @@ import {
   createConfirmedTask,
   createDecision,
   createGoal,
+  createEveningReview,
   createMemoryConflict,
   createMemoryFact,
   createNote,
+  createPlanningFeedback,
+  createPlanningProposal,
   createProject,
   createSource,
   createTask,
@@ -57,11 +60,13 @@ const ids = {
   dependencyOne: "23456789-2345-4345-8345-23456789abcd",
   dependencyTwo: "3456789a-3456-4456-8456-3456789abcde",
   dependencyThree: "456789ab-4567-4567-8567-456789abcdef",
+  areaShadow: "56789abc-5678-4678-8678-56789abcdef0",
+  areaPrivate: "6789abcd-6789-4789-8789-6789abcdef01",
 } as const;
 
-describe("RHIA stage 3 domain foundation", () => {
+describe("RHIA stage 4 domain foundation", () => {
   it("activates IndexedDB as the only local source while cloud and AI stay disabled", () => {
-    expect(RHIA_STAGE).toBe(3);
+    expect(RHIA_STAGE).toBe(4);
     expect(RHIA_RUNTIME).toEqual({
       sourceOfTruth: "indexeddb",
       cloudRuntime: false,
@@ -856,5 +861,170 @@ describe("stage 3.8 confirmed task acceptance", () => {
         { id: ids.taskTwo, timestamp },
       ),
     ).toThrow(expect.objectContaining({ code: "TASK_INPUT_CONFIRMATION_REQUIRED" }));
+  });
+});
+
+describe("stage 4 deterministic planning and briefings", () => {
+  const rhiaArea = createArea(
+    { name: "RHIA" },
+    { id: ids.area, timestamp: "2026-08-10T07:00:00.000Z" },
+  );
+  const shadowArea = createArea(
+    { name: "Shadow Grown" },
+    { id: ids.areaShadow, timestamp: "2026-08-10T07:00:00.000Z" },
+  );
+  const privateArea = createArea(
+    { name: "Privat" },
+    { id: ids.areaPrivate, timestamp: "2026-08-10T07:00:00.000Z" },
+  );
+
+  it("reserves about twenty percent and at least sixty minutes for each protected weekly area", () => {
+    const urgent = createTask(
+      {
+        areaId: privateArea.id,
+        title: "Künstliche Fristaufgabe",
+        status: "planned",
+        dueAt: "2026-08-11T12:00:00.000Z",
+        importance: "high",
+        estimatedMinutes: 60,
+      },
+      { id: ids.taskOne, timestamp: "2026-08-10T07:00:00.000Z" },
+    );
+    const proposal = createPlanningProposal(
+      {
+        kind: "week",
+        periodStart: "2026-08-10T00:00:00.000Z",
+        periodEnd: "2026-08-17T00:00:00.000Z",
+        generatedAt: "2026-08-10T08:00:00.000Z",
+        availability: Array.from({ length: 5 }, (_, index) => ({
+          startAt: `2026-08-${String(10 + index).padStart(2, "0")}T18:00:00.000Z`,
+          endAt: `2026-08-${String(10 + index).padStart(2, "0")}T20:00:00.000Z`,
+        })),
+      },
+      {
+        areas: [rhiaArea, shadowArea, privateArea],
+        tasks: [urgent],
+        dependencies: [],
+        workBlocks: [],
+        feedback: [],
+      },
+    );
+
+    const protection = proposal.workBlocks.filter((block) => block.kind === "protection");
+    expect(proposal.briefing).toMatchObject({
+      kind: "week",
+      availableMinutes: 600,
+      protectionMinutes: 120,
+    });
+    expect(
+      protection
+        .filter((block) => block.areaId === rhiaArea.id)
+        .reduce((sum, block) => sum + block.durationMinutes, 0),
+    ).toBe(60);
+    expect(
+      protection
+        .filter((block) => block.areaId === shadowArea.id)
+        .reduce((sum, block) => sum + block.durationMinutes, 0),
+    ).toBe(60);
+    expect(proposal.workBlocks.some((block) => block.taskId === urgent.id)).toBe(true);
+    expect(proposal.briefing.explanation).toContain("Fristen");
+  });
+
+  it("uses partial time feedback to enlarge the next task block", () => {
+    const task = createTask(
+      {
+        areaId: privateArea.id,
+        title: "Künstlicher Feedback-Test",
+        status: "planned",
+        estimatedMinutes: 60,
+      },
+      { id: ids.taskOne, timestamp: "2026-08-10T07:00:00.000Z" },
+    );
+    const first = createPlanningProposal(
+      {
+        kind: "morning",
+        periodStart: "2026-08-10T00:00:00.000Z",
+        periodEnd: "2026-08-11T00:00:00.000Z",
+        generatedAt: "2026-08-10T08:00:00.000Z",
+        availability: [{ startAt: "2026-08-10T09:00:00.000Z", endAt: "2026-08-10T12:00:00.000Z" }],
+      },
+      {
+        areas: [rhiaArea, shadowArea, privateArea],
+        tasks: [task],
+        dependencies: [],
+        workBlocks: [],
+        feedback: [],
+      },
+    );
+    const firstTaskBlock = first.workBlocks.find((block) => block.taskId === task.id);
+    expect(firstTaskBlock?.durationMinutes).toBe(60);
+    if (!firstTaskBlock) {
+      throw new Error("Künstlicher Aufgabenblock fehlt.");
+    }
+    const feedback = createPlanningFeedback({
+      briefingId: first.briefing.id,
+      workBlockId: firstTaskBlock.id,
+      taskId: task.id,
+      result: "partial",
+      reason: "time-too-short",
+      actualMinutes: 30,
+      recordedBy: "sir",
+      recordedAt: "2026-08-10T18:00:00.000Z",
+    });
+    const followUp = createPlanningProposal(
+      {
+        kind: "morning",
+        periodStart: "2026-08-11T00:00:00.000Z",
+        periodEnd: "2026-08-12T00:00:00.000Z",
+        generatedAt: "2026-08-11T08:00:00.000Z",
+        availability: [{ startAt: "2026-08-11T09:00:00.000Z", endAt: "2026-08-11T13:00:00.000Z" }],
+      },
+      {
+        areas: [rhiaArea, shadowArea, privateArea],
+        tasks: [task],
+        dependencies: [],
+        workBlocks: first.workBlocks,
+        feedback: [feedback],
+      },
+    );
+
+    const followUpBlock = followUp.workBlocks.find((block) => block.taskId === task.id);
+    expect(followUpBlock?.durationMinutes).toBe(90);
+    expect(followUpBlock?.explanation).toContain("Letzte Rückmeldung: partial");
+  });
+
+  it("creates an evening review and rejects a week without enough protection time", () => {
+    expect(() =>
+      createPlanningProposal(
+        {
+          kind: "week",
+          periodStart: "2026-08-10T00:00:00.000Z",
+          periodEnd: "2026-08-17T00:00:00.000Z",
+          generatedAt: "2026-08-10T08:00:00.000Z",
+          availability: [
+            { startAt: "2026-08-10T09:00:00.000Z", endAt: "2026-08-10T10:30:00.000Z" },
+          ],
+        },
+        {
+          areas: [rhiaArea, shadowArea],
+          tasks: [],
+          dependencies: [],
+          workBlocks: [],
+          feedback: [],
+        },
+      ),
+    ).toThrow(expect.objectContaining({ code: "INSUFFICIENT_WEEKLY_PROTECTION_TIME" }));
+
+    const review = createEveningReview({
+      periodStart: "2026-08-10T00:00:00.000Z",
+      periodEnd: "2026-08-11T00:00:00.000Z",
+      generatedAt: "2026-08-10T20:00:00.000Z",
+      workBlocks: [],
+      feedback: [],
+    });
+    expect(review).toMatchObject({
+      kind: "evening",
+      summary: "0 erledigt, 0 teilweise, 0 ausgelassen, 0 ohne Rückmeldung.",
+    });
   });
 });
