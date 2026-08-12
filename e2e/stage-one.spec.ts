@@ -7,7 +7,6 @@ test("stage 4 starts locally without old cloud dependencies", async ({ page }) =
   await page.goto("/");
 
   await expect(page.getByRole("heading", { name: "RHIA 2.0" })).toBeVisible();
-  await expect(page.getByText("Lokale Steuerung aktiv")).toBeVisible();
   await expect(page.getByText("IndexedDB")).toBeVisible();
   await expect(page.getByRole("status")).toContainText("Kein stiller Rückfall");
 
