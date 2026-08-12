@@ -109,6 +109,7 @@ export class LocalMemoryService {
   private readonly storage: RhiaBrowserStorage;
   private readonly now: Clock;
   private opened = false;
+  private referenceInitialization: Promise<{ areas: Area[]; sources: Source[] }> | null = null;
 
   constructor(options: LocalMemoryServiceOptions = {}) {
     this.storage = options.storage ?? createRhiaBrowserStorage();
@@ -919,6 +920,15 @@ export class LocalMemoryService {
   }
 
   private async ensureMemoryReferences(): Promise<{ areas: Area[]; sources: Source[] }> {
+    if (!this.referenceInitialization) {
+      this.referenceInitialization = this.createMissingMemoryReferences().finally(() => {
+        this.referenceInitialization = null;
+      });
+    }
+    return this.referenceInitialization;
+  }
+
+  private async createMissingMemoryReferences(): Promise<{ areas: Area[]; sources: Source[] }> {
     await this.initialize();
     let [areas, sources] = await Promise.all([
       this.storage.areas.list(),

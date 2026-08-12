@@ -1,10 +1,18 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
+async function dismissStartGreeting(page: Page): Promise<void> {
+  const startButton = page.getByRole("button", { name: "RHIA starten" });
+  if (await startButton.isVisible().catch(() => false)) {
+    await startButton.click();
+  }
+}
 
 test("stage 4 starts locally without old cloud dependencies", async ({ page }) => {
   const networkTargets: string[] = [];
   page.on("request", (request) => networkTargets.push(request.url()));
 
   await page.goto("/");
+  await dismissStartGreeting(page);
 
   await expect(page.getByRole("heading", { name: "RHIA" })).toBeVisible();
   await page.getByRole("tab", { name: "Übersicht" }).click();
@@ -23,7 +31,12 @@ test("stage 4 starts locally without old cloud dependencies", async ({ page }) =
 
 test("compact shell exposes all modules and preserves unfinished form input", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("tab", { name: "Planung" })).toHaveAttribute("aria-selected", "true");
+  await dismissStartGreeting(page);
+  await expect(page.getByRole("tab", { name: "Übersicht" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByRole("heading", { name: "Was ist jetzt wichtig?" })).toBeVisible();
 
   await page.getByRole("tab", { name: "Gedächtnis" }).click();
   const property = page.getByRole("textbox", { name: "Eigenschaft" });
@@ -47,6 +60,7 @@ test("compact shell exposes all modules and preserves unfinished form input", as
 
 test("daily planning creates a local explained protection block", async ({ page }) => {
   await page.goto("/");
+  await dismissStartGreeting(page);
   await page.getByRole("tab", { name: "Planung" }).click();
   const planningPanel = page.getByRole("region", { name: "Begründet planen" });
   await expect(planningPanel).toBeVisible();
@@ -77,6 +91,7 @@ test("daily planning creates a local explained protection block", async ({ page 
 
 test("weekly planning protects RHIA and Shadow Grown locally", async ({ page }) => {
   await page.goto("/");
+  await dismissStartGreeting(page);
   await page.getByRole("tab", { name: "Planung" }).click();
   const planningPanel = page.getByRole("region", { name: "Begründet planen" });
   await planningPanel.getByRole("tab", { name: "Woche" }).click();
@@ -98,6 +113,7 @@ test("local note survives edit, reload, trash and restore without reanimation", 
   page,
 }) => {
   await page.goto("/");
+  await dismissStartGreeting(page);
   await page.getByRole("tab", { name: "Daten & Sicherung" }).click();
   const notePanel = page.getByRole("region", { name: "Notizen testen" });
   await expect(notePanel.getByText("Bereit", { exact: true })).toBeVisible();
@@ -114,12 +130,14 @@ test("local note survives edit, reload, trash and restore without reanimation", 
   await expect(page.getByText("Bordeaux 47 geändert")).toBeVisible();
 
   await page.reload();
+  await dismissStartGreeting(page);
   await page.getByRole("tab", { name: "Daten & Sicherung" }).click();
   await expect(page.getByText("Bordeaux 47 geändert")).toBeVisible();
   await page.getByRole("button", { name: "Löschen" }).click();
   await expect(page.getByRole("button", { name: "Wiederherstellen" })).toBeVisible();
 
   await page.reload();
+  await dismissStartGreeting(page);
   await page.getByRole("tab", { name: "Daten & Sicherung" }).click();
   await expect(page.getByRole("button", { name: "Wiederherstellen" })).toBeVisible();
   await page.getByRole("button", { name: "Wiederherstellen" }).click();
@@ -136,6 +154,7 @@ test("local note survives edit, reload, trash and restore without reanimation", 
   await expect(page.getByText("Bordeaux 47 geändert")).not.toBeVisible();
 
   await page.reload();
+  await dismissStartGreeting(page);
   await page.getByRole("tab", { name: "Daten & Sicherung" }).click();
   await expect(page.getByText("Bordeaux 47 geändert")).not.toBeVisible();
   await expect(page.getByText("0 aktiv", { exact: false })).toBeVisible();
@@ -145,6 +164,7 @@ test("memory fact stays local through proposal, confirmation, reload and search"
   page,
 }) => {
   await page.goto("/");
+  await dismissStartGreeting(page);
   await page.getByRole("tab", { name: "Gedächtnis" }).click();
   const memoryPanel = page.getByRole("region", { name: "Fakten und Entscheidungen" });
   await expect(memoryPanel.getByText("Bereit", { exact: true })).toBeVisible();
@@ -164,6 +184,7 @@ test("memory fact stays local through proposal, confirmation, reload and search"
   ).toBeVisible();
 
   await page.reload();
+  await dismissStartGreeting(page);
   await page.getByRole("tab", { name: "Gedächtnis" }).click();
   await expect(memoryPanel.getByText("Die bevorzugte Anrede ist Sir.")).toBeVisible();
   await memoryPanel.getByRole("searchbox", { name: "Gedächtnis durchsuchen" }).fill("anrede sir");
@@ -184,6 +205,7 @@ test("memory controls remain usable without horizontal overflow in portrait and 
   for (const viewport of viewports) {
     await page.setViewportSize(viewport);
     await page.goto("/");
+    await dismissStartGreeting(page);
     await page.getByRole("tab", { name: "Gedächtnis" }).click();
     await expect(page.getByRole("heading", { name: "Fakten und Entscheidungen" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Als Vorschlag speichern" })).toBeVisible();
@@ -195,4 +217,38 @@ test("memory controls remain usable without horizontal overflow in portrait and 
     );
     expect(hasHorizontalOverflow).toBe(false);
   }
+});
+
+test("company cockpit accepts a confirmed blocked task and keeps the microphone button visible", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 800, height: 1280 });
+  await page.goto("/");
+  await dismissStartGreeting(page);
+
+  await expect(page.getByRole("heading", { name: "Was ist jetzt wichtig?" })).toBeVisible();
+  const microphoneButton = page.getByRole("button", { name: /Mikrofontaste/ });
+  await expect(microphoneButton).toBeVisible();
+  await microphoneButton.click();
+  await expect(page.getByRole("dialog", { name: "Sprachfreigabe" })).toContainText(
+    "RHIA speichert kein Audio",
+  );
+  await page.getByRole("button", { name: "Abbrechen" }).click();
+  await page.getByRole("textbox", { name: "Aufgabe" }).fill("Künstliches Angebot vorbereiten");
+  await page.getByRole("combobox", { name: "Wichtigkeit" }).selectOption("high");
+  await page.getByRole("textbox", { name: "Blockade – optional" }).fill("Testpreise fehlen");
+  await page
+    .getByRole("checkbox", { name: "Ich, Sir, bestätige die Übernahme dieser Aufgabe." })
+    .check();
+  await page.getByRole("button", { name: "Aufgabe bestätigen" }).click();
+
+  await expect(
+    page.getByText("„Künstliches Angebot vorbereiten“ wurde lokal übernommen."),
+  ).toBeVisible();
+  await expect(page.getByText("Blockiert: Testpreise fehlen")).toBeVisible();
+
+  await page.reload();
+  await dismissStartGreeting(page);
+  await expect(page.getByText("Blockiert: Testpreise fehlen")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Mikrofontaste/ })).toBeVisible();
 });

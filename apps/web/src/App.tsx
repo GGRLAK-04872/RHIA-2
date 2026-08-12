@@ -1,44 +1,29 @@
-import { type AppStatus, appStatusSchema } from "@rhia/contracts";
-import { RHIA_RUNTIME, RHIA_STAGE, RHIA_VERSION } from "@rhia/domain";
+import { RHIA_STAGE } from "@rhia/domain";
 import { RHIA_SECURITY_POLICY } from "@rhia/security";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./App.module.css";
+import {
+  ensureRhProduktionStartReminder,
+  isRhProduktionAnniversary,
+  RH_PRODUKTION_START_GREETING,
+} from "./application/businessStartService";
+import {
+  browserSpeechRecognitionAvailable,
+  parseRhiaVoiceCommand,
+  type RhiaVoiceTarget,
+  speakWithBrowserVoice,
+  startBrowserSpeechRecognition,
+} from "./application/voiceControl";
+import { BusinessCockpitPanel } from "./components/BusinessCockpitPanel";
 import { LocalPlanningPanel } from "./components/LocalPlanningPanel";
 import { LocalWorkHubPanel } from "./components/LocalWorkHubPanel";
 import { MemoryPanel } from "./components/MemoryPanel";
 import { StageOneDataPanel } from "./components/StageOneDataPanel";
 
-const status: AppStatus = appStatusSchema.parse({
-  version: RHIA_VERSION,
-  stage: RHIA_STAGE,
-  mode: "local-first",
-  apiEnabled: RHIA_RUNTIME.externalAi,
-  persistenceEnabled: RHIA_RUNTIME.persistence,
-});
-
-const checks = [
-  {
-    label: "Betriebsart",
-    value: "Local-first",
-  },
-  {
-    label: "OpenAI API",
-    value: status.apiEnabled ? "Aktiv" : "Deaktiviert",
-  },
-  {
-    label: "Cloud-Speicher",
-    value: RHIA_RUNTIME.cloudRuntime ? "Aktiv" : "Nicht verbunden",
-  },
-  {
-    label: "Datenbank",
-    value: status.persistenceEnabled ? "IndexedDB" : "Deaktiviert",
-  },
-] as const;
-
-type ModuleId = "overview" | "memory" | "tasks" | "planning" | "data";
+type ModuleId = RhiaVoiceTarget;
 
 const modules = [
-  { id: "overview", label: "Übersicht", eyebrow: "Lokaler Betriebszustand" },
+  { id: "overview", label: "Übersicht", eyebrow: "Firmen-Cockpit" },
   { id: "memory", label: "Gedächtnis", eyebrow: "Bestätigtes Wissen" },
   { id: "tasks", label: "Aufgaben", eyebrow: "Arbeitszentrale" },
   { id: "planning", label: "Planung", eyebrow: "Tages- und Wochenvorschläge" },
@@ -168,8 +153,67 @@ function ModuleIcon({ module }: { module: ModuleId }) {
 }
 
 export function App() {
-  const [activeModule, setActiveModule] = useState<ModuleId>("planning");
+  const [activeModule, setActiveModule] = useState<ModuleId>("overview");
+  const [voiceTaskDraft, setVoiceTaskDraft] = useState<string | null>(null);
+  const [voiceStatus, setVoiceStatus] = useState("Mikrofontaste – bereit");
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceConsentOpen, setVoiceConsentOpen] = useState(false);
+  const [greetingOpen, setGreetingOpen] = useState(() => isRhProduktionAnniversary());
+  const [greetingError, setGreetingError] = useState<string | null>(null);
   const activeModuleDetails = modules.find((module) => module.id === activeModule) ?? modules[0];
+
+  useEffect(() => {
+    let active = true;
+    void ensureRhProduktionStartReminder().catch((reason: unknown) => {
+      if (active) {
+        setGreetingError(
+          reason instanceof Error
+            ? reason.message
+            : "Die jährliche RH-Produktion-Erinnerung konnte nicht gespeichert werden.",
+        );
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const speak = (message: string) => {
+    if (!speakWithBrowserVoice(message)) {
+      setVoiceStatus("Sprachausgabe wird von diesem Browser nicht unterstützt.");
+    }
+  };
+
+  const startVoiceControl = () => {
+    if (!browserSpeechRecognitionAvailable()) {
+      setVoiceStatus("Browser-Spracherkennung ist auf diesem Gerät nicht verfügbar.");
+      return;
+    }
+    setVoiceListening(true);
+    setVoiceStatus("RHIA hört jetzt einmalig zu …");
+    const session = startBrowserSpeechRecognition({
+      onResult: (transcript) => {
+        const command = parseRhiaVoiceCommand(transcript);
+        setVoiceStatus(`Erkannt: ${transcript}`);
+        if (command.target) {
+          setActiveModule(command.target);
+        }
+        if (command.taskDraft) {
+          setVoiceTaskDraft(command.taskDraft);
+        }
+        speak(command.reply);
+      },
+      onError: (message) => {
+        setVoiceStatus(message);
+      },
+      onEnd: () => {
+        setVoiceListening(false);
+      },
+    });
+    if (!session) {
+      setVoiceListening(false);
+    }
+  };
 
   return (
     <main className={styles.page}>
@@ -202,6 +246,69 @@ export function App() {
           </span>
         </div>
       </header>
+
+      {greetingOpen ? (
+        <section className={styles.greetingBackdrop} aria-label="RH-Produktion-Starttag">
+          <div
+            className={styles.greetingCard}
+            role="dialog"
+            aria-modal="true"
+            aria-label="RH-Produktion-Starttag"
+          >
+            <p className={styles.greetingOverline}>12. August · jährliche Erinnerung</p>
+            <h2>Herzlichen Glückwunsch, Sir.</h2>
+            <p>{RH_PRODUKTION_START_GREETING}</p>
+            {greetingError ? <p role="alert">{greetingError}</p> : null}
+            <div className={styles.greetingActions}>
+              <button type="button" onClick={() => speak(RH_PRODUKTION_START_GREETING)}>
+                Begrüßung anhören
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setGreetingOpen(false);
+                  setActiveModule("overview");
+                }}
+              >
+                RHIA starten
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {voiceConsentOpen ? (
+        <section className={styles.greetingBackdrop} aria-label="Sprachfreigabe">
+          <div
+            className={styles.greetingCard}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Sprachfreigabe"
+          >
+            <p className={styles.greetingOverline}>Mikrofon · einmalige Freigabe</p>
+            <h2>Soll RHIA jetzt zuhören?</h2>
+            <p>
+              Das Mikrofon ist nur für diesen einen Sprachbefehl aktiv. RHIA speichert kein Audio.
+              Die Spracherkennung wird vom Browser bereitgestellt und kann Sprache an dessen
+              Anbieter übertragen.
+            </p>
+            <div className={styles.greetingActions}>
+              <button type="button" onClick={() => setVoiceConsentOpen(false)}>
+                Abbrechen
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setVoiceConsentOpen(false);
+                  startVoiceControl();
+                }}
+              >
+                Einmalig zuhören
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <div className={styles.workspace}>
         <section className={styles.hero} aria-labelledby="rhia-title">
@@ -284,14 +391,21 @@ export function App() {
             <div className={styles.highlight} />
           </div>
 
-          <div className={styles.composer} title="RHIA Eingabe – noch nicht aktiv">
+          <button
+            type="button"
+            className={styles.composer}
+            data-listening={voiceListening || undefined}
+            disabled={voiceListening}
+            onClick={() => setVoiceConsentOpen(true)}
+            title="Mikrofon ist nur während dieser Spracheingabe aktiv"
+          >
             <span className={styles.composerIcon} aria-hidden="true">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M7 7.5A2.5 2.5 0 0 1 9.5 5h5A2.5 2.5 0 0 1 17 7.5v5a2.5 2.5 0 0 1-2.5 2.5H12l-3.5 3v-3A2.5 2.5 0 0 1 6 12.5v-5Z" />
                 <circle cx="12" cy="10" r="2.3" />
               </svg>
             </span>
-            <span className={styles.composerText}>Nachricht an RHIA...</span>
+            <span className={styles.composerText}>{voiceStatus}</span>
             <span className={styles.waveform} aria-hidden="true">
               <i />
               <i />
@@ -301,8 +415,8 @@ export function App() {
               <i />
               <i />
             </span>
-            <small>noch nicht aktiv</small>
-          </div>
+            <small>Browser-Spracherkennung · RHIA speichert kein Audio</small>
+          </button>
         </section>
 
         <section
@@ -330,44 +444,15 @@ export function App() {
               aria-labelledby="nav-overview"
               hidden={activeModule !== "overview"}
             >
-              <section className={styles.statusCard} aria-labelledby="system-status-title">
-                <div className={styles.statusHeader}>
-                  <div>
-                    <p className={styles.statusOverline}>Systemstatus</p>
-                    <h3 id="system-status-title">Kontrollierter Start</h3>
-                  </div>
-                  <span className={styles.localState}>Lokal bereit</span>
-                </div>
-
-                <dl className={styles.statusGrid}>
-                  {checks.map((check) => (
-                    <div key={check.label}>
-                      <dt>{check.label}</dt>
-                      <dd>{check.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-
-                <p className={styles.safetyNote} role="status">
-                  {RHIA_SECURITY_POLICY.cloudFallbackAllowed
-                    ? "Cloud-Fallback aktiv"
-                    : "Kein stiller Rückfall auf alte RHIA- oder Cloud-Datenquellen."}
-                </p>
-              </section>
-
-              <section className={styles.orientationCard} aria-labelledby="orientation-title">
-                <p className={styles.statusOverline}>Aktueller Schritt</p>
-                <h3 id="orientation-title">Planung und Briefings</h3>
-                <p>
-                  Wissen, Aufgaben, Planungen und Sicherungen bleiben in der lokalen
-                  Browserdatenbank. Wählen Sie unten den benötigten Arbeitsbereich.
-                </p>
-                <div className={styles.versionRow}>
-                  <span>Version {status.version}</span>
-                  <span>Dexie 5</span>
-                  <span>Sicherung 4</span>
-                </div>
-              </section>
+              <BusinessCockpitPanel
+                voiceTaskDraft={voiceTaskDraft}
+                onVoiceTaskDraftConsumed={() => setVoiceTaskDraft(null)}
+              />
+              <p className={styles.safetyNote} role="status">
+                {RHIA_SECURITY_POLICY.cloudFallbackAllowed
+                  ? "Cloud-Fallback aktiv"
+                  : "Kein stiller Rückfall auf alte RHIA- oder Cloud-Datenquellen."}
+              </p>
             </section>
 
             <section

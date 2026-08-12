@@ -149,3 +149,7 @@ Domäne, Speicherung, Priorisierung, Planung, Feedbackwirkung, Dexie-Schema, Sic
 externe Schnittstellen, Kostenregeln und die Sperren von PR #6, `main` und Stufe 5 bleiben
 unverändert. Die funktionale Abnahme bleibt gültig; die nachgeschärfte Optik benötigt eine kurze
 erneute Sichtprüfung durch Sir.
+
+Der später ausdrücklich freigegebene Betriebsstart mit Firmen-Cockpit, Jahrestag und einmaliger
+Mikrofontaste ist eine getrennte Folgeentscheidung in ADR 0009. Die hier beschriebene UI-Shell-
+Entscheidung bleibt als Ausgangsstand unverändert nachvollziehbar.

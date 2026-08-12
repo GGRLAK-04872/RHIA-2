@@ -528,6 +528,21 @@
   background: rgb(8 4 7 / 82%);
   box-shadow: 0 12px 30px rgb(0 0 0 / 28%);
   backdrop-filter: blur(16px);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.composer:disabled {
+  cursor: wait;
+}
+
+.composer[data-listening="true"] {
+  border-color: rgb(255 83 146 / 72%);
+  box-shadow:
+    0 0 22px rgb(222 41 108 / 28%),
+    0 12px 30px rgb(0 0 0 / 28%);
 }
 
 .composerIcon {
@@ -593,6 +608,87 @@
 
 .waveform i:nth-child(4) {
   height: 29px;
+}
+
+.composer[data-listening="true"] .waveform i {
+  animation: voicePulse 0.72s ease-in-out infinite alternate;
+}
+
+.composer[data-listening="true"] .waveform i:nth-child(2n) {
+  animation-delay: 0.18s;
+}
+
+.greetingBackdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(0 0 0 / 72%);
+  backdrop-filter: blur(16px);
+}
+
+.greetingCard {
+  width: min(620px, 100%);
+  padding: clamp(24px, 4vw, 42px);
+  border: 1px solid rgb(242 63 133 / 35%);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 90% 5%, rgb(210 38 103 / 20%), transparent 34%),
+    linear-gradient(145deg, rgb(37 12 25 / 98%), rgb(8 5 8 / 98%));
+  box-shadow:
+    0 30px 100px rgb(0 0 0 / 70%),
+    0 0 60px rgb(188 25 86 / 18%);
+}
+
+.greetingOverline {
+  margin: 0;
+  color: #eb6c9f;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.greetingCard h2 {
+  margin: 9px 0 0;
+  color: #fff0f5;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 460;
+}
+
+.greetingCard > p:not(.greetingOverline) {
+  margin: 18px 0 0;
+  color: #d9c2cb;
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.greetingActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.greetingActions button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgb(236 73 135 / 34%);
+  border-radius: 11px;
+  background: rgb(108 23 56 / 32%);
+  color: #efc5d5;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.greetingActions button:last-child {
+  background: linear-gradient(145deg, #a32258, #641235);
+  color: #fff0f5;
 }
 
 .moduleShell {
@@ -901,6 +997,15 @@
   }
 }
 
+@keyframes voicePulse {
+  from {
+    transform: scaleY(0.45);
+  }
+  to {
+    transform: scaleY(1.2);
+  }
+}
+
 @media (max-width: 1180px) {
   .workspace {
     grid-template-columns: minmax(410px, 0.92fr) minmax(500px, 1.08fr);
@@ -955,7 +1060,7 @@
 
   .hero {
     grid-template-columns: minmax(220px, 1fr) minmax(170px, 0.7fr);
-    grid-template-rows: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
     align-items: center;
     justify-items: start;
     padding: 18px clamp(22px, 6vw, 54px);
@@ -982,8 +1087,19 @@
     display: none;
   }
 
-  .composer,
   .systemRail {
+    display: none;
+  }
+
+  .composer {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    min-height: 46px;
+    margin: 4px 0 0;
+  }
+
+  .composer small {
     display: none;
   }
 
@@ -1090,6 +1206,21 @@
 
   .modulePanel {
     padding: 12px;
+  }
+
+  .greetingBackdrop {
+    padding: 14px;
+  }
+
+  .greetingCard {
+    max-height: calc(100dvh - 28px);
+    overflow-y: auto;
+    padding: 22px;
+    border-radius: 18px;
+  }
+
+  .greetingActions {
+    display: grid;
   }
 
   .statusCard,

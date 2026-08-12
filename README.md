@@ -10,7 +10,9 @@ Dieses Repository ist der saubere Neustart ohne Cloudflare-, KV- oder Durable-Ob
 - Stufe 2: Gedächtnis v1 abgeschlossen, real abgenommen und in `main` integriert
 - Stufe 3: Arbeitszentrale abgeschlossen, real abgenommen und in `main` integriert
 - Stufe 4: Planung und Briefings technisch umgesetzt; funktionale Schnellabnahme offen
-- Produktstand des Stufe-4-Branches: Version 0.4.0, Dexie-Version 5, Sicherungsformat 4
+- Betriebsstart: Firmen-Cockpit, jährlicher RH-Produktionstag und einmalige Mikrofontaste technisch
+  umgesetzt; echtes Wake-Word weiterhin später
+- Produktstand des Betriebsstart-Branches: Version 0.4.1, Dexie-Version 5, Sicherungsformat 4
 - Betriebsart: lokale IndexedDB als einzige Datenquelle, ohne Cloud-Sync
 - Web/PWA: React, Vite und TypeScript Strict
 - Daten: Dexie, Zod, versionierte Migration, Export/Import und 30-Tage-Papierkorb
@@ -59,6 +61,14 @@ Stufe 4 ergänzt begründete Tages- und Wochenplanung, Morgenbriefing, Abendrüc
 strukturiertes Planungsfeedback. Verfügbare Zeit wird ausdrücklich eingegeben. Ungefähr 20 Prozent
 werden als Schutzzeit vorgesehen; pro Woche bleiben mindestens 60 Minuten für RHIA und 60 Minuten
 für Shadow Grown geschützt.
+
+Der freigegebene Betriebsstart ergänzt ein Firmen-Cockpit aus den vorhandenen lokalen Projekten,
+Aufgaben und Prioritätsregeln. Der 12. August 2026 wird als bestätigter jährlicher
+RH-Produktionstag gespeichert. Eine sichtbare Mikrofontaste verarbeitet nach Einwilligung genau
+einen Browser-Sprachbefehl. RHIA speichert kein Audio oder Transkript; der Browser kann Sprache an
+seinen Anbieter übertragen. Ohne Browserunterstützung bleibt die vollständige Textbedienung aktiv
+und RHIA meldet den fehlenden Sprachweg sichtbar. Dauerhören und das Wake-Word `Rhia` sind nicht
+Bestandteil dieses Zwischenstands.
 
 Sicherungen werden im Format v4 mit allen 14 lokalen Sammlungen erstellt. Gültige Dateien der
 Formate v1 bis v3 bleiben importierbar und werden ohne erfundene Daten migriert.

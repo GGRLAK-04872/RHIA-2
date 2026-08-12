@@ -74,19 +74,27 @@ export type EditableTaskFields = Pick<
 export class LocalWorkHubService {
   private readonly storage: RhiaBrowserStorage;
   private opened = false;
+  private initialization: Promise<void> | null = null;
 
   constructor(storage: RhiaBrowserStorage = createRhiaBrowserStorage()) {
     this.storage = storage;
   }
 
   async initialize(): Promise<LocalWorkHubSnapshot> {
+    if (!this.initialization) {
+      this.initialization = this.prepare();
+    }
+    await this.initialization;
+    return this.getSnapshot();
+  }
+
+  private async prepare(): Promise<void> {
     if (!this.opened) {
       await this.storage.open();
       this.opened = true;
     }
     await this.storage.purgeExpiredTrash();
     await this.ensureRequiredAreas();
-    return this.getSnapshot();
   }
 
   async getSnapshot(): Promise<LocalWorkHubSnapshot> {

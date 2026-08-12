@@ -32,7 +32,7 @@ Draft und ungemergt.
 ## Sicherheits- und Systemgrenzen
 
 - Testadresse: `https://ggrlak-04872.github.io/RHIA-2/`;
-- erwartete Anzeige: Version `0.4.0`, Stufe `4`, Datenquelle `IndexedDB`, OpenAI API `Deaktiviert`;
+- erwartete Anzeige: Version `0.4.1`, Stufe `4`, Datenquelle `IndexedDB`, OpenAI API `Deaktiviert`;
 - keine persönlichen, produktiven oder vertraulichen Testdaten;
 - keine externe KI, Cloud-Datenquelle, Synchronisation, Kalender-, Datei-, E-Mail- oder
   Kontaktintegration;
@@ -189,7 +189,7 @@ Sicherungs-Export, validierter Import und Persistenz nach Neustart funktionieren
 ## Handy-Smoke innerhalb derselben Testsitzung
 
 1. Testadresse auf dem Handy in einem privaten Tab öffnen.
-2. Version `0.4.0`, Stufe `4`, `IndexedDB` und deaktivierte API prüfen.
+2. Version `0.4.1`, Stufe `4`, `IndexedDB` und deaktivierte API prüfen.
 3. Prüfen: Die Daten des Hauptgeräts erscheinen nicht automatisch. Das bestätigt die vorgesehene
    lokale Datenquelle und fehlende Mehrgerätesynchronisation in Stufe 4.
 4. Mit ausschließlich künstlichen Werten einen Tagesplan erzeugen und Hoch- sowie Querformat

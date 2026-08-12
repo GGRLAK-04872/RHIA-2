@@ -142,7 +142,7 @@ describe("stage 1 contracts", () => {
 
     expect(
       appStatusSchema.safeParse({
-        version: "0.4.0",
+        version: "0.4.1",
         stage: 4,
         mode: "local-first",
         apiEnabled: false,
