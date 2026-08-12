@@ -13,7 +13,8 @@
 | `main` | `25c445668651ccd6077b5ffcfce66d839c4f151d`; unverändert |
 | Stufe-4-Planung | Draft-PR #6, Head `d611baffd35f2ad125fcfb3edbf3226b6efae4b1`, ungemergt |
 | Stufe-4-UI | Draft-PR #7, Head `836cfff045c98aef9563521313c6f0c353b0edc7`, ungemergt |
-| Betriebsstart-Draft | #8, Head `2193e0bb948cf25b972a5a73d8eb4794d5b0d326`, Draft gegen `main`, ungemergt |
+| Betriebsstart-Funktionscommit | `2193e0bb948cf25b972a5a73d8eb4794d5b0d326` |
+| Betriebsstart-Draft | #8, Draft gegen `main`, ungemergt; den aktuellen Dokumentations-Head direkt am Branch prüfen |
 | Produktstand | Version 0.4.1, aktive Stufe 4 |
 | Datenquelle | ausschließlich lokale IndexedDB des jeweiligen Browsers |
 | Schema / Sicherung | Dexie-Version 5 / `rhia-backup` Version 4 |
