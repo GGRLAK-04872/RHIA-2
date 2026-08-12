@@ -7,7 +7,7 @@ test("stage 4 starts locally without old cloud dependencies", async ({ page }) =
   await page.goto("/");
 
   await expect(page.getByRole("heading", { name: "RHIA 2.0" })).toBeVisible();
-  await expect(page.getByText("Wissen und Arbeit bleiben unter deiner Kontrolle.")).toBeVisible();
+  await expect(page.getByText("Lokale Steuerung aktiv")).toBeVisible();
   await expect(page.getByText("IndexedDB")).toBeVisible();
   await expect(page.getByRole("status")).toContainText("Kein stiller Rückfall");
 
@@ -49,9 +49,7 @@ test("compact shell exposes all modules and preserves unfinished form input", as
 test("daily planning creates a local explained protection block", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("tab", { name: "Planung" }).click();
-  const planningPanel = page.locator("section").filter({
-    has: page.getByRole("heading", { name: "Begründet planen" }),
-  });
+  const planningPanel = page.getByRole("region", { name: "Begründet planen" });
   await expect(planningPanel).toBeVisible();
   await planningPanel.getByRole("button", { name: "Tagesplan vorschlagen" }).click();
   await expect(
@@ -81,9 +79,7 @@ test("daily planning creates a local explained protection block", async ({ page 
 test("weekly planning protects RHIA and Shadow Grown locally", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("tab", { name: "Planung" }).click();
-  const planningPanel = page.locator("section").filter({
-    has: page.getByRole("heading", { name: "Begründet planen" }),
-  });
+  const planningPanel = page.getByRole("region", { name: "Begründet planen" });
   await planningPanel.getByRole("tab", { name: "Woche" }).click();
   await planningPanel.getByRole("button", { name: "Woche vorschlagen" }).click();
   await expect(
@@ -104,9 +100,7 @@ test("local note survives edit, reload, trash and restore without reanimation", 
 }) => {
   await page.goto("/");
   await page.getByRole("tab", { name: "Daten & Sicherung" }).click();
-  const notePanel = page.locator("section").filter({
-    has: page.getByRole("heading", { name: "Notizen testen" }),
-  });
+  const notePanel = page.getByRole("region", { name: "Notizen testen" });
   await expect(notePanel.getByText("Bereit", { exact: true })).toBeVisible();
 
   await page.getByRole("textbox", { name: "Bereich" }).fill("RHIA Browser-Test");
@@ -153,9 +147,7 @@ test("memory fact stays local through proposal, confirmation, reload and search"
 }) => {
   await page.goto("/");
   await page.getByRole("tab", { name: "Gedächtnis" }).click();
-  const memoryPanel = page.locator("section").filter({
-    has: page.getByRole("heading", { name: "Fakten und Entscheidungen" }),
-  });
+  const memoryPanel = page.getByRole("region", { name: "Fakten und Entscheidungen" });
   await expect(memoryPanel.getByText("Bereit", { exact: true })).toBeVisible();
 
   await memoryPanel.getByRole("textbox", { name: "Eigenschaft" }).fill("preferred-address");
