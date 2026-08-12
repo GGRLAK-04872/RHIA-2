@@ -50,6 +50,15 @@ const blockStatusLabels: Record<WorkBlock["status"], string> = {
   skipped: "Ausgelassen",
 };
 
+type PlanningView = "day" | "week" | "briefings" | "feedback";
+
+const planningViews = [
+  { id: "day", label: "Tagesplan" },
+  { id: "week", label: "Woche" },
+  { id: "briefings", label: "Briefings" },
+  { id: "feedback", label: "Feedback" },
+] as const satisfies ReadonlyArray<{ id: PlanningView; label: string }>;
+
 function localDateValue(date = new Date()): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -167,6 +176,7 @@ export function PlanningPanel({
   onTrashBriefing,
   onRestoreBriefing,
 }: PlanningPanelProps) {
+  const [activeView, setActiveView] = useState<PlanningView>("day");
   const [dayDate, setDayDate] = useState(defaultDate());
   const [dayStart, setDayStart] = useState("09:00");
   const [dayEnd, setDayEnd] = useState("12:00");
@@ -242,118 +252,164 @@ export function PlanningPanel({
         Ungefähr 20 Prozent bleiben für RHIA und Shadow Grown geschützt.
       </p>
 
+      <div className={styles.viewTabs} aria-label="Planungsbereiche" role="tablist">
+        {planningViews.map((view) => (
+          <button
+            key={view.id}
+            id={`planning-tab-${view.id}`}
+            type="button"
+            role="tab"
+            aria-selected={activeView === view.id}
+            aria-controls={`planning-view-${view.id}`}
+            onClick={() => setActiveView(view.id)}
+          >
+            {view.label}
+          </button>
+        ))}
+      </div>
+
       <div className={styles.planningForms}>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            void generateDayPlan();
-          }}
-        >
-          <h3>Morgenbriefing</h3>
-          <label>
-            <span>Tag</span>
-            <input
-              type="date"
-              value={dayDate}
-              onChange={(event) => setDayDate(event.currentTarget.value)}
-              required
-            />
-          </label>
-          <div className={styles.inlineFields}>
+        {activeView === "day" ? (
+          <form
+            id="planning-view-day"
+            role="tabpanel"
+            aria-labelledby="planning-tab-day"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void generateDayPlan();
+            }}
+          >
+            <h3>Morgenbriefing</h3>
             <label>
-              <span>Verfügbar ab</span>
+              <span>Tag</span>
+              <input
+                type="date"
+                value={dayDate}
+                onChange={(event) => setDayDate(event.currentTarget.value)}
+                required
+              />
+            </label>
+            <div className={styles.inlineFields}>
+              <label>
+                <span>Verfügbar ab</span>
+                <input
+                  type="time"
+                  value={dayStart}
+                  onChange={(event) => setDayStart(event.currentTarget.value)}
+                  required
+                />
+              </label>
+              <label>
+                <span>Verfügbar bis</span>
+                <input
+                  type="time"
+                  value={dayEnd}
+                  onChange={(event) => setDayEnd(event.currentTarget.value)}
+                  required
+                />
+              </label>
+            </div>
+            <button type="submit">Tagesplan vorschlagen</button>
+          </form>
+        ) : null}
+
+        {activeView === "week" ? (
+          <form
+            id="planning-view-week"
+            role="tabpanel"
+            aria-labelledby="planning-tab-week"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void generateWeekPlan();
+            }}
+          >
+            <h3>Wochenplanung</h3>
+            <label>
+              <span>Wochenbeginn</span>
+              <input
+                type="date"
+                value={weekStart}
+                onChange={(event) => setWeekStart(event.currentTarget.value)}
+                required
+              />
+            </label>
+            <label>
+              <span>Täglicher Start</span>
               <input
                 type="time"
-                value={dayStart}
-                onChange={(event) => setDayStart(event.currentTarget.value)}
+                value={weekStartTime}
+                onChange={(event) => setWeekStartTime(event.currentTarget.value)}
                 required
               />
             </label>
-            <label>
-              <span>Verfügbar bis</span>
-              <input
-                type="time"
-                value={dayEnd}
-                onChange={(event) => setDayEnd(event.currentTarget.value)}
-                required
-              />
-            </label>
-          </div>
-          <button type="submit">Tagesplan vorschlagen</button>
-        </form>
+            <div className={styles.inlineFields}>
+              <label>
+                <span>Minuten Mo–Fr</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="720"
+                  value={weekdayMinutes}
+                  onChange={(event) => setWeekdayMinutes(event.currentTarget.value)}
+                  required
+                />
+              </label>
+              <label>
+                <span>Minuten Sa/So</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="720"
+                  value={weekendMinutes}
+                  onChange={(event) => setWeekendMinutes(event.currentTarget.value)}
+                  required
+                />
+              </label>
+            </div>
+            <button type="submit">Woche vorschlagen</button>
+          </form>
+        ) : null}
 
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            void generateWeekPlan();
-          }}
-        >
-          <h3>Wochenplanung</h3>
-          <label>
-            <span>Wochenbeginn</span>
-            <input
-              type="date"
-              value={weekStart}
-              onChange={(event) => setWeekStart(event.currentTarget.value)}
-              required
-            />
-          </label>
-          <label>
-            <span>Täglicher Start</span>
-            <input
-              type="time"
-              value={weekStartTime}
-              onChange={(event) => setWeekStartTime(event.currentTarget.value)}
-              required
-            />
-          </label>
-          <div className={styles.inlineFields}>
+        {activeView === "briefings" ? (
+          <form
+            id="planning-view-briefings"
+            role="tabpanel"
+            aria-labelledby="planning-tab-briefings"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const { periodStart, periodEnd } = dayRange(reviewDate);
+              void onCreateEveningReview(periodStart, periodEnd);
+            }}
+          >
+            <h3>Abendrückblick</h3>
             <label>
-              <span>Minuten Mo–Fr</span>
+              <span>Tag</span>
               <input
-                type="number"
-                min="0"
-                max="720"
-                value={weekdayMinutes}
-                onChange={(event) => setWeekdayMinutes(event.currentTarget.value)}
+                type="date"
+                value={reviewDate}
+                onChange={(event) => setReviewDate(event.currentTarget.value)}
                 required
               />
             </label>
-            <label>
-              <span>Minuten Sa/So</span>
-              <input
-                type="number"
-                min="0"
-                max="720"
-                value={weekendMinutes}
-                onChange={(event) => setWeekendMinutes(event.currentTarget.value)}
-                required
-              />
-            </label>
-          </div>
-          <button type="submit">Woche vorschlagen</button>
-        </form>
+            <p>Fasst erledigte, teilweise erledigte, ausgelassene und offene Blöcke zusammen.</p>
+            <button type="submit">Rückblick erstellen</button>
+          </form>
+        ) : null}
 
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            const { periodStart, periodEnd } = dayRange(reviewDate);
-            void onCreateEveningReview(periodStart, periodEnd);
-          }}
-        >
-          <h3>Abendrückblick</h3>
-          <label>
-            <span>Tag</span>
-            <input
-              type="date"
-              value={reviewDate}
-              onChange={(event) => setReviewDate(event.currentTarget.value)}
-              required
-            />
-          </label>
-          <p>Fasst erledigte, teilweise erledigte, ausgelassene und offene Blöcke zusammen.</p>
-          <button type="submit">Rückblick erstellen</button>
-        </form>
+        {activeView === "feedback" ? (
+          <section
+            id="planning-view-feedback"
+            className={styles.feedbackGuide}
+            role="tabpanel"
+            aria-labelledby="planning-tab-feedback"
+          >
+            <h3>Planungsfeedback</h3>
+            <p>
+              Rückmeldungen werden direkt beim aktuellen Aufgabenblock gespeichert und wirken auf
+              den nächsten Vorschlag.
+            </p>
+          </section>
+        ) : null}
       </div>
 
       <section className={styles.latest} aria-live="polite">
@@ -426,32 +482,36 @@ export function PlanningPanel({
         )}
       </section>
 
-      <details className={styles.history}>
-        <summary>Briefing-Verlauf ({briefings.length})</summary>
-        <ul>
-          {briefings.map((briefing) => (
-            <li key={briefing.id}>
-              <strong>{kindLabels[briefing.kind]}</strong>
-              <span>{formatDateTime(briefing.generatedAt)}</span>
-              <span>{briefing.summary}</span>
-            </li>
-          ))}
-        </ul>
-      </details>
+      {activeView === "briefings" ? (
+        <details className={styles.history}>
+          <summary>Briefing-Verlauf ({briefings.length})</summary>
+          <ul>
+            {briefings.map((briefing) => (
+              <li key={briefing.id}>
+                <strong>{kindLabels[briefing.kind]}</strong>
+                <span>{formatDateTime(briefing.generatedAt)}</span>
+                <span>{briefing.summary}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
 
-      <details className={styles.history}>
-        <summary>Papierkorb ({snapshot.trash.briefings.length})</summary>
-        <ul>
-          {snapshot.trash.briefings.map((briefing) => (
-            <li key={briefing.id}>
-              <strong>{briefing.title}</strong>
-              <button type="button" onClick={() => void onRestoreBriefing(briefing)}>
-                Wiederherstellen
-              </button>
-            </li>
-          ))}
-        </ul>
-      </details>
+      {activeView === "feedback" ? (
+        <details className={styles.history}>
+          <summary>Papierkorb ({snapshot.trash.briefings.length})</summary>
+          <ul>
+            {snapshot.trash.briefings.map((briefing) => (
+              <li key={briefing.id}>
+                <strong>{briefing.title}</strong>
+                <button type="button" onClick={() => void onRestoreBriefing(briefing)}>
+                  Wiederherstellen
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
     </section>
   );
 }
