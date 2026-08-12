@@ -13,7 +13,7 @@
 | `main` | `25c445668651ccd6077b5ffcfce66d839c4f151d`; unverändert |
 | Stufe-4-Planung | Draft-PR #6, Head `d611baffd35f2ad125fcfb3edbf3226b6efae4b1`, ungemergt |
 | Stufe-4-UI | Draft-PR #7, Head `836cfff045c98aef9563521313c6f0c353b0edc7`, ungemergt |
-| Betriebsstart-Draft | `[nach Veröffentlichung eintragen]` |
+| Betriebsstart-Draft | #8, Head `2193e0bb948cf25b972a5a73d8eb4794d5b0d326`, Draft gegen `main`, ungemergt |
 | Produktstand | Version 0.4.1, aktive Stufe 4 |
 | Datenquelle | ausschließlich lokale IndexedDB des jeweiligen Browsers |
 | Schema / Sicherung | Dexie-Version 5 / `rhia-backup` Version 4 |
@@ -87,8 +87,8 @@ weder Audio noch Transkripte. Die Textbedienung bleibt ohne Mikrofon vollständi
 | Lokale Unit-/Komponententests | 111/111 grün |
 | Vollständiger `pnpm check` | Format, Lint, TypeScript, Tests, Build und alle Audits erfolgreich |
 | Lokaler Playwright-Lauf | Chromium in der Work-Umgebung nicht vorhanden; GitHub-CI übernimmt |
-| GitHub-CI | `[nach Veröffentlichung eintragen]` |
-| Pages-/PR-Preview | `[nach Veröffentlichung eintragen]` |
+| GitHub-CI | PR #8 führt Qualität/Build und Browser-Smoke auf jedem aktuellen Head aus |
+| Pages-/PR-Preview | PR #8 baut und veröffentlicht die getrennte RHIA-2-Testseite; grüner aktueller Lauf ist Pflicht |
 | Reale Abnahme | offen; `docs/tests/RHIA_BETRIEBSSTART_SCHNELLTEST.md` |
 
 ## Restdauer bis Sirs finalem Schnelltest
@@ -101,12 +101,9 @@ sich die Geräteklärung; dieser Fall wird nicht als bestanden ausgegeben.
 
 ## Nächster erlaubter Schritt
 
-1. Vollständigen lokalen Prüflauf abschließen.
-2. Betriebsstart ausschließlich auf `agent/rhia-firmenassistent-test` veröffentlichen.
-3. Draft-PR gegen `agent/stufe-4-ui-shell` erstellen; nichts mergen.
-4. CI und Preview auf demselben Branch-Head prüfen.
-5. Sir führt `docs/tests/RHIA_BETRIEBSSTART_SCHNELLTEST.md` mit künstlichen Daten durch.
-6. Danach stoppen und Sirs Ergebnis beziehungsweise gesonderte Mergeentscheidung abwarten.
+1. CI und Testseite auf demselben aktuellen PR-Head vollständig grün prüfen.
+2. Sir führt `docs/tests/RHIA_BETRIEBSSTART_SCHNELLTEST.md` mit künstlichen Daten durch.
+3. Danach stoppen und Sirs Ergebnis beziehungsweise gesonderte Mergeentscheidung abwarten.
 
 ## Dauerhafte Zwei-Dateien-Regel
 
