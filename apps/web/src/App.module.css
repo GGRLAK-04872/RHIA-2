@@ -8,8 +8,8 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   background:
-    radial-gradient(circle at 25% 44%, rgb(123 12 55 / 20%), transparent 34%),
-    radial-gradient(circle at 78% 26%, rgb(102 20 47 / 11%), transparent 30%), #050406;
+    radial-gradient(circle at 34% 43%, rgb(130 7 54 / 13%), transparent 37%),
+    radial-gradient(circle at 78% 26%, rgb(92 12 43 / 9%), transparent 30%), #020203;
   color: #fff9fb;
 }
 
@@ -17,7 +17,7 @@
   position: absolute;
   z-index: -1;
   inset: -15%;
-  opacity: 0.8;
+  opacity: 0.66;
   background:
     radial-gradient(circle at 38% 42%, rgb(240 21 101 / 10%), transparent 24%),
     radial-gradient(circle at 72% 56%, rgb(133 25 66 / 10%), transparent 26%);
@@ -30,11 +30,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 66px;
-  padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 12px
+  min-height: 62px;
+  padding: max(10px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) 10px
     max(20px, env(safe-area-inset-left));
-  border-bottom: 1px solid rgb(237 47 117 / 12%);
-  background: rgb(4 3 5 / 78%);
+  border-bottom: 1px solid rgb(237 47 117 / 9%);
+  background: rgb(2 2 3 / 88%);
   backdrop-filter: blur(20px);
 }
 
@@ -91,6 +91,7 @@
 
 .readyBadge,
 .userBadge,
+.settingsGlyph,
 .stageBadge,
 .localState {
   border: 1px solid rgb(255 255 255 / 10%);
@@ -119,6 +120,33 @@
   padding: 5px 12px 5px 5px;
 }
 
+.userBadge > svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: #a98a96;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.settingsGlyph {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+}
+
+.settingsGlyph svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: #d9c3cc;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.45;
+}
+
 .userBadge > span {
   display: grid;
   width: 27px;
@@ -133,7 +161,7 @@
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(360px, 0.9fr) minmax(540px, 1.1fr);
+  grid-template-columns: minmax(600px, 1.48fr) minmax(520px, 1fr);
 }
 
 .hero {
@@ -144,33 +172,34 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   justify-items: center;
-  padding: clamp(22px, 3.5vw, 54px);
+  padding: clamp(22px, 2.7vw, 46px) clamp(26px, 3vw, 54px) 28px;
   border-right: 1px solid rgb(229 46 114 / 16%);
   background:
-    radial-gradient(circle at 50% 50%, rgb(143 15 65 / 18%), transparent 42%),
-    linear-gradient(145deg, rgb(8 5 8 / 38%), rgb(3 2 4 / 74%));
+    radial-gradient(circle at 55% 50%, rgb(143 10 60 / 17%), transparent 40%),
+    linear-gradient(145deg, rgb(7 3 6 / 28%), rgb(1 1 2 / 74%));
 }
 
 .hero::before {
   position: absolute;
   content: "";
-  inset: 8% 5%;
-  opacity: 0.44;
+  inset: 2% 2%;
+  opacity: 0.68;
   background-image:
-    radial-gradient(circle, rgb(249 35 112 / 80%) 0 1px, transparent 1.6px),
-    radial-gradient(circle, rgb(255 120 169 / 48%) 0 1px, transparent 1.4px);
+    radial-gradient(circle, rgb(249 35 112 / 76%) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgb(255 120 169 / 44%) 0 0.8px, transparent 1.35px);
   background-position:
     0 0,
     22px 31px;
   background-size:
-    47px 53px,
-    71px 67px;
-  mask-image: radial-gradient(circle at 50% 52%, #000 0 24%, transparent 70%);
+    41px 47px,
+    67px 61px;
+  mask-image: radial-gradient(circle at 55% 51%, #000 0 18%, transparent 71%);
 }
 
 .heroCopy {
   z-index: 2;
   text-align: center;
+  padding-left: 70px;
 }
 
 .eyebrow,
@@ -187,9 +216,9 @@
 .heroCopy h1 {
   margin: 9px 0 0;
   color: #ff91bc;
-  font-size: clamp(3.25rem, 5.4vw, 6.2rem);
-  font-weight: 340;
-  letter-spacing: 0.12em;
+  font-size: clamp(3.1rem, 4.4vw, 5.2rem);
+  font-weight: 320;
+  letter-spacing: 0.17em;
   line-height: 0.96;
   text-shadow:
     0 0 24px rgb(235 47 118 / 34%),
@@ -197,142 +226,373 @@
 }
 
 .salutation {
-  margin: 12px 0 0;
+  margin: 10px 0 0;
   color: #f2dfe6;
-  font-size: clamp(1.2rem, 1.9vw, 1.85rem);
+  font-size: clamp(1.15rem, 1.5vw, 1.55rem);
   font-weight: 350;
 }
 
 .organism {
   position: relative;
   z-index: 1;
-  width: min(37vw, 560px);
+  width: min(45vw, 720px);
   max-height: 100%;
   aspect-ratio: 1;
   align-self: center;
   display: grid;
   place-items: center;
-  filter: drop-shadow(0 28px 46px rgb(0 0 0 / 48%));
+  margin-left: 70px;
+  filter: drop-shadow(0 26px 52px rgb(0 0 0 / 52%));
 }
 
 .orbitOuter,
 .orbitInner,
 .particleField,
+.neuralWeb,
 .core,
 .highlight {
   position: absolute;
 }
 
 .orbitOuter {
-  inset: 2%;
-  border: 1px solid rgb(232 57 122 / 18%);
-  border-radius: 47% 53% 55% 45% / 48% 41% 59% 52%;
+  inset: 1%;
+  border: 1px solid rgb(232 57 122 / 14%);
+  border-radius: 43% 57% 51% 49% / 54% 41% 59% 46%;
   box-shadow:
-    0 0 68px rgb(173 23 79 / 18%),
-    inset 0 0 54px rgb(234 74 133 / 8%);
-  animation: orbit 24s linear infinite;
+    0 0 72px rgb(173 23 79 / 14%),
+    inset 0 0 58px rgb(234 74 133 / 6%);
+  animation: orbit 52s linear infinite;
 }
 
 .orbitInner {
-  inset: 16%;
-  border: 1px solid rgb(251 106 161 / 24%);
-  border-radius: 53% 47% 43% 57% / 46% 58% 42% 54%;
-  box-shadow: 0 0 36px rgb(234 42 111 / 22%);
-  animation: reverseOrbit 17s linear infinite;
+  inset: 12%;
+  border: 1px solid rgb(251 106 161 / 19%);
+  border-radius: 56% 44% 48% 52% / 42% 58% 42% 58%;
+  box-shadow: 0 0 42px rgb(234 42 111 / 17%);
+  animation: reverseOrbit 38s linear infinite;
 }
 
 .particleField {
-  inset: 12%;
+  inset: 3%;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 12% 46%, #ff4f93 0 1.2px, transparent 2px),
-    radial-gradient(circle at 74% 17%, #ff84b2 0 1.2px, transparent 2px),
-    radial-gradient(circle at 82% 67%, #f52576 0 1.4px, transparent 2.2px),
-    radial-gradient(circle at 35% 82%, #ff78aa 0 1.2px, transparent 2px),
-    repeating-radial-gradient(circle at 50% 50%, transparent 0 8%, rgb(232 35 105 / 10%) 9% 10%);
+    radial-gradient(circle at 12% 46%, #ff4f93 0 1.3px, transparent 2px),
+    radial-gradient(circle at 74% 17%, #ff84b2 0 1.1px, transparent 1.9px),
+    radial-gradient(circle at 82% 67%, #f52576 0 1.4px, transparent 2px),
+    radial-gradient(circle at 35% 82%, #ff78aa 0 1.1px, transparent 1.9px),
+    radial-gradient(circle at 63% 74%, #ff3f87 0 1px, transparent 1.8px),
+    radial-gradient(circle at 29% 28%, #ff9fc2 0 0.9px, transparent 1.7px),
+    repeating-radial-gradient(circle at 50% 50%, transparent 0 7%, rgb(232 35 105 / 6%) 8% 8.5%);
   box-shadow:
-    0 -70px 42px -45px rgb(241 27 102 / 48%),
-    70px 16px 45px -50px rgb(255 101 157 / 72%),
-    -65px 24px 42px -48px rgb(230 24 94 / 64%),
-    8px 72px 44px -50px rgb(235 35 103 / 58%);
-  animation: pulseField 8s ease-in-out infinite;
+    0 -118px 68px -66px rgb(241 27 102 / 36%),
+    118px 20px 72px -76px rgb(255 101 157 / 48%),
+    -112px 38px 70px -72px rgb(230 24 94 / 42%),
+    18px 118px 70px -78px rgb(235 35 103 / 38%);
+  animation: pulseField 9s ease-in-out infinite;
+}
+
+.neuralWeb {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 0 8px rgb(240 35 111 / 56%));
+  animation: neuralDrift 18s ease-in-out infinite;
+}
+
+.neuralLoops path {
+  fill: none;
+  stroke: url("#neural-gradient");
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  opacity: 0.45;
+}
+
+.neuralLoops path:nth-child(even) {
+  stroke-width: 0.8;
+  opacity: 0.3;
+}
+
+.neuralFilaments path {
+  fill: none;
+  stroke: url("#neural-gradient");
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  filter: url("#neural-glow");
+  opacity: 0.84;
+}
+
+.neuralFilaments path:nth-child(3n) {
+  stroke-width: 0.9;
+  opacity: 0.58;
+}
+
+.neuralFilaments path:nth-child(4n) {
+  stroke-width: 2;
+  opacity: 0.72;
+}
+
+.neuralNodes circle {
+  fill: #ff7cac;
+  filter: url("#neural-glow");
+}
+
+.neuralNodes circle:first-child {
+  fill: #fff8fb;
+  stroke: #ff9fc4;
+  stroke-width: 5;
 }
 
 .core {
-  width: 42%;
+  width: 4.2%;
   aspect-ratio: 1;
-  border-radius: 44% 56% 48% 52% / 55% 43% 57% 45%;
-  background:
-    radial-gradient(circle at 47% 45%, #fff4f8 0 2%, #ff95bd 3% 5%, transparent 7%),
-    conic-gradient(from 45deg, #4c0b28, #ea2e78, #6f1138, #ff7bab, #5b0a2d, #d92368, #4c0b28);
+  border: 2px solid rgb(255 229 239 / 82%);
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 20%, #ff9cc0 36%, #ef3278 62%, transparent 72%);
   box-shadow:
-    inset -20px -26px 50px rgb(12 1 7 / 52%),
-    inset 15px 14px 32px rgb(255 218 232 / 18%),
-    0 0 18px rgb(255 116 168 / 74%),
-    0 0 66px rgb(224 35 104 / 48%);
-  animation: breathe 6.8s ease-in-out infinite;
+    0 0 16px #ffb5d0,
+    0 0 42px #f62f79,
+    0 0 92px rgb(213 18 88 / 76%);
+  animation: breathe 5.8s ease-in-out infinite;
 }
 
 .core::before,
 .core::after {
   position: absolute;
   content: "";
-  inset: -24%;
-  border: 1px solid rgb(255 97 155 / 30%);
-  border-radius: 38% 62% 58% 42% / 52% 45% 55% 48%;
+  inset: -120%;
+  border: 1px solid rgb(255 97 155 / 38%);
+  border-radius: 43% 57% 58% 42% / 52% 42% 58% 48%;
   transform: rotate(27deg);
-  box-shadow:
-    24px -18px 18px -21px #ff4d91,
-    -18px 24px 16px -19px #e92470,
-    12px 31px 20px -24px #ff8bb6;
+  box-shadow: 0 0 22px rgb(244 48 119 / 36%);
 }
 
 .core::after {
-  inset: -48%;
-  opacity: 0.55;
+  inset: -230%;
+  opacity: 0.38;
   transform: rotate(-31deg);
 }
 
 .highlight {
-  width: 9%;
-  height: 7%;
-  top: 42%;
-  left: 45%;
+  width: 1.2%;
+  height: 1.2%;
+  top: 48.7%;
+  left: 48.9%;
   border-radius: 50%;
-  background: rgb(255 247 250 / 78%);
-  filter: blur(4px);
-  transform: rotate(-25deg);
+  background: #fff;
+  box-shadow: 0 0 12px #fff;
 }
 
-.heroState {
-  z-index: 2;
-  width: min(100%, 360px);
+.systemRail {
+  position: absolute;
+  z-index: 3;
+  top: 84px;
+  bottom: 112px;
+  left: 24px;
+  width: 138px;
+  min-height: 360px;
   display: grid;
-  gap: 4px;
-  padding: 12px 16px;
-  border: 1px solid rgb(226 50 116 / 20%);
-  border-radius: 14px;
-  background: rgb(12 7 11 / 68%);
-  text-align: center;
-  backdrop-filter: blur(16px);
+  grid-template-rows: auto auto 1fr auto;
+  gap: 18px;
+  padding: 18px 14px;
+  border: 1px solid rgb(228 44 113 / 28%);
+  border-radius: 13px;
+  background: linear-gradient(165deg, rgb(15 7 12 / 88%), rgb(5 3 5 / 82%));
+  box-shadow:
+    0 20px 50px rgb(0 0 0 / 36%),
+    inset 0 0 32px rgb(149 17 65 / 7%);
+  backdrop-filter: blur(18px);
 }
 
-.heroState span {
-  color: #ba768f;
-  font-size: 0.64rem;
-  font-weight: 760;
-  letter-spacing: 0.12em;
+.railHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #c9b3bc;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.heroState strong {
-  color: #efdce4;
+.railHeading i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f4387d;
+  box-shadow: 0 0 9px #f4387d;
+}
+
+.localRing {
+  width: 84px;
+  aspect-ratio: 1;
+  justify-self: center;
+  display: grid;
+  place-content: center;
+  border: 1px solid #e82f76;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(110 19 53 / 34%), transparent 70%);
+  box-shadow:
+    0 0 18px rgb(232 47 118 / 40%),
+    inset 0 0 18px rgb(232 47 118 / 18%);
+  text-align: center;
+}
+
+.localRing strong {
+  color: #f4c1d3;
+  font-size: 1.05rem;
+  font-weight: 520;
+}
+
+.localRing span {
+  color: #c37995;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.railChecks {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  margin: 0;
+}
+
+.railChecks > div {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgb(255 255 255 / 6%);
+}
+
+.railChecks > div::after {
+  position: absolute;
+  content: "";
+  right: 20%;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, #ef3379, transparent);
+  box-shadow: 0 0 7px rgb(239 51 121 / 60%);
+}
+
+.railChecks dt,
+.railChecks dd {
+  margin: 0;
+  color: #a9949d;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+
+.railChecks dd {
+  color: #ead3dc;
+  font-weight: 750;
+}
+
+.railSource {
+  display: grid;
+  gap: 4px;
+  padding-top: 12px;
+  border-top: 1px solid rgb(255 255 255 / 7%);
+}
+
+.railSource span {
+  color: #b85d7e;
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.railSource strong {
+  color: #d8c2cb;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.composer {
+  position: relative;
+  z-index: 2;
+  width: min(66%, 480px);
+  min-height: 58px;
+  margin-left: 70px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding: 9px 12px 9px 17px;
+  border: 1px solid rgb(226 50 116 / 32%);
+  border-radius: 18px;
+  background: rgb(8 4 7 / 82%);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 28%);
+  backdrop-filter: blur(16px);
+}
+
+.composerIcon {
+  width: 22px;
+  height: 22px;
+  color: #ec2c72;
+}
+
+.composerIcon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.composerText {
+  color: #76646c;
   font-size: 0.82rem;
 }
 
-.heroState small {
-  color: #8f747f;
-  font-size: 0.68rem;
+.composer small {
+  position: absolute;
+  right: 14px;
+  bottom: -17px;
+  color: #6f5660;
+  font-size: 0.56rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.waveform {
+  width: 44px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 13px;
+  background: radial-gradient(circle, rgb(142 18 64 / 58%), rgb(54 8 29 / 42%));
+  box-shadow: 0 0 16px rgb(220 32 103 / 24%);
+}
+
+.waveform i {
+  width: 2px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ef3b7f;
+  box-shadow: 0 0 5px #ef3b7f;
+}
+
+.waveform i:nth-child(2),
+.waveform i:nth-child(6) {
+  height: 15px;
+}
+
+.waveform i:nth-child(3),
+.waveform i:nth-child(5) {
+  height: 22px;
+}
+
+.waveform i:nth-child(4) {
+  height: 29px;
 }
 
 .moduleShell {
@@ -340,9 +600,12 @@
   min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
+  border-top: 1px solid rgb(222 52 115 / 20%);
+  border-left: 1px solid rgb(222 52 115 / 22%);
   background:
-    linear-gradient(145deg, rgb(29 10 19 / 82%), rgb(12 7 11 / 92%)),
-    radial-gradient(circle at 90% 10%, rgb(136 28 68 / 18%), transparent 32%);
+    linear-gradient(145deg, rgb(24 7 15 / 86%), rgb(8 4 7 / 96%)),
+    radial-gradient(circle at 90% 10%, rgb(136 28 68 / 14%), transparent 32%);
+  box-shadow: inset 18px 0 36px rgb(105 11 46 / 5%);
 }
 
 .moduleHeader {
@@ -350,8 +613,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 82px;
-  padding: 16px clamp(18px, 2.6vw, 34px);
+  min-height: 58px;
+  padding: 11px clamp(16px, 2vw, 24px);
   border-bottom: 1px solid rgb(233 64 126 / 18%);
 }
 
@@ -361,11 +624,11 @@
 }
 
 .moduleTitle h2 {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   overflow-wrap: anywhere;
   color: #f6e7ed;
-  font-size: clamp(1.35rem, 2vw, 1.9rem);
-  font-weight: 520;
+  font-size: clamp(1.1rem, 1.45vw, 1.45rem);
+  font-weight: 470;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -379,8 +642,8 @@
 
 .moduleIcon {
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 27px;
+  height: 27px;
 }
 
 .moduleIcon svg,
@@ -397,7 +660,7 @@
 .stageBadge,
 .localState {
   flex: none;
-  padding: 8px 11px;
+  padding: 6px 9px;
   color: #e9b6ca;
 }
 
@@ -414,7 +677,7 @@
   min-width: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: clamp(16px, 2.4vw, 30px);
+  padding: clamp(12px, 1.5vw, 20px);
   scrollbar-color: #7c2148 rgb(8 5 8 / 60%);
   scrollbar-width: thin;
 }
@@ -543,7 +806,7 @@
 .bottomNav button {
   position: relative;
   min-width: 0;
-  min-height: 72px;
+  min-height: 78px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -554,7 +817,7 @@
   background: transparent;
   color: #9c858f;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: 0.79rem;
   font-weight: 650;
   cursor: pointer;
 }
@@ -626,13 +889,52 @@
   }
 }
 
-@media (max-width: 1080px) {
+@keyframes neuralDrift {
+  0%,
+  100% {
+    opacity: 0.84;
+    transform: scale(0.985) rotate(-0.7deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.018) rotate(0.7deg);
+  }
+}
+
+@media (max-width: 1180px) {
   .workspace {
-    grid-template-columns: minmax(300px, 0.72fr) minmax(500px, 1.28fr);
+    grid-template-columns: minmax(410px, 0.92fr) minmax(500px, 1.08fr);
+  }
+
+  .systemRail {
+    display: none;
+  }
+
+  .heroCopy {
+    padding-left: 0;
+  }
+
+  .organism,
+  .composer {
+    margin-left: 0;
   }
 
   .organism {
-    width: min(34vw, 430px);
+    width: min(40vw, 560px);
+  }
+
+  .composer {
+    width: min(82%, 460px);
+  }
+}
+
+@media (max-width: 1080px) {
+  .workspace {
+    grid-template-columns: minmax(340px, 0.76fr) minmax(500px, 1.24fr);
+  }
+
+  .organism {
+    width: min(35vw, 440px);
   }
 
   .bottomNav button {
@@ -677,6 +979,11 @@
   }
 
   .heroState {
+    display: none;
+  }
+
+  .composer,
+  .systemRail {
     display: none;
   }
 
@@ -751,6 +1058,10 @@
 
   .organism {
     width: min(33vw, 145px);
+  }
+
+  .settingsGlyph {
+    display: none;
   }
 
   .moduleHeader {
@@ -888,7 +1199,8 @@
   .core,
   .orbitOuter,
   .orbitInner,
-  .particleField {
+  .particleField,
+  .neuralWeb {
     animation: none;
   }
 }

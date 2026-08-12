@@ -1,6 +1,6 @@
 # ADR 0008 – Kompakte RHIA-UI-Shell während Stufe 4
 
-**Status:** umgesetzt, technische und reale Abnahme noch offen  
+**Status:** funktional abgenommen; visuelle Nachschärfung umgesetzt, erneute Sichtabnahme offen
 **Datum:** 12.08.2026  
 **Ausgangsstand:** `agent/stufe-4-planung-briefings` auf
 `d611baffd35f2ad125fcfb3edbf3226b6efae4b1`
@@ -129,3 +129,23 @@ Dieser UI-Praxistest ersetzt nicht Z01 bis Z05 der fachlichen Stufe-4-Schnellabn
 Solange der UI-Branch nicht in `agent/stufe-4-planung-briefings` übernommen wurde, besteht die
 vollständige Rücknahme darin, den Draft-PR zu schließen. PR #6, `main`, Dexie-Schema, Sicherungen
 und Sirs lokale Daten bleiben davon unberührt.
+
+## Visuelle Nachschärfung nach dem ersten Praxistest
+
+Sir hat den ersten UI-Praxistest am 12.08.2026 funktional bestanden. Die Optik wurde dabei noch
+nicht endgültig freigegeben, weil der veröffentlichte Stand sichtbar vom Referenzbild abwich.
+Daraufhin wurde ausschließlich die Darstellung im bestehenden UI-Draft nachgeschärft:
+
+- Planung ist wie im Referenzbild der sichtbare Startbereich;
+- die linke RHIA-Präsenz nutzt ein neuronales SVG-Partikelgeflecht statt einer geschlossenen
+  metallisch wirkenden Scheibe;
+- ein schmaler, wahrheitsgemäßer lokaler Systemstatus ergänzt die breite Ansicht;
+- die RHIA-Eingabe ist nur als deutlich mit `noch nicht aktiv` gekennzeichnetes Gestaltungselement
+  vorhanden und behauptet keine Chat-, Mikrofon- oder Sprachfunktion;
+- Planungsreiter, Formulare und Vorschlagsblöcke sind dichter und flacher gestaltet;
+- Kopfzeile, Modulrahmen und Hauptnavigation wurden den Proportionen des Referenzbilds angenähert.
+
+Domäne, Speicherung, Priorisierung, Planung, Feedbackwirkung, Dexie-Schema, Sicherungsformat,
+externe Schnittstellen, Kostenregeln und die Sperren von PR #6, `main` und Stufe 5 bleiben
+unverändert. Die funktionale Abnahme bleibt gültig; die nachgeschärfte Optik benötigt eine kurze
+erneute Sichtprüfung durch Sir.

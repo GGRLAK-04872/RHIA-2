@@ -6,8 +6,11 @@ test("stage 4 starts locally without old cloud dependencies", async ({ page }) =
 
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "RHIA 2.0" })).toBeVisible();
-  await expect(page.getByText("IndexedDB")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "RHIA" })).toBeVisible();
+  await page.getByRole("tab", { name: "Übersicht" }).click();
+  await expect(
+    page.getByRole("tabpanel", { name: "Übersicht" }).getByText("IndexedDB"),
+  ).toBeVisible();
   await expect(page.getByRole("status")).toContainText("Kein stiller Rückfall");
 
   const foreignTargets = networkTargets.filter((target) => {
@@ -20,10 +23,7 @@ test("stage 4 starts locally without old cloud dependencies", async ({ page }) =
 
 test("compact shell exposes all modules and preserves unfinished form input", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("tab", { name: "Übersicht" })).toHaveAttribute(
-    "aria-selected",
-    "true",
-  );
+  await expect(page.getByRole("tab", { name: "Planung" })).toHaveAttribute("aria-selected", "true");
 
   await page.getByRole("tab", { name: "Gedächtnis" }).click();
   const property = page.getByRole("textbox", { name: "Eigenschaft" });

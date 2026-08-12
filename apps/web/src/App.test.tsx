@@ -8,9 +8,10 @@ describe("RHIA stage 4 shell", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    expect(screen.getByRole("heading", { name: "RHIA 2.0" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "RHIA" })).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Übersicht" }));
     expect(screen.getByText("Local-first")).toBeInTheDocument();
-    expect(screen.getByText("IndexedDB")).toBeInTheDocument();
+    expect(screen.getAllByText("IndexedDB")).toHaveLength(2);
     expect(screen.getByText("Deaktiviert")).toBeInTheDocument();
     expect(screen.getByText("Nicht verbunden")).toBeInTheDocument();
     expect(screen.getByText("Stufe 4 · lokal")).toBeInTheDocument();
