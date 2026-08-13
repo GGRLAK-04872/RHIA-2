@@ -1,15 +1,18 @@
 import {
   createArea,
   createAuditEntry,
+  createBriefing,
   createDecision,
   createGoal,
   createMemoryConflict,
   createMemoryFact,
   createNote,
+  createPlanningFeedback,
   createProject,
   createSource,
   createTask,
   createTaskDependency,
+  createWorkBlock,
 } from "@rhia/domain";
 import { describe, expect, it } from "vitest";
 import {
@@ -17,6 +20,7 @@ import {
   appStatusSchema,
   areaSchema,
   auditEntrySchema,
+  briefingSchema,
   decisionSchema,
   explicitTaskInputConfirmationSchema,
   explicitTaskPriorityDecisionSchema,
@@ -25,11 +29,13 @@ import {
   memoryConflictSchema,
   memoryFactSchema,
   noteSchema,
+  planningFeedbackSchema,
   persistedEntitySchema,
   projectSchema,
   sourceSchema,
   taskDependencySchema,
   taskSchema,
+  workBlockSchema,
   workHubAreaNameSchema,
 } from "./index";
 
@@ -49,6 +55,9 @@ const ids = {
   taskOne: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
   taskTwo: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
   dependency: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+  briefing: "f1111111-1111-4111-8111-111111111111",
+  workBlock: "f2222222-2222-4222-8222-222222222222",
+  feedback: "f3333333-3333-4333-8333-333333333333",
 } as const;
 
 describe("stage 1 contracts", () => {
@@ -130,6 +139,16 @@ describe("stage 1 contracts", () => {
         persistenceEnabled: true,
       }).success,
     ).toBe(false);
+
+    expect(
+      appStatusSchema.safeParse({
+        version: "0.4.1",
+        stage: 4,
+        mode: "local-first",
+        apiEnabled: false,
+        persistenceEnabled: true,
+      }).success,
+    ).toBe(true);
 
     expect(
       appStatusSchema.safeParse({
@@ -492,6 +511,67 @@ describe("stage 3.8 task input confirmation contract", () => {
     ).toBe(false);
     expect(
       explicitTaskInputConfirmationSchema.safeParse({ ...confirmation, unexpected: true }).success,
+    ).toBe(false);
+  });
+});
+
+describe("stage 4 planning contracts", () => {
+  it("validates linked briefings, work blocks and Sir's planning feedback", () => {
+    const briefing = createBriefing(
+      {
+        kind: "morning",
+        periodStart: "2026-08-10T00:00:00.000Z",
+        periodEnd: "2026-08-11T00:00:00.000Z",
+        availableMinutes: 120,
+        plannedMinutes: 60,
+        protectionMinutes: 0,
+        title: "Künstliches Morgenbriefing",
+        summary: "Ein künstlicher Block.",
+        explanation: "Nur lokale Testdaten.",
+        generatedAt: "2026-08-10T08:00:00.000Z",
+      },
+      { id: ids.briefing, timestamp: "2026-08-10T08:00:00.000Z" },
+    );
+    const block = createWorkBlock(
+      {
+        briefingId: briefing.id,
+        taskId: ids.taskOne,
+        areaId: ids.area,
+        kind: "task",
+        title: "Künstlicher Block",
+        startAt: "2026-08-10T09:00:00.000Z",
+        endAt: "2026-08-10T10:00:00.000Z",
+        durationMinutes: 60,
+        explanation: "Künstliche Prioritätsbegründung.",
+      },
+      { id: ids.workBlock, timestamp: "2026-08-10T08:00:00.000Z" },
+    );
+    const feedback = createPlanningFeedback(
+      {
+        briefingId: briefing.id,
+        workBlockId: block.id,
+        taskId: block.taskId,
+        result: "partial",
+        reason: "time-too-short",
+        actualMinutes: 30,
+        recordedBy: "sir",
+        recordedAt: "2026-08-10T18:00:00.000Z",
+      },
+      { id: ids.feedback },
+    );
+
+    expect(briefingSchema.parse(briefing)).toEqual(briefing);
+    expect(workBlockSchema.parse(block)).toEqual(block);
+    expect(planningFeedbackSchema.parse(feedback)).toEqual(feedback);
+    expect(
+      [briefing, block, feedback].every(
+        (entity) => persistedEntitySchema.safeParse(entity).success,
+      ),
+    ).toBe(true);
+    expect(workBlockSchema.safeParse({ ...block, durationMinutes: 30 }).success).toBe(false);
+    expect(
+      planningFeedbackSchema.safeParse({ ...feedback, result: "completed", reason: "blocked" })
+        .success,
     ).toBe(false);
   });
 });

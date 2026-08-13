@@ -1,173 +1,118 @@
 # RHIA 2.0 – Start Here
 
 > Diese Datei ist die einzige lebende Übergabe für neue RHIA-2-Arbeitschats. Zusammen mit
-> docs/RHIA_MASTER_AUFBAUPLAN_2.2.md bildet sie das vollständige aktive Übergabesystem.
+> `docs/RHIA_MASTER_AUFBAUPLAN_2.2.md` bildet sie das vollständige aktive Übergabesystem.
 
-## Aktueller Projektstand
+## Verbindlicher Stand
 
-| Feld | Verbindlicher Stand |
+| Feld | Stand am 12.08.2026 |
 |---|---|
-| Datum | 10.08.2026 |
-| Repository | GGRLAK-04872/RHIA-2 |
-| Verbindlicher Branch | main |
-| Letzter verifizierter Funktionsstand auf main | 4e86426870e7eba7e309a365a986be5a3a3e6a6e |
-| Produktversion | 0.3.0 |
-| Aktive Stufe im Produkt | 3 |
-| Abgeschlossene Entwicklungsstufen | 0, 1, 2 und 3 |
-| Nächste Entwicklungsstufe | Stufe 4 – gesperrt |
-| Datenbankschema | Dexie-Version 4 |
-| Sicherungsformat | rhia-backup Version 3 |
-| Testseite | https://ggrlak-04872.github.io/RHIA-2/ |
-| Aktive Datenquelle | lokale IndexedDB des jeweiligen Browsers |
-| Projektphase | Stufe 3 vollständig abgeschlossen; Warten auf separate Freigabe für Stufe 4 |
-| Offene Abnahmefehler | keine |
+| Repository | `GGRLAK-04872/RHIA-2` |
+| Aktiver Betriebsstart-Branch | `agent/rhia-firmenassistent-test` |
+| Basis des Betriebsstarts | `agent/stufe-4-ui-shell` auf `836cfff045c98aef9563521313c6f0c353b0edc7` |
+| `main` | `25c445668651ccd6077b5ffcfce66d839c4f151d`; unverändert |
+| Stufe-4-Planung | Draft-PR #6, Head `d611baffd35f2ad125fcfb3edbf3226b6efae4b1`, ungemergt |
+| Stufe-4-UI | Draft-PR #7, Head `836cfff045c98aef9563521313c6f0c353b0edc7`, ungemergt |
+| Betriebsstart-Funktionscommit | `2193e0bb948cf25b972a5a73d8eb4794d5b0d326` |
+| Betriebsstart-Draft | #8, Draft gegen `main`, ungemergt; den aktuellen Dokumentations-Head direkt am Branch prüfen |
+| Produktstand | Version 0.4.1, aktive Stufe 4 |
+| Datenquelle | ausschließlich lokale IndexedDB des jeweiligen Browsers |
+| Schema / Sicherung | Dexie-Version 5 / `rhia-backup` Version 4 |
+| OpenAI / Kosten | API deaktiviert / Budget 0 Euro |
+| Nächster Schritt | CI und Preview prüfen; danach Praxisschnelltest durch Sir |
+| Merge | nicht freigegeben; Stufe 5 bleibt gesperrt |
 
-Der Commit 4e86426870e7eba7e309a365a986be5a3a3e6a6e ist der letzte technisch geprüfte
-Funktionsstand auf main. Er enthält Stufe 3.1 bis 3.9 als Squash-Merge von PR #5. Spätere reine
-Änderungen an diesen beiden Übergabedateien gehören ausschließlich zum Dokumentationsstand und
-verändern den Funktionsstand nicht.
+Das alte Repository `GGRLAK-04872/RHIA` bleibt unverändert und darf nicht beschrieben werden.
 
-Das alte Repository GGRLAK-04872/RHIA bleibt unverändert und darf nicht beschrieben werden.
+## Verifizierte Sicherung vor dem Betriebsstart
+
+Vor jeder Betriebsstart-Änderung wurden drei getrennte, unveränderliche Git-Branchzeiger erstellt:
+
+| Sicherung | Gesicherter Stand |
+|---|---|
+| `backup/2026-08-12-main` | `25c445668651ccd6077b5ffcfce66d839c4f151d` |
+| `backup/2026-08-12-stufe-4-planung` | `d611baffd35f2ad125fcfb3edbf3226b6efae4b1` |
+| `backup/2026-08-12-ui-shell` | `836cfff045c98aef9563521313c6f0c353b0edc7` |
+
+Damit sind veröffentlichter Hauptstand, Planung und die bis dahin erarbeitete RHIA-Oberfläche
+separat rückholbar. Es wurden keine Browserdaten oder Sicherungsexporte in Git geschrieben.
 
 ## Abgeschlossene Stufen
 
-### Stufe 0 – Neustartbasis
+- Stufe 0 – Neustartbasis: abgeschlossen, real abgenommen und in `main`.
+- Stufe 1 – Local-first-Datenfundament: abgeschlossen, real abgenommen und in `main`.
+- Stufe 2 – Gedächtnis v1: abgeschlossen, real abgenommen und in `main`.
+- Stufe 3 – Arbeitszentrale: abgeschlossen, real abgenommen und über PR #5 in `main`.
+- Stufe 4 – Planung und Briefings: technisch umgesetzt; Schnellabnahme weiterhin offen.
+- Stufe 4 – kompakte UI: technisch umgesetzt; Draft-PR #7 und erneute Sichtabnahme offen.
 
-Vollständig abgeschlossen, real im Android-Browser abgenommen und in main integriert.
+## Freigegebener RHIA-Betriebsstart
 
-### Stufe 1 – Local-first-Datenfundament
+Sir hat am 12.08.2026 entschieden:
 
-Vollständig abgeschlossen, auf Tablet und Handy abgenommen und in main integriert. Enthalten sind
-Area, Source, Note, AuditEntry, lokale IndexedDB, Revisionen, Audit, 30-Tage-Papierkorb,
-Wiederherstellung, bestätigte Gesamtlöschung sowie Export und Import mit SHA-256 und
-Konfliktschutz.
+> Betriebsstart zuerst: Cockpit, Erinnerung und Mikrofontaste; echtes Wake-Word anschließend.
 
-### Stufe 2 – Gedächtnis v1
+Auf dem getrennten Branch ist deshalb umgesetzt:
 
-Vollständig abgeschlossen, technisch geprüft, auf Tablet und Handy abgenommen und über PR #3 per
-Squash-Merge in main integriert. Fakten und Entscheidungen werden nur nach ausdrücklicher
-Bestätigung aktiv; Korrekturhistorie, Konfliktauflösung, Suche, Filter und Sicherungsformat 2 sind
-enthalten.
+- Start in der Übersicht als Firmen-Cockpit mit nächstem sinnvollem Schritt, Geldwirkung,
+  Blockaden, offenen Entscheidungen und Projekten;
+- bestätigte Schnelleingabe auf Basis der vorhandenen Stufe-3-Regeln;
+- automatische, idempotente Speicherung des ersten RH-Produktionstags als bestätigter
+  `MemoryFact` mit Jahrestag 12. August;
+- emotionale sichtbare Begrüßung beim Öffnen am Jahrestag und optionales Vorlesen nach Klick;
+- einmalige deutsche Browser-Spracherkennung nach sichtbarer Einwilligung;
+- lokale Navigationsbefehle und Aufgabenentwurf, der weiterhin Sirs Bestätigung benötigt;
+- sichtbare Fehler statt eines heimlichen Ersatzdienstes;
+- responsive Mikrofontaste auf Desktop, Tablet und Handy.
 
-### Stufe 3 – Arbeitszentrale
+Die Browser-Spracherkennung kann Sprache an den Anbieter des Browsers übertragen. RHIA speichert
+weder Audio noch Transkripte. Die Textbedienung bleibt ohne Mikrofon vollständig erhalten.
 
-**Status:** vollständig abgeschlossen, technisch geprüft, real abgenommen und über PR #5 per
-Squash-Merge in main integriert.
+## Unveränderte technische Grenzen
 
-Enthalten sind:
+- Kein neues Datenbankschema und kein neues Sicherungsformat.
+- Keine neue npm-Laufzeitabhängigkeit.
+- Keine OpenAI API, keine externe KI und keine laufenden Kosten.
+- Keine Cloud- oder Mehrgerätesynchronisation.
+- Keine Kalender-, Datei-, E-Mail- oder Kontaktintegration.
+- Keine externen Aktionen, Käufe, Buchungen oder Veröffentlichungen.
+- Kein Dauerhören, kein Hintergrundmikrofon und kein Wake-Word.
+- Wake-Word `Rhia`, lokale VAD/STT/TTS und Android-Hülle bleiben Stufe 9.
+- Keine realen oder persönlichen Daten auf der öffentlichen Testseite.
+- Kein Merge nach `main` ohne weitere ausdrückliche Freigabe von Sir.
 
-- Project, Goal, Task und TaskDependency mit strikten Domänen- und Zod-Regeln;
-- die vier Pflichtbereiche Privat, RH Produktion, RHIA und Shadow Grown;
-- strukturierte Status-, Frist-, Wichtigkeits-, Aufwands-, Geldwirkungs- und Blockadefelder;
-- azyklische Aufgabenabhängigkeiten mit sichtbarer Blockade und Entblockung;
-- deterministische und verständlich begründete Priorisierung;
-- ausdrücklich bestätigte, geschützte manuelle Rangentscheidungen von Sir;
-- responsive Inbox-, Projekt-, Fokus-, Alle-, Such- und Filteransichten;
-- sichtbare Anlage und Korrektur von Projekten, Zielen, Aufgaben und Abhängigkeiten;
-- Dexie-Version 4 mit additiver Migration und Erhalt der Stufe-1- und Stufe-2-Daten;
-- Sicherungsformat 3 mit Migration gültiger Formate 1 und 2;
-- erweiterter Audit, 30-Tage-Papierkorb, Wiederherstellung und Gesamtlöschung;
-- Speicherung realer Aufgaben nur nach sichtbarer ausdrücklicher Bestätigung;
-- erneut validierter und per SHA-256 geschützter Import.
-
-## Abschlussnachweise Stufe 3
+## Technische Nachweise
 
 | Prüfung | Ergebnis |
 |---|---|
-| Feature-Head vor Merge | eabe91b94a5e4356ea69d87e961a07838247acf4 |
-| Feature-CI | CI #61 vollständig erfolgreich |
-| Squash-Merge | PR #5 als 4e86426870e7eba7e309a365a986be5a3a3e6a6e in main integriert |
-| main-CI nach Merge | CI #62 vollständig erfolgreich |
-| Qualität und Build | erfolgreich |
-| Browser- und Responsive-Smoke | erfolgreich |
-| Pages-Deployment nach Merge | Deployment #46 vollständig erfolgreich |
-| Öffentliche Testseite | HTTP 200; Version 0.3.0, Stufe 3 lokal und Arbeitszentrale ausgeliefert |
-| Tablet | T01 bis T14 bestanden |
-| Handy | H01 bis H05 bestanden |
-| Gesamtergebnis Stufe 3.9 | BESTANDEN |
-| Offene Abnahmefehler | keine |
+| Lokale Unit-/Komponententests | 111/111 grün |
+| Vollständiger `pnpm check` | Format, Lint, TypeScript, Tests, Build und alle Audits erfolgreich |
+| Lokaler Playwright-Lauf | Chromium in der Work-Umgebung nicht vorhanden; GitHub-CI übernimmt |
+| GitHub-CI | PR #8 führt Qualität/Build und Browser-Smoke auf jedem aktuellen Head aus |
+| Pages-/PR-Preview | PR #8 baut und veröffentlicht die getrennte RHIA-2-Testseite; grüner aktueller Lauf ist Pflicht |
+| Reale Abnahme | offen; `docs/tests/RHIA_BETRIEBSSTART_SCHNELLTEST.md` |
 
-Die reale Abnahme bestätigte Pflichtbereiche, Projekt- und Zielanlage, vollständige
-Aufgabenerfassung, Bestätigungsschutz, Abhängigkeiten, Blockaden, automatische Priorisierung,
-geschützte manuelle Rangfolge, Ansichten, Suche, Filter, Korrektur, lokale Persistenz,
-Papierkorb, Wiederherstellung, Export, Konfliktschutz, Gesamtlöschung, Import sowie Hoch- und
-Querformat auf Tablet und Handy.
+## Restdauer bis Sirs finalem Schnelltest
 
-## Bekannte Beobachtungen ohne offenen Fehler
-
-- Auf dem Handy wurde zunächst aus dem Browsercache noch eine ältere Version 0.2.x angezeigt. In
-  einem privaten Tab wurde anschließend korrekt Version 0.3.0 und Stufe 3 geladen. Die Abnahme
-  erfolgte vollständig auf Version 0.3.0.
-- Tablet- und Handybestände sind bis Stufe 5 bewusst lokal getrennt. Unterschiedliche
-  Gedächtniseinträge auf beiden Geräten sind deshalb derzeit kein Fehler.
-- Eine bereits geöffnete oder installierte PWA kann nach einem Deployment vorübergehend einen
-  älteren Cache anzeigen. Vor einer Fehlerbewertung alle RHIA-Tabs und den Browser schließen und
-  die Seite neu öffnen.
-
-## Aktueller Haltepunkt
-
-Stufe 3 ist abgeschlossen. Es gibt keine Freigabe für Stufe 4.
-
-Bis zu einer neuen ausdrücklichen Freigabe von Sir sind nur lesende Prüfungen des bestehenden
-Stands zulässig. Es darf kein Stufe-4-Branch angelegt, keine Stufe-4-Implementierung begonnen und
-kein weiterer Entwicklungs-PR erstellt oder gemergt werden.
-
-## Aktuelle Sperren
-
-- Stufe 4 und alle späteren Stufen bleiben gesperrt.
-- OpenAI API und andere externe KI bleiben technisch deaktiviert.
-- Das API-Budget bleibt bei 0 Euro, bis Sir einen Kostenrahmen ausdrücklich freigibt.
-- Keine Cloud- oder Mehrgerätesynchronisation vor der dafür vorgesehenen Stufe.
-- Keine Cloudflare-Laufzeit, keine Sprache, kein Wake-Word und keine native Android-App.
-- Keine Kalender-, Datei-, E-Mail-, Kontakt- oder anderen externen Integrationen.
-- Keine externen Aktionen, Käufe, Buchungen oder Veröffentlichungen.
-- Keine produktiven oder persönlichen Testdaten auf der öffentlichen Testseite.
-- Das alte Repository GGRLAK-04872/RHIA darf nicht verändert werden.
-- Keine weiteren Arbeiten ohne ausdrückliche Freigabe von Sir.
+Nach grünem lokalen Prüflauf werden für Draft-PR, GitHub-CI und Preview erfahrungsgemäß etwa 10 bis
+20 Minuten benötigt. Sirs eigener Praxisschnelltest dauert ungefähr 15 bis 25 Minuten. Insgesamt
+sind ab technischer Übergabe etwa 25 bis 45 Minuten bis zu Sirs Ergebnis einzuplanen. Falls der
+verwendete Browser keine Spracherkennung unterstützt oder die Berechtigung blockiert, verlängert
+sich die Geräteklärung; dieser Fall wird nicht als bestanden ausgegeben.
 
 ## Nächster erlaubter Schritt
 
-Auf eine separate ausdrückliche Freigabe für die Vorbereitung von Stufe 4 warten. Eine spätere
-Freigabe muss zuerst den tatsächlichen main-, CI-, Pages- und Übergabestand prüfen und den Umfang
-von Stufe 4 aus dem Masterplan verbindlich abgrenzen. Der Abschluss von Stufe 3 erteilt keine
-automatische Freigabe.
+1. CI und Testseite auf demselben aktuellen PR-Head vollständig grün prüfen.
+2. Sir führt `docs/tests/RHIA_BETRIEBSSTART_SCHNELLTEST.md` mit künstlichen Daten durch.
+3. Danach stoppen und Sirs Ergebnis beziehungsweise gesonderte Mergeentscheidung abwarten.
 
-## Dauerhafte Zwei-Dateien-Chatwechsel-Regel
+## Dauerhafte Zwei-Dateien-Regel
 
-Bei jedem neuen RHIA-2-Arbeitschat werden ausschließlich diese beiden Dateien als aktive Übergabe
-verwendet:
+Ein neuer RHIA-Arbeitschat liest zuerst diese Datei und danach
+`docs/RHIA_MASTER_AUFBAUPLAN_2.2.md`, prüft lesend den tatsächlichen GitHub-, PR-, CI- und
+Pages-Stand und meldet Abweichungen. Historische Statusdateien und alte Chats überschreiben diese
+beiden aktiven Dateien nicht.
 
-- docs/RHIA_START_HERE.md;
-- docs/RHIA_MASTER_AUFBAUPLAN_2.2.md.
-
-Ein neuer Chat:
-
-1. liest zuerst RHIA_START_HERE.md und danach den Masterplan;
-2. prüft den tatsächlichen main-, PR-, CI- und Pages-Stand;
-3. unterscheidet Funktionsstand und spätere reine Dokumentationscommits;
-4. meldet jede Abweichung sofort und bestimmt ihre Ursache;
-5. korrigiert bei Bedarf nur die betroffene Übergabedatei;
-6. erstellt kein neues Übergabesystem;
-7. fordert keine alten Chatprotokolle oder historischen Masterversionen an;
-8. beginnt keine gesperrte Stufe ohne ausdrückliche Freigabe.
-
-## Startanweisung für einen neuen Chat
-
-> Arbeite ausschließlich auf Basis des tatsächlichen Repository-Stands von
-> GGRLAK-04872/RHIA-2. Öffne zuerst docs/RHIA_START_HERE.md und danach
-> docs/RHIA_MASTER_AUFBAUPLAN_2.2.md. Prüfe anschließend lesend main, spätere reine
-> Dokumentationscommits, CI, Pages und alle Sperren. Stufe 3 ist vollständig abgeschlossen und
-> über PR #5 als Funktionscommit 4e86426870e7eba7e309a365a986be5a3a3e6a6e in main integriert.
-> Stufe 4 ist nicht freigegeben. Verändere weder das alte Repository RHIA noch Sicherheits-,
-> Datenschutz- oder Kostengrenzen. Nenne vor jedem längeren Arbeitsschritt eine realistische
-> Dauer und stoppe an jedem Freigabepunkt.
-
-Ein neuer Chat muss sofort melden:
-
-- Stufen 0 bis 3 abgeschlossen;
-- Produktversion 0.3.0 und aktive Stufe 3;
-- letzter verifizierter Funktionsstand auf main:
-  4e86426870e7eba7e309a365a986be5a3a3e6a6e;
-- Stufe 3.9 auf Tablet und Handy bestanden, keine offenen Abnahmefehler;
-- nächster erlaubter Schritt: auf ausdrückliche Freigabe für Stufe 4 warten;
-- verboten: jede Stufe-4-Arbeit oder Änderung am alten Repository ohne passenden Auftrag.
+Ein neuer Chat darf weder Stufe 5 beginnen noch `main`, PR #6, PR #7 oder das alte Repository
+verändern. Nach grünem Betriebsstart-Preview begleitet er Sir nur durch den dokumentierten
+Praxisschnelltest, bis Sir eine neue ausdrückliche Freigabe erteilt.

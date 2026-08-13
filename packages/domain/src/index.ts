@@ -1,6 +1,6 @@
 export const RHIA_PRODUCT_NAME = "RHIA 2.0" as const;
-export const RHIA_VERSION = "0.3.0" as const;
-export const RHIA_STAGE = 3 as const;
+export const RHIA_VERSION = "0.4.1" as const;
+export const RHIA_STAGE = 4 as const;
 export const RHIA_SCHEMA_VERSION = 1 as const;
 
 export const RHIA_RUNTIME = {
@@ -24,6 +24,9 @@ export const ENTITY_TYPES = [
   "goal",
   "task",
   "task-dependency",
+  "work-block",
+  "briefing",
+  "planning-feedback",
 ] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];
 
@@ -211,6 +214,60 @@ export interface TaskDependency extends EntityBase<"task-dependency"> {
   dependsOnTaskId: string;
 }
 
+export type WorkBlockKind = "task" | "protection";
+export type WorkBlockStatus = "proposed" | "accepted" | "completed" | "partial" | "skipped";
+
+export interface WorkBlock extends EntityBase<"work-block"> {
+  briefingId: string;
+  taskId: string | null;
+  areaId: string;
+  kind: WorkBlockKind;
+  title: string;
+  startAt: string;
+  endAt: string;
+  durationMinutes: number;
+  status: WorkBlockStatus;
+  explanation: string;
+}
+
+export type BriefingKind = "morning" | "week" | "evening";
+export type BriefingStatus = "proposed" | "confirmed" | "archived";
+
+export interface Briefing extends EntityBase<"briefing"> {
+  kind: BriefingKind;
+  periodStart: string;
+  periodEnd: string;
+  availableMinutes: number;
+  plannedMinutes: number;
+  protectionMinutes: number;
+  title: string;
+  summary: string;
+  explanation: string;
+  status: BriefingStatus;
+  generatedAt: string;
+}
+
+export type PlanningFeedbackResult = "completed" | "partial" | "skipped";
+export type PlanningFeedbackReason =
+  | "none"
+  | "time-too-short"
+  | "time-too-long"
+  | "blocked"
+  | "priority-wrong"
+  | "other";
+
+export interface PlanningFeedback extends EntityBase<"planning-feedback"> {
+  briefingId: string;
+  workBlockId: string;
+  taskId: string | null;
+  result: PlanningFeedbackResult;
+  reason: PlanningFeedbackReason;
+  actualMinutes: number | null;
+  note: string | null;
+  recordedBy: "sir";
+  recordedAt: string;
+}
+
 export type TaskBlockKind = "none" | "explicit" | "dependency" | "explicit-and-dependency";
 
 export interface TaskBlockState {
@@ -232,7 +289,10 @@ export type PersistedEntity =
   | Project
   | Goal
   | Task
-  | TaskDependency;
+  | TaskDependency
+  | WorkBlock
+  | Briefing
+  | PlanningFeedback;
 
 export interface EntityFactoryOptions {
   id?: string;
@@ -344,6 +404,45 @@ export interface CreateTaskInput {
 export interface CreateTaskDependencyInput {
   taskId: string;
   dependsOnTaskId: string;
+}
+
+export interface CreateWorkBlockInput {
+  briefingId: string;
+  taskId?: string | null;
+  areaId: string;
+  kind: WorkBlockKind;
+  title: string;
+  startAt: string;
+  endAt: string;
+  durationMinutes: number;
+  status?: WorkBlockStatus;
+  explanation: string;
+}
+
+export interface CreateBriefingInput {
+  kind: BriefingKind;
+  periodStart: string;
+  periodEnd: string;
+  availableMinutes: number;
+  plannedMinutes: number;
+  protectionMinutes: number;
+  title: string;
+  summary: string;
+  explanation: string;
+  status?: BriefingStatus;
+  generatedAt: string;
+}
+
+export interface CreatePlanningFeedbackInput {
+  briefingId: string;
+  workBlockId: string;
+  taskId?: string | null;
+  result: PlanningFeedbackResult;
+  reason: PlanningFeedbackReason;
+  actualMinutes?: number | null;
+  note?: string | null;
+  recordedBy: "sir";
+  recordedAt: string;
 }
 
 function createEnvelope<TType extends EntityType>(
@@ -631,6 +730,118 @@ export function createTaskDependency(
     ...createEnvelope("task-dependency", options),
     taskId: input.taskId,
     dependsOnTaskId: input.dependsOnTaskId,
+  };
+}
+
+export function createWorkBlock(
+  input: CreateWorkBlockInput,
+  options: EntityFactoryOptions = {},
+): WorkBlock {
+  const start = Date.parse(input.startAt);
+  const end = Date.parse(input.endAt);
+  const calculatedMinutes = (end - start) / 60_000;
+  if (
+    Number.isNaN(start) ||
+    Number.isNaN(end) ||
+    end <= start ||
+    !Number.isInteger(input.durationMinutes) ||
+    input.durationMinutes <= 0 ||
+    calculatedMinutes !== input.durationMinutes ||
+    (input.kind === "task" && (input.taskId ?? null) === null)
+  ) {
+    throw new PlanningRuleError(
+      "INVALID_WORK_BLOCK",
+      "Ein Arbeitsblock benötigt einen gültigen Zeitraum, eine passende Dauer und eine klare Zuordnung.",
+    );
+  }
+
+  return {
+    ...createEnvelope("work-block", options),
+    briefingId: input.briefingId,
+    taskId: input.taskId ?? null,
+    areaId: input.areaId,
+    kind: input.kind,
+    title: input.title,
+    startAt: input.startAt,
+    endAt: input.endAt,
+    durationMinutes: input.durationMinutes,
+    status: input.status ?? "proposed",
+    explanation: input.explanation,
+  };
+}
+
+export function createBriefing(
+  input: CreateBriefingInput,
+  options: EntityFactoryOptions = {},
+): Briefing {
+  const periodStart = Date.parse(input.periodStart);
+  const periodEnd = Date.parse(input.periodEnd);
+  const generatedAt = Date.parse(input.generatedAt);
+  if (
+    Number.isNaN(periodStart) ||
+    Number.isNaN(periodEnd) ||
+    Number.isNaN(generatedAt) ||
+    periodEnd <= periodStart ||
+    ![input.availableMinutes, input.plannedMinutes, input.protectionMinutes].every(
+      (minutes) => Number.isInteger(minutes) && minutes >= 0,
+    ) ||
+    input.plannedMinutes > input.availableMinutes ||
+    input.protectionMinutes > input.plannedMinutes
+  ) {
+    throw new PlanningRuleError(
+      "INVALID_PLANNING_PERIOD",
+      "Ein Briefing benötigt einen gültigen Zeitraum und widerspruchsfreie Zeitangaben.",
+    );
+  }
+
+  return {
+    ...createEnvelope("briefing", options),
+    kind: input.kind,
+    periodStart: input.periodStart,
+    periodEnd: input.periodEnd,
+    availableMinutes: input.availableMinutes,
+    plannedMinutes: input.plannedMinutes,
+    protectionMinutes: input.protectionMinutes,
+    title: input.title,
+    summary: input.summary,
+    explanation: input.explanation,
+    status: input.status ?? "proposed",
+    generatedAt: input.generatedAt,
+  };
+}
+
+export function createPlanningFeedback(
+  input: CreatePlanningFeedbackInput,
+  options: EntityFactoryOptions = {},
+): PlanningFeedback {
+  if (
+    input.recordedBy !== "sir" ||
+    Number.isNaN(Date.parse(input.recordedAt)) ||
+    (input.actualMinutes !== undefined &&
+      input.actualMinutes !== null &&
+      (!Number.isInteger(input.actualMinutes) || input.actualMinutes < 0)) ||
+    (input.result === "completed" && input.reason === "blocked")
+  ) {
+    throw new PlanningRuleError(
+      "INVALID_PLANNING_FEEDBACK",
+      "Planungsfeedback benötigt eine gültige, von Sir stammende Rückmeldung.",
+    );
+  }
+
+  return {
+    ...createEnvelope("planning-feedback", {
+      ...options,
+      timestamp: options.timestamp ?? input.recordedAt,
+    }),
+    briefingId: input.briefingId,
+    workBlockId: input.workBlockId,
+    taskId: input.taskId ?? null,
+    result: input.result,
+    reason: input.reason,
+    actualMinutes: input.actualMinutes ?? null,
+    note: input.note ?? null,
+    recordedBy: input.recordedBy,
+    recordedAt: input.recordedAt,
   };
 }
 
@@ -1175,6 +1386,475 @@ export function rankTasksByPriority(
   );
 
   return [...rankedActive, ...rankedInactive];
+}
+
+export const PLANNING_RULE_ERROR_CODES = [
+  "INVALID_PLANNING_PERIOD",
+  "INVALID_AVAILABILITY",
+  "INVALID_WORK_BLOCK",
+  "INVALID_PLANNING_FEEDBACK",
+  "INSUFFICIENT_WEEKLY_PROTECTION_TIME",
+] as const;
+
+export type PlanningRuleErrorCode = (typeof PLANNING_RULE_ERROR_CODES)[number];
+
+export class PlanningRuleError extends Error {
+  readonly code: PlanningRuleErrorCode;
+
+  constructor(code: PlanningRuleErrorCode, message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = "PlanningRuleError";
+    this.code = code;
+  }
+}
+
+export interface AvailabilityWindow {
+  startAt: string;
+  endAt: string;
+}
+
+export interface PlanningWorkspace {
+  areas: readonly Area[];
+  tasks: readonly Task[];
+  dependencies: readonly TaskDependency[];
+  workBlocks: readonly WorkBlock[];
+  feedback: readonly PlanningFeedback[];
+}
+
+export interface PlanningRequest {
+  kind: "morning" | "week";
+  periodStart: string;
+  periodEnd: string;
+  availability: readonly AvailabilityWindow[];
+  generatedAt: string;
+}
+
+export interface PlanningProposal {
+  briefing: Briefing;
+  workBlocks: WorkBlock[];
+  warnings: string[];
+  unplannedTaskIds: string[];
+}
+
+interface FreePlanningSlot {
+  cursor: number;
+  end: number;
+}
+
+interface AllocatedSlot {
+  startAt: string;
+  endAt: string;
+  durationMinutes: number;
+}
+
+function normalizeAvailability(request: PlanningRequest): {
+  slots: FreePlanningSlot[];
+  availableMinutes: number;
+} {
+  const periodStart = Date.parse(request.periodStart);
+  const periodEnd = Date.parse(request.periodEnd);
+  const generatedAt = Date.parse(request.generatedAt);
+  if (
+    Number.isNaN(periodStart) ||
+    Number.isNaN(periodEnd) ||
+    Number.isNaN(generatedAt) ||
+    periodEnd <= periodStart ||
+    request.availability.length === 0
+  ) {
+    throw new PlanningRuleError(
+      "INVALID_PLANNING_PERIOD",
+      "Die Planung benötigt einen gültigen Zeitraum und mindestens ein Zeitfenster.",
+    );
+  }
+
+  const slots = request.availability
+    .map((window) => ({ cursor: Date.parse(window.startAt), end: Date.parse(window.endAt) }))
+    .toSorted((left, right) => left.cursor - right.cursor);
+  let previousEnd = periodStart;
+  for (const slot of slots) {
+    if (
+      Number.isNaN(slot.cursor) ||
+      Number.isNaN(slot.end) ||
+      slot.cursor < periodStart ||
+      slot.end > periodEnd ||
+      slot.end <= slot.cursor ||
+      slot.cursor < previousEnd ||
+      (slot.end - slot.cursor) % 60_000 !== 0
+    ) {
+      throw new PlanningRuleError(
+        "INVALID_AVAILABILITY",
+        "Verfügbare Zeitfenster müssen im Planungszeitraum liegen, dürfen sich nicht überschneiden und brauchen volle Minuten.",
+      );
+    }
+    previousEnd = slot.end;
+  }
+
+  return {
+    slots,
+    availableMinutes: slots.reduce((sum, slot) => sum + (slot.end - slot.cursor) / 60_000, 0),
+  };
+}
+
+function allocateSlot(
+  slots: FreePlanningSlot[],
+  requestedMinutes: number,
+  minimumMinutes: number,
+): AllocatedSlot | null {
+  const requestedMs = requestedMinutes * 60_000;
+  const minimumMs = minimumMinutes * 60_000;
+  const preferred = slots.find((slot) => slot.end - slot.cursor >= requestedMs);
+  const slot =
+    preferred ?? slots.find((candidate) => candidate.end - candidate.cursor >= minimumMs);
+  if (!slot) {
+    return null;
+  }
+
+  const durationMs = Math.min(requestedMs, slot.end - slot.cursor);
+  const start = slot.cursor;
+  slot.cursor += durationMs;
+  return {
+    startAt: new Date(start).toISOString(),
+    endAt: new Date(start + durationMs).toISOString(),
+    durationMinutes: durationMs / 60_000,
+  };
+}
+
+function latestFeedbackByTask(
+  feedback: readonly PlanningFeedback[],
+): Map<string, PlanningFeedback> {
+  const latest = new Map<string, PlanningFeedback>();
+  for (const entry of feedback) {
+    if (entry.deletedAt !== null || entry.taskId === null) {
+      continue;
+    }
+    const current = latest.get(entry.taskId);
+    if (!current || entry.recordedAt > current.recordedAt) {
+      latest.set(entry.taskId, entry);
+    }
+  }
+  return latest;
+}
+
+function feedbackPriorityAdjustment(feedback: PlanningFeedback | undefined): number {
+  if (!feedback) {
+    return 0;
+  }
+  if (feedback.result === "completed") {
+    return -100_000;
+  }
+  if (feedback.reason === "blocked") {
+    return -100_000;
+  }
+  if (feedback.reason === "priority-wrong") {
+    return -300;
+  }
+  return feedback.result === "partial" ? 300 : 150;
+}
+
+function adjustedTaskDuration(task: Task, feedback: PlanningFeedback | undefined): number {
+  const estimate = task.estimatedMinutes ?? 60;
+  if (!feedback) {
+    return Math.min(240, estimate);
+  }
+  if (feedback.reason === "time-too-short") {
+    return Math.min(240, Math.max(estimate + 30, (feedback.actualMinutes ?? estimate) + 30));
+  }
+  if (feedback.reason === "time-too-long") {
+    return Math.max(15, Math.min(estimate, feedback.actualMinutes ?? estimate - 30));
+  }
+  if (feedback.result === "partial" && feedback.actualMinutes !== null) {
+    return Math.max(30, Math.min(240, estimate - feedback.actualMinutes));
+  }
+  return Math.min(240, estimate);
+}
+
+function roundProtectionTarget(availableMinutes: number, kind: "morning" | "week"): number {
+  const unit = kind === "week" ? 30 : 15;
+  const rounded = Math.round((availableMinutes * 0.2) / unit) * unit;
+  return kind === "week" ? Math.max(120, rounded) : Math.min(availableMinutes, rounded);
+}
+
+function protectedMinutesInPeriod(
+  areaId: string,
+  workspace: PlanningWorkspace,
+  periodStart: number,
+  periodEnd: number,
+): number {
+  return workspace.workBlocks
+    .filter(
+      (block) =>
+        block.deletedAt === null &&
+        block.kind === "protection" &&
+        block.areaId === areaId &&
+        Date.parse(block.startAt) >= periodStart &&
+        Date.parse(block.startAt) < periodEnd &&
+        block.status !== "skipped",
+    )
+    .reduce((sum, block) => sum + block.durationMinutes, 0);
+}
+
+export function createPlanningProposal(
+  request: PlanningRequest,
+  workspace: PlanningWorkspace,
+): PlanningProposal {
+  const { slots, availableMinutes } = normalizeAvailability(request);
+  if (request.kind === "week" && availableMinutes < 120) {
+    throw new PlanningRuleError(
+      "INSUFFICIENT_WEEKLY_PROTECTION_TIME",
+      "Für die beiden wöchentlichen Schutzblöcke werden mindestens 120 verfügbare Minuten benötigt.",
+    );
+  }
+
+  const activeAreas = workspace.areas.filter(
+    (area) => area.deletedAt === null && area.status === "active",
+  );
+  const protectedAreas = ["RHIA", "Shadow Grown"].map((name) => {
+    const area = activeAreas.find((candidate) => candidate.name === name);
+    if (!area) {
+      throw new PlanningRuleError(
+        "INVALID_PLANNING_PERIOD",
+        `Der verbindliche Schutzbereich ${name} ist nicht verfügbar.`,
+      );
+    }
+    return area;
+  });
+  const tasks = workspace.tasks.filter((task) => task.deletedAt === null);
+  const taskIds = new Set(tasks.map((task) => task.id));
+  const dependencies = workspace.dependencies.filter(
+    (dependency) =>
+      dependency.deletedAt === null &&
+      taskIds.has(dependency.taskId) &&
+      taskIds.has(dependency.dependsOnTaskId),
+  );
+  const feedbackByTask = latestFeedbackByTask(workspace.feedback);
+  const ranked = rankTasksByPriority(tasks, dependencies, {
+    now: request.generatedAt,
+    availableMinutes,
+    protectedAreaIds: protectedAreas.map((area) => area.id),
+  })
+    .filter((priority) => {
+      const task = tasks.find((candidate) => candidate.id === priority.taskId);
+      const feedback = feedbackByTask.get(priority.taskId);
+      return (
+        task !== undefined &&
+        task.status !== "completed" &&
+        task.status !== "discarded" &&
+        !priority.blocked &&
+        feedbackPriorityAdjustment(feedback) > -100_000
+      );
+    })
+    .toSorted((left, right) => {
+      const leftTask = tasks.find((task) => task.id === left.taskId);
+      const rightTask = tasks.find((task) => task.id === right.taskId);
+      const leftManual = left.source === "manual" ? 100_000 - left.rank * 1_000 : 0;
+      const rightManual = right.source === "manual" ? 100_000 - right.rank * 1_000 : 0;
+      const leftScore =
+        left.score + leftManual + feedbackPriorityAdjustment(feedbackByTask.get(left.taskId));
+      const rightScore =
+        right.score + rightManual + feedbackPriorityAdjustment(feedbackByTask.get(right.taskId));
+      if (leftScore !== rightScore) {
+        return rightScore - leftScore;
+      }
+      return (leftTask?.id ?? left.taskId).localeCompare(rightTask?.id ?? right.taskId);
+    });
+
+  const briefingId = globalThis.crypto.randomUUID();
+  const workBlocks: WorkBlock[] = [];
+  const warnings: string[] = [];
+  const scheduledTaskIds = new Set<string>();
+  const protectionTarget = roundProtectionTarget(availableMinutes, request.kind);
+  const periodStart = Date.parse(request.periodStart);
+  const periodEnd = Date.parse(request.periodEnd);
+  const protectedQueue = protectedAreas
+    .map((area) => ({
+      area,
+      existingMinutes: protectedMinutesInPeriod(area.id, workspace, periodStart, periodEnd),
+      targetMinutes: request.kind === "week" ? 60 : 0,
+    }))
+    .toSorted((left, right) => left.existingMinutes - right.existingMinutes);
+  let remainingProtection = protectionTarget;
+  if (request.kind === "week") {
+    remainingProtection -= 120;
+  }
+  let queueIndex = 0;
+  while (remainingProtection > 0) {
+    const target = protectedQueue[queueIndex % protectedQueue.length];
+    if (!target) {
+      throw new PlanningRuleError(
+        "INVALID_PLANNING_PERIOD",
+        "Die Schutzzeitbereiche RHIA und Shadow Grown fehlen.",
+      );
+    }
+    target.targetMinutes += Math.min(30, remainingProtection);
+    remainingProtection -= Math.min(30, remainingProtection);
+    queueIndex += 1;
+  }
+
+  for (const target of protectedQueue) {
+    let remaining = target.targetMinutes;
+    while (remaining > 0) {
+      const preferred = remaining >= 60 ? 60 : remaining;
+      const minimum = request.kind === "week" ? 30 : Math.min(15, preferred);
+      const allocated = allocateSlot(slots, preferred, minimum);
+      if (!allocated) {
+        warnings.push(
+          `Schutzzeit für ${target.area.name} konnte nicht vollständig eingeplant werden.`,
+        );
+        break;
+      }
+      const protectedTask = ranked
+        .map((priority) => tasks.find((task) => task.id === priority.taskId))
+        .find(
+          (task) =>
+            task !== undefined && task.areaId === target.area.id && !scheduledTaskIds.has(task.id),
+        );
+      if (protectedTask) {
+        scheduledTaskIds.add(protectedTask.id);
+      }
+      workBlocks.push(
+        createWorkBlock({
+          briefingId,
+          taskId: protectedTask?.id ?? null,
+          areaId: target.area.id,
+          kind: "protection",
+          title: protectedTask?.title ?? `Schutzzeit ${target.area.name}`,
+          ...allocated,
+          explanation: `Geschützter Block für ${target.area.name}; verbindliche Langzeitprojektzeit.`,
+        }),
+      );
+      remaining -= allocated.durationMinutes;
+    }
+  }
+
+  for (const priority of ranked) {
+    if (scheduledTaskIds.has(priority.taskId)) {
+      continue;
+    }
+    const task = tasks.find((candidate) => candidate.id === priority.taskId);
+    if (!task) {
+      continue;
+    }
+    const requestedMinutes = adjustedTaskDuration(task, feedbackByTask.get(task.id));
+    const allocated = allocateSlot(slots, requestedMinutes, 15);
+    if (!allocated) {
+      continue;
+    }
+    scheduledTaskIds.add(task.id);
+    const feedback = feedbackByTask.get(task.id);
+    const feedbackExplanation = feedback
+      ? ` Letzte Rückmeldung: ${feedback.result}, Grund ${feedback.reason}.`
+      : "";
+    workBlocks.push(
+      createWorkBlock({
+        briefingId,
+        taskId: task.id,
+        areaId: task.areaId,
+        kind: "task",
+        title: task.title,
+        ...allocated,
+        explanation: `${priority.explanation}${feedbackExplanation}`.trim(),
+      }),
+    );
+  }
+
+  const plannedMinutes = workBlocks.reduce((sum, block) => sum + block.durationMinutes, 0);
+  const protectionMinutes = workBlocks
+    .filter((block) => block.kind === "protection")
+    .reduce((sum, block) => sum + block.durationMinutes, 0);
+  if (request.kind === "week" && protectionMinutes < 120) {
+    throw new PlanningRuleError(
+      "INSUFFICIENT_WEEKLY_PROTECTION_TIME",
+      "Die verfügbaren Zeitfenster erlauben keine vollständigen Schutzblöcke für RHIA und Shadow Grown.",
+    );
+  }
+  if (request.kind === "week" && protectionTarget > availableMinutes * 0.25) {
+    warnings.push(
+      "Die Mindestschutzblöcke liegen über ungefähr 20 Prozent, weil die Wochenzeit unter zehn Stunden liegt.",
+    );
+  }
+  const activeUnplanned = ranked
+    .map((priority) => priority.taskId)
+    .filter((taskId) => !scheduledTaskIds.has(taskId));
+  const title = request.kind === "week" ? "Wochenplanung" : "Morgenbriefing und Tagesplan";
+  const summary = `${workBlocks.length} Blöcke, ${plannedMinutes} von ${availableMinutes} Minuten geplant; ${protectionMinutes} Minuten Schutzzeit.`;
+  const briefing = createBriefing(
+    {
+      kind: request.kind,
+      periodStart: request.periodStart,
+      periodEnd: request.periodEnd,
+      availableMinutes,
+      plannedMinutes,
+      protectionMinutes,
+      title,
+      summary,
+      explanation:
+        "Reihenfolge: Fristen, Wichtigkeit, Blockaden, Geldwirkung, früher Geldeingang, Aufwand und Schutzzeit. Manuelle Prioritäten von Sir bleiben geschützt.",
+      generatedAt: request.generatedAt,
+    },
+    { id: briefingId, timestamp: request.generatedAt },
+  );
+
+  return { briefing, workBlocks, warnings, unplannedTaskIds: activeUnplanned };
+}
+
+export interface EveningReviewInput {
+  periodStart: string;
+  periodEnd: string;
+  generatedAt: string;
+  workBlocks: readonly WorkBlock[];
+  feedback: readonly PlanningFeedback[];
+}
+
+export function createEveningReview(input: EveningReviewInput): Briefing {
+  const periodStart = Date.parse(input.periodStart);
+  const periodEnd = Date.parse(input.periodEnd);
+  const blocks = input.workBlocks.filter(
+    (block) =>
+      block.deletedAt === null &&
+      Date.parse(block.startAt) >= periodStart &&
+      Date.parse(block.startAt) < periodEnd,
+  );
+  const latestByBlock = new Map<string, PlanningFeedback>();
+  for (const feedback of input.feedback) {
+    if (feedback.deletedAt !== null) {
+      continue;
+    }
+    const current = latestByBlock.get(feedback.workBlockId);
+    if (!current || feedback.recordedAt > current.recordedAt) {
+      latestByBlock.set(feedback.workBlockId, feedback);
+    }
+  }
+  const completed = blocks.filter(
+    (block) => latestByBlock.get(block.id)?.result === "completed" || block.status === "completed",
+  ).length;
+  const partial = blocks.filter(
+    (block) => latestByBlock.get(block.id)?.result === "partial" || block.status === "partial",
+  ).length;
+  const skipped = blocks.filter(
+    (block) => latestByBlock.get(block.id)?.result === "skipped" || block.status === "skipped",
+  ).length;
+  const open = Math.max(0, blocks.length - completed - partial - skipped);
+  const plannedMinutes = blocks.reduce((sum, block) => sum + block.durationMinutes, 0);
+  const protectionMinutes = blocks
+    .filter((block) => block.kind === "protection")
+    .reduce((sum, block) => sum + block.durationMinutes, 0);
+
+  return createBriefing(
+    {
+      kind: "evening",
+      periodStart: input.periodStart,
+      periodEnd: input.periodEnd,
+      availableMinutes: plannedMinutes,
+      plannedMinutes,
+      protectionMinutes,
+      title: "Abendrückblick",
+      summary: `${completed} erledigt, ${partial} teilweise, ${skipped} ausgelassen, ${open} ohne Rückmeldung.`,
+      explanation:
+        "Teilweise erledigte und ausgelassene Blöcke beeinflussen den nächsten Vorschlag; Blockaden und falsche Prioritäten werden sichtbar berücksichtigt.",
+      generatedAt: input.generatedAt,
+    },
+    { timestamp: input.generatedAt },
+  );
 }
 
 export interface RepositoryReadOptions {
