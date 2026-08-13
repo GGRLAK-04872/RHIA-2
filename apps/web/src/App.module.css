@@ -215,16 +215,16 @@
   content: "";
   inset: 6% -8% 4% 6%;
   pointer-events: none;
-  border-radius: 50%;
+  border-radius: 61% 39% 54% 46% / 43% 62% 38% 57%;
   background:
     radial-gradient(
-      ellipse at 48% 48%,
-      transparent 0 38%,
-      rgb(239 38 109 / 5%) 39%,
-      transparent 41%
+      ellipse at 37% 44%,
+      transparent 0 24%,
+      rgb(239 38 109 / 5%) 25%,
+      transparent 27%
     ),
-    radial-gradient(ellipse at 54% 52%, transparent 0 53%, rgb(139 15 58 / 8%) 54%, transparent 56%);
-  filter: blur(1px);
+    radial-gradient(ellipse at 68% 61%, transparent 0 31%, rgb(139 15 58 / 7%) 32%, transparent 35%);
+  filter: blur(5px);
   transform: translateZ(-90px) rotate(-8deg) scale(1.08);
 }
 

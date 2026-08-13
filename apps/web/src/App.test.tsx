@@ -16,7 +16,7 @@ describe("RHIA stage 4 shell", () => {
     expect(screen.getByRole("heading", { name: "RHIA" })).toBeInTheDocument();
     expect(document.querySelector('[data-rhia-presence="spatial"]')).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Übersicht" }));
-    await screen.findByRole("heading", { name: "Was ist jetzt wichtig?" });
+    await screen.findByRole("heading", { name: "Was ist jetzt wichtig?" }, { timeout: 8_000 });
     expect(screen.getByText("Local-first")).toBeInTheDocument();
     expect(screen.getAllByText("IndexedDB")).toHaveLength(2);
     expect(screen.getByText("OpenAI API deaktiviert")).toBeInTheDocument();

@@ -35,9 +35,40 @@ const organicRibbons = [
 ] as const;
 
 const orbitPaths = [
-  "M72 426 C160 160 514 76 724 260 C876 394 720 664 456 708 C218 748 14 628 72 426 Z",
-  "M132 254 C338 92 684 204 718 446 C746 648 438 748 224 620 C36 508 -16 372 132 254 Z",
-  "M174 582 C80 386 254 148 490 156 C690 164 786 356 688 526 C590 696 270 740 174 582 Z",
+  "M58 456 C104 218 374 66 640 142 C734 168 790 232 786 306",
+  "M112 246 C286 86 590 122 724 344 C780 438 760 538 684 620",
+  "M116 602 C46 424 170 218 380 156 C552 106 716 194 766 354",
+  "M176 722 C368 798 650 690 730 520 C770 436 754 366 710 304",
+] as const;
+
+const neuralBloom = Array.from({ length: 72 }, (_, index) => {
+  const angle = index * 2.399963 + (index % 5) * 0.11;
+  const length = 112 + ((index * 47) % 224);
+  const direction = index % 2 === 0 ? 1 : -1;
+  const bend = direction * (0.36 + (index % 7) * 0.045);
+  const flatten = 0.86 + (index % 4) * 0.035;
+  const point = (pointAngle: number, radius: number) =>
+    `${(400 + Math.cos(pointAngle) * radius).toFixed(1)} ${(400 + Math.sin(pointAngle) * radius * flatten).toFixed(1)}`;
+
+  const start = point(angle, 12 + (index % 8) * 1.8);
+  const controlOne = point(angle + bend * 0.24, length * (0.19 + (index % 4) * 0.025));
+  const controlTwo = point(angle + bend * 0.74, length * (0.55 + (index % 3) * 0.05));
+  const end = point(angle + bend * (1.08 + (index % 5) * 0.055), length);
+
+  return `M${start} C${controlOne} ${controlTwo} ${end}`;
+});
+
+const neuralLinks = [
+  "M190 252 C244 206 304 222 350 158",
+  "M258 342 C282 288 326 266 364 166",
+  "M526 294 C558 352 604 378 636 346",
+  "M574 206 C626 230 648 282 710 304",
+  "M584 532 C526 576 482 602 430 642",
+  "M654 626 C590 640 534 618 468 690",
+  "M214 548 C278 586 330 558 337 472",
+  "M144 636 C188 596 198 548 214 548",
+  "M160 414 C206 370 226 352 278 326",
+  "M52 706 C114 670 132 626 144 636",
 ] as const;
 
 const anchorNodes = [
@@ -124,8 +155,18 @@ export function RhiaPresence() {
             <path key={path} d={path} />
           ))}
         </g>
+        <g className={styles.bloom}>
+          {neuralBloom.map((path, index) => (
+            <path key={path} d={path} data-depth={index % 4} />
+          ))}
+        </g>
         <g className={styles.filaments}>
           {filaments.map((path) => (
+            <path key={path} d={path} />
+          ))}
+        </g>
+        <g className={styles.links}>
+          {neuralLinks.map((path) => (
             <path key={path} d={path} />
           ))}
         </g>
