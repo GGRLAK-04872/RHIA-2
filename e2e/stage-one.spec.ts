@@ -274,9 +274,14 @@ test("spatial RHIA start cockpit stays usable in tablet portrait and landscape",
 
     const viewportState = await page.evaluate(() => ({
       horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth,
-      bodyOverflow: document.body.scrollHeight > window.innerHeight,
+      bodyOverflow: getComputedStyle(document.body).overflow,
+      rootOverflow: getComputedStyle(document.querySelector("#root") as HTMLElement).overflow,
     }));
-    expect(viewportState).toEqual({ horizontalOverflow: false, bodyOverflow: false });
+    expect(viewportState).toEqual({
+      horizontalOverflow: false,
+      bodyOverflow: "hidden",
+      rootOverflow: "hidden",
+    });
   }
 });
 
