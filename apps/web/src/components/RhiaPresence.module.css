@@ -1,0 +1,354 @@
+.presence {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  transform-style: preserve-3d;
+  perspective: 1100px;
+}
+
+.presence::before,
+.presence::after,
+.farHalo,
+.depthMist,
+.web,
+.lensFlare {
+  position: absolute;
+}
+
+.presence::before,
+.presence::after {
+  content: "";
+  pointer-events: none;
+  border-radius: 50%;
+}
+
+.presence::before {
+  inset: 7% 4% 9%;
+  background:
+    radial-gradient(circle at 50% 50%, rgb(255 189 216 / 16%) 0 1%, transparent 7%),
+    radial-gradient(ellipse at 46% 48%, rgb(229 29 104 / 15%), transparent 36%),
+    radial-gradient(ellipse at 58% 53%, rgb(116 8 44 / 18%), transparent 61%);
+  filter: blur(18px);
+  transform: translateZ(-70px) scale(1.1);
+  animation: auraBreath 11s ease-in-out infinite;
+}
+
+.presence::after {
+  inset: 23% 18%;
+  border: 1px solid rgb(255 97 154 / 8%);
+  box-shadow:
+    0 0 62px rgb(210 24 91 / 18%),
+    inset 0 0 72px rgb(255 84 143 / 9%);
+  transform: translateZ(36px) rotate(-9deg);
+  animation: shellDrift 15s ease-in-out infinite;
+}
+
+.farHalo {
+  inset: 4%;
+  border-radius: 48% 52% 44% 56% / 56% 45% 55% 44%;
+  background:
+    conic-gradient(
+      from 38deg,
+      transparent 0 9%,
+      rgb(194 19 78 / 8%) 15%,
+      transparent 21% 46%,
+      rgb(246 48 119 / 7%) 55%,
+      transparent 66% 100%
+    ),
+    radial-gradient(circle, transparent 36%, rgb(126 10 47 / 12%) 58%, transparent 72%);
+  filter: blur(3px);
+  transform: translateZ(-120px) scale(1.16);
+  animation: haloDrift 21s ease-in-out infinite;
+}
+
+.depthMist {
+  inset: 18% 11%;
+  border-radius: 52% 48% 57% 43%;
+  background:
+    radial-gradient(circle at 32% 34%, rgb(255 63 133 / 24%), transparent 18%),
+    radial-gradient(circle at 68% 67%, rgb(203 23 91 / 18%), transparent 22%),
+    radial-gradient(circle at 54% 42%, rgb(105 7 41 / 30%), transparent 58%);
+  filter: blur(24px);
+  transform: translateZ(-30px);
+  animation: mistBreath 13s ease-in-out infinite;
+}
+
+.web {
+  inset: -2%;
+  width: 104%;
+  height: 104%;
+  overflow: visible;
+  transform: translateZ(18px);
+  filter: drop-shadow(0 18px 42px rgb(0 0 0 / 56%));
+}
+
+.orbits path,
+.ribbons path,
+.filaments path {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.orbits {
+  transform-origin: 400px 400px;
+  animation: orbitDrift 18s ease-in-out infinite;
+}
+
+.orbits path {
+  stroke: url("#rhia-orbit-gradient");
+  stroke-width: 1.1;
+  stroke-dasharray: 2 9 22 16;
+  opacity: 0.55;
+}
+
+.orbits path:nth-child(2) {
+  stroke-width: 0.75;
+  opacity: 0.38;
+}
+
+.orbits path:nth-child(3) {
+  stroke-dasharray: 40 22 3 16;
+  opacity: 0.28;
+}
+
+.farParticles {
+  filter: url("#rhia-soft-glow");
+  animation: particleBreath 12s ease-in-out infinite;
+}
+
+.farParticles circle {
+  fill: #f52f78;
+  opacity: 0.34;
+}
+
+.farParticles circle[data-depth="1"] {
+  fill: #ff91b9;
+  opacity: 0.56;
+}
+
+.farParticles circle[data-depth="2"] {
+  fill: #a81049;
+  opacity: 0.23;
+}
+
+.ribbons {
+  transform-origin: 400px 400px;
+  animation: ribbonBreath 16s ease-in-out infinite;
+}
+
+.ribbons path {
+  stroke: url("#rhia-filament-gradient");
+  stroke-width: 1.15;
+  opacity: 0.42;
+}
+
+.ribbons path:nth-child(3n) {
+  stroke-width: 2.2;
+  opacity: 0.28;
+  filter: url("#rhia-near-glow");
+}
+
+.filaments {
+  transform-origin: 400px 400px;
+  animation: filamentBreath 10s ease-in-out infinite;
+}
+
+.filaments path {
+  stroke: url("#rhia-filament-gradient");
+  stroke-width: 1.25;
+  opacity: 0.78;
+  filter: url("#rhia-near-glow");
+}
+
+.filaments path:nth-child(3n) {
+  stroke-width: 0.7;
+  opacity: 0.48;
+}
+
+.filaments path:nth-child(4n) {
+  stroke-width: 2;
+  opacity: 0.66;
+}
+
+.nodes circle {
+  fill: #ff80ad;
+  opacity: 0.82;
+  filter: url("#rhia-near-glow");
+}
+
+.nodes circle:first-child {
+  fill: #fff;
+  stroke: #ff91bb;
+  stroke-width: 4;
+}
+
+.coreAura {
+  fill: rgb(241 40 116 / 17%);
+  filter: url("#rhia-soft-glow");
+  transform-origin: 400px 400px;
+  animation: coreBreath 6s ease-in-out infinite;
+}
+
+.coreRing {
+  fill: rgb(97 8 39 / 66%);
+  stroke: rgb(255 132 179 / 75%);
+  stroke-width: 1.4;
+  filter: url("#rhia-near-glow");
+  transform-origin: 400px 400px;
+  animation: coreBreath 6s ease-in-out infinite reverse;
+}
+
+.coreLight {
+  fill: #fff8fb;
+  stroke: #ffb6d1;
+  stroke-width: 3;
+  filter: url("#rhia-near-glow");
+}
+
+.lensFlare {
+  z-index: 3;
+  top: 48.9%;
+  left: 49%;
+  width: 2%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 8px #fff,
+    0 0 24px #ff98bf,
+    0 0 68px rgb(240 39 114 / 72%);
+  transform: translateZ(70px);
+  animation: lensBreath 6s ease-in-out infinite;
+}
+
+@keyframes auraBreath {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: translateZ(-70px) scale(1.06);
+  }
+  50% {
+    opacity: 1;
+    transform: translateZ(-70px) scale(1.14);
+  }
+}
+
+@keyframes shellDrift {
+  0%,
+  100% {
+    transform: translate3d(-1%, 1%, 36px) rotate(-9deg) scale(0.98);
+  }
+  50% {
+    transform: translate3d(1.5%, -1%, 36px) rotate(-6deg) scale(1.04);
+  }
+}
+
+@keyframes haloDrift {
+  0%,
+  100% {
+    transform: translate3d(-1%, 0, -120px) scale(1.14) rotate(-2deg);
+  }
+  50% {
+    transform: translate3d(1%, -1.5%, -120px) scale(1.2) rotate(2deg);
+  }
+}
+
+@keyframes mistBreath {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: translate3d(-1.5%, 1%, -30px) scale(0.96);
+  }
+  50% {
+    opacity: 0.88;
+    transform: translate3d(1.5%, -1%, -30px) scale(1.05);
+  }
+}
+
+@keyframes orbitDrift {
+  0%,
+  100% {
+    opacity: 0.52;
+    transform: rotate(-1.5deg) scale(0.99);
+  }
+  50% {
+    opacity: 0.76;
+    transform: rotate(1.5deg) scale(1.02);
+  }
+}
+
+@keyframes particleBreath {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes ribbonBreath {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(0.98) rotate(-0.7deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.025) rotate(0.7deg);
+  }
+}
+
+@keyframes filamentBreath {
+  0%,
+  100% {
+    opacity: 0.82;
+    transform: scale(0.99);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.015);
+  }
+}
+
+@keyframes coreBreath {
+  0%,
+  100% {
+    opacity: 0.78;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+
+@keyframes lensBreath {
+  0%,
+  100% {
+    opacity: 0.86;
+    transform: translateZ(70px) scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: translateZ(70px) scale(1.14);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .presence::before,
+  .presence::after,
+  .farHalo,
+  .depthMist,
+  .orbits,
+  .farParticles,
+  .ribbons,
+  .filaments,
+  .coreAura,
+  .coreRing,
+  .lensFlare {
+    animation: none;
+  }
+}

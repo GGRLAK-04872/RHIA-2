@@ -14,6 +14,7 @@ describe("RHIA stage 4 shell", () => {
     }
 
     expect(screen.getByRole("heading", { name: "RHIA" })).toBeInTheDocument();
+    expect(document.querySelector('[data-rhia-presence="spatial"]')).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Übersicht" }));
     await screen.findByRole("heading", { name: "Was ist jetzt wichtig?" });
     expect(screen.getByText("Local-first")).toBeInTheDocument();
