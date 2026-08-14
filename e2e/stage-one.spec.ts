@@ -252,3 +252,48 @@ test("company cockpit accepts a confirmed blocked task and keeps the microphone 
   await expect(page.getByText("Blockiert: Testpreise fehlen")).toBeVisible();
   await expect(page.getByRole("button", { name: /Mikrofontaste/ })).toBeVisible();
 });
+
+test("spatial RHIA start cockpit stays usable in tablet portrait and landscape", async ({
+  page,
+}) => {
+  const viewports = [
+    { width: 800, height: 1280 },
+    { width: 1280, height: 800 },
+  ];
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await dismissStartGreeting(page);
+
+    await expect(page.locator('[data-rhia-presence="spatial"]')).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Nächster sinnvoller Schritt" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Mikrofontaste/ })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Aufgabe" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Daten & Sicherung" })).toBeVisible();
+
+    const viewportState = await page.evaluate(() => ({
+      horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth,
+      bodyOverflow: getComputedStyle(document.body).overflow,
+      rootOverflow: getComputedStyle(document.querySelector("#root") as HTMLElement).overflow,
+    }));
+    expect(viewportState).toEqual({
+      horizontalOverflow: false,
+      bodyOverflow: "hidden",
+      rootOverflow: "hidden",
+    });
+  }
+});
+
+test("spatial RHIA presence respects reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await dismissStartGreeting(page);
+
+  const presence = page.locator('[data-rhia-presence="spatial"]');
+  await expect(presence).toBeVisible();
+  const activeAnimations = await presence.evaluate(
+    (element) => element.getAnimations({ subtree: true }).length,
+  );
+  expect(activeAnimations).toBe(0);
+});

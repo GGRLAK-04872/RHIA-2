@@ -23,6 +23,12 @@ body {
   margin: 0;
 }
 
+body,
+#root {
+  height: 100dvh;
+  overflow: hidden;
+}
+
 button,
 input,
 textarea,
