@@ -235,152 +235,13 @@
 .organism {
   position: relative;
   z-index: 1;
-  width: min(45vw, 720px);
-  max-height: 100%;
-  aspect-ratio: 1;
-  align-self: center;
-  display: grid;
-  place-items: center;
-  margin-left: 70px;
-  filter: drop-shadow(0 26px 52px rgb(0 0 0 / 52%));
-}
-
-.orbitOuter,
-.orbitInner,
-.particleField,
-.neuralWeb,
-.core,
-.highlight {
-  position: absolute;
-}
-
-.orbitOuter {
-  inset: 1%;
-  border: 1px solid rgb(232 57 122 / 14%);
-  border-radius: 43% 57% 51% 49% / 54% 41% 59% 46%;
-  box-shadow:
-    0 0 72px rgb(173 23 79 / 14%),
-    inset 0 0 58px rgb(234 74 133 / 6%);
-  animation: orbit 52s linear infinite;
-}
-
-.orbitInner {
-  inset: 12%;
-  border: 1px solid rgb(251 106 161 / 19%);
-  border-radius: 56% 44% 48% 52% / 42% 58% 42% 58%;
-  box-shadow: 0 0 42px rgb(234 42 111 / 17%);
-  animation: reverseOrbit 38s linear infinite;
-}
-
-.particleField {
-  inset: 3%;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 12% 46%, #ff4f93 0 1.3px, transparent 2px),
-    radial-gradient(circle at 74% 17%, #ff84b2 0 1.1px, transparent 1.9px),
-    radial-gradient(circle at 82% 67%, #f52576 0 1.4px, transparent 2px),
-    radial-gradient(circle at 35% 82%, #ff78aa 0 1.1px, transparent 1.9px),
-    radial-gradient(circle at 63% 74%, #ff3f87 0 1px, transparent 1.8px),
-    radial-gradient(circle at 29% 28%, #ff9fc2 0 0.9px, transparent 1.7px),
-    repeating-radial-gradient(circle at 50% 50%, transparent 0 7%, rgb(232 35 105 / 6%) 8% 8.5%);
-  box-shadow:
-    0 -118px 68px -66px rgb(241 27 102 / 36%),
-    118px 20px 72px -76px rgb(255 101 157 / 48%),
-    -112px 38px 70px -72px rgb(230 24 94 / 42%),
-    18px 118px 70px -78px rgb(235 35 103 / 38%);
-  animation: pulseField 9s ease-in-out infinite;
-}
-
-.neuralWeb {
-  inset: 0;
-  width: 100%;
+  width: min(47vw, 760px);
   height: 100%;
-  overflow: visible;
-  filter: drop-shadow(0 0 8px rgb(240 35 111 / 56%));
-  animation: neuralDrift 18s ease-in-out infinite;
-}
-
-.neuralLoops path {
-  fill: none;
-  stroke: url("#neural-gradient");
-  stroke-width: 1.3;
-  stroke-linecap: round;
-  opacity: 0.45;
-}
-
-.neuralLoops path:nth-child(even) {
-  stroke-width: 0.8;
-  opacity: 0.3;
-}
-
-.neuralFilaments path {
-  fill: none;
-  stroke: url("#neural-gradient");
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  filter: url("#neural-glow");
-  opacity: 0.84;
-}
-
-.neuralFilaments path:nth-child(3n) {
-  stroke-width: 0.9;
-  opacity: 0.58;
-}
-
-.neuralFilaments path:nth-child(4n) {
-  stroke-width: 2;
-  opacity: 0.72;
-}
-
-.neuralNodes circle {
-  fill: #ff7cac;
-  filter: url("#neural-glow");
-}
-
-.neuralNodes circle:first-child {
-  fill: #fff8fb;
-  stroke: #ff9fc4;
-  stroke-width: 5;
-}
-
-.core {
-  width: 4.2%;
-  aspect-ratio: 1;
-  border: 2px solid rgb(255 229 239 / 82%);
-  border-radius: 50%;
-  background: radial-gradient(circle, #fff 0 20%, #ff9cc0 36%, #ef3278 62%, transparent 72%);
-  box-shadow:
-    0 0 16px #ffb5d0,
-    0 0 42px #f62f79,
-    0 0 92px rgb(213 18 88 / 76%);
-  animation: breathe 5.8s ease-in-out infinite;
-}
-
-.core::before,
-.core::after {
-  position: absolute;
-  content: "";
-  inset: -120%;
-  border: 1px solid rgb(255 97 155 / 38%);
-  border-radius: 43% 57% 58% 42% / 52% 42% 58% 48%;
-  transform: rotate(27deg);
-  box-shadow: 0 0 22px rgb(244 48 119 / 36%);
-}
-
-.core::after {
-  inset: -230%;
-  opacity: 0.38;
-  transform: rotate(-31deg);
-}
-
-.highlight {
-  width: 1.2%;
-  height: 1.2%;
-  top: 48.7%;
-  left: 48.9%;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 12px #fff;
+  min-height: 260px;
+  max-height: 100%;
+  align-self: center;
+  margin-left: 70px;
+  transform: translateZ(0);
 }
 
 .systemRail {
@@ -949,54 +810,6 @@
   height: 24px;
 }
 
-@keyframes breathe {
-  0%,
-  100% {
-    transform: scale(0.96) rotate(-2deg);
-    filter: saturate(0.92) brightness(0.93);
-  }
-  50% {
-    transform: scale(1.06) rotate(2deg);
-    filter: saturate(1.12) brightness(1.12);
-  }
-}
-
-@keyframes orbit {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes reverseOrbit {
-  to {
-    transform: rotate(-360deg);
-  }
-}
-
-@keyframes pulseField {
-  0%,
-  100% {
-    opacity: 0.68;
-    transform: scale(0.96);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.04);
-  }
-}
-
-@keyframes neuralDrift {
-  0%,
-  100% {
-    opacity: 0.84;
-    transform: scale(0.985) rotate(-0.7deg);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.018) rotate(0.7deg);
-  }
-}
-
 @keyframes voicePulse {
   from {
     transform: scaleY(0.45);
@@ -1080,6 +893,8 @@
     grid-column: 2;
     grid-row: 1;
     width: min(31vw, 300px);
+    height: 100%;
+    min-height: 0;
     justify-self: center;
   }
 
@@ -1174,6 +989,7 @@
 
   .organism {
     width: min(33vw, 145px);
+    min-height: 0;
   }
 
   .settingsGlyph {
@@ -1314,6 +1130,7 @@
 
   .organism {
     width: 128px;
+    min-height: 0;
   }
 
   .moduleHeader {
@@ -1323,15 +1140,5 @@
 
   .bottomNav button {
     min-height: 52px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .core,
-  .orbitOuter,
-  .orbitInner,
-  .particleField,
-  .neuralWeb {
-    animation: none;
   }
 }

@@ -18,6 +18,7 @@ import { BusinessCockpitPanel } from "./components/BusinessCockpitPanel";
 import { LocalPlanningPanel } from "./components/LocalPlanningPanel";
 import { LocalWorkHubPanel } from "./components/LocalWorkHubPanel";
 import { MemoryPanel } from "./components/MemoryPanel";
+import { RhiaPresenceStage } from "./components/RhiaPresenceStage";
 import { StageOneDataPanel } from "./components/StageOneDataPanel";
 
 type ModuleId = RhiaVoiceTarget;
@@ -29,86 +30,6 @@ const modules = [
   { id: "planning", label: "Planung", eyebrow: "Tages- und Wochenvorschläge" },
   { id: "data", label: "Daten & Sicherung", eyebrow: "Lokale Kontrolle" },
 ] as const satisfies ReadonlyArray<{ id: ModuleId; label: string; eyebrow: string }>;
-
-const neuralPaths = [
-  "M400 400 C334 332 258 342 190 252 C132 176 94 196 58 118",
-  "M400 400 C452 315 526 294 574 206 C608 143 678 146 732 76",
-  "M400 400 C465 455 520 462 584 532 C644 596 686 590 760 650",
-  "M400 400 C337 472 265 476 214 548 C170 610 104 620 52 706",
-  "M400 400 C376 296 400 242 350 158 C315 98 326 70 300 30",
-  "M400 400 C488 370 546 388 636 346 C694 318 726 330 786 294",
-  "M400 400 C414 496 386 552 430 642 C456 695 438 736 468 790",
-  "M400 400 C306 407 250 378 160 414 C102 438 72 422 16 454",
-  "M400 400 C348 352 316 285 236 294 C170 302 148 254 88 250",
-  "M400 400 C444 338 502 346 534 274 C559 218 606 212 638 166",
-  "M400 400 C477 422 501 490 580 490 C644 490 670 536 726 546",
-  "M400 400 C358 456 304 446 268 516 C238 574 188 566 148 616",
-  "M400 400 C390 326 438 284 414 212 C394 154 430 112 422 56",
-  "M400 400 C470 391 506 430 572 404 C628 382 670 410 724 392",
-  "M400 400 C407 472 370 516 394 588 C412 644 380 684 392 744",
-  "M400 400 C326 386 286 420 218 392 C160 368 116 394 62 372",
-  "M400 400 C302 330 246 224 152 238 C90 246 64 208 18 192",
-  "M400 400 C488 286 594 266 652 164 C686 104 728 102 794 50",
-  "M400 400 C514 486 594 526 654 626 C688 682 724 714 792 750",
-  "M400 400 C292 502 210 530 144 636 C108 694 70 730 10 774",
-  "M400 400 C346 376 328 326 278 326 C226 326 204 286 164 282",
-  "M400 400 C428 344 474 330 492 278 C512 224 548 204 574 168",
-  "M400 400 C456 434 468 482 522 500 C572 516 594 558 628 588",
-  "M400 400 C362 438 318 448 298 496 C278 544 238 558 204 588",
-  "M400 400 C382 356 402 320 380 278 C360 240 376 202 364 166",
-  "M400 400 C446 384 480 404 522 382 C562 362 596 378 636 362",
-  "M400 400 C418 446 398 480 420 526 C438 564 426 604 442 642",
-  "M400 400 C354 414 320 394 276 414 C236 432 200 416 160 434",
-] as const;
-
-const neuralLoops = [
-  "M166 358 C196 172 354 102 516 160 C684 220 720 408 634 548 C548 686 350 720 208 622 C86 538 72 390 166 358 Z",
-  "M236 286 C324 198 474 208 568 298 C660 386 620 542 508 604 C390 670 238 610 186 492 C154 418 174 348 236 286 Z",
-  "M294 340 C354 276 458 274 520 338 C586 406 548 508 470 548 C382 594 278 544 252 454 C236 406 250 374 294 340 Z",
-  "M112 448 C206 404 242 232 408 222 C566 212 612 346 706 398",
-  "M104 284 C228 316 270 170 420 190 C560 208 570 324 708 300",
-  "M132 566 C244 510 288 644 430 616 C566 590 574 470 710 506",
-] as const;
-
-const neuralNodes = [
-  [400, 400, 8],
-  [334, 332, 3],
-  [258, 342, 2.5],
-  [190, 252, 3],
-  [94, 196, 2],
-  [452, 315, 2.5],
-  [526, 294, 3],
-  [574, 206, 2],
-  [678, 146, 2.5],
-  [465, 455, 3],
-  [520, 462, 2],
-  [584, 532, 3],
-  [686, 590, 2.5],
-  [337, 472, 2.5],
-  [265, 476, 3],
-  [214, 548, 2],
-  [104, 620, 2.5],
-  [376, 296, 2],
-  [350, 158, 2.5],
-  [488, 370, 2.5],
-  [636, 346, 3],
-  [414, 496, 2.5],
-  [430, 642, 2],
-  [306, 407, 2.5],
-  [160, 414, 3],
-  [236, 294, 2],
-  [534, 274, 2.5],
-  [580, 490, 3],
-  [268, 516, 2.5],
-  [414, 212, 2],
-  [572, 404, 2.5],
-  [394, 588, 2.5],
-  [218, 392, 2],
-  [152, 238, 2.5],
-  [652, 164, 2.5],
-  [654, 626, 2],
-  [144, 636, 2.5],
-] as const;
 
 function ModuleIcon({ module }: { module: ModuleId }) {
   if (module === "overview") {
@@ -352,43 +273,7 @@ export function App() {
           </div>
 
           <div className={styles.organism} aria-hidden="true">
-            <div className={styles.orbitOuter} />
-            <div className={styles.orbitInner} />
-            <div className={styles.particleField} />
-            <svg className={styles.neuralWeb} viewBox="0 0 800 800" aria-hidden="true">
-              <defs>
-                <radialGradient id="neural-gradient" cx="50%" cy="50%" r="58%">
-                  <stop offset="0%" stopColor="#fff1f7" />
-                  <stop offset="8%" stopColor="#ff65a0" />
-                  <stop offset="48%" stopColor="#e91f69" stopOpacity="0.92" />
-                  <stop offset="100%" stopColor="#8f0b3d" stopOpacity="0" />
-                </radialGradient>
-                <filter id="neural-glow" x="-35%" y="-35%" width="170%" height="170%">
-                  <feGaussianBlur stdDeviation="2.8" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-              <g className={styles.neuralLoops}>
-                {neuralLoops.map((path) => (
-                  <path key={path} d={path} />
-                ))}
-              </g>
-              <g className={styles.neuralFilaments}>
-                {neuralPaths.map((path) => (
-                  <path key={path} d={path} />
-                ))}
-              </g>
-              <g className={styles.neuralNodes}>
-                {neuralNodes.map(([cx, cy, radius]) => (
-                  <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={radius} />
-                ))}
-              </g>
-            </svg>
-            <div className={styles.core} />
-            <div className={styles.highlight} />
+            <RhiaPresenceStage />
           </div>
 
           <button

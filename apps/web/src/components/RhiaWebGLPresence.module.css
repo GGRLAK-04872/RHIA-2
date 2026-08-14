@@ -1,0 +1,93 @@
+.stage,
+.mount,
+.fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.stage {
+  isolation: isolate;
+  overflow: hidden;
+  background: transparent;
+  pointer-events: none;
+  mask-image: radial-gradient(ellipse 72% 70% at 52% 48%, #000 0 66%, transparent 100%);
+}
+
+.stage::before {
+  position: absolute;
+  z-index: -1;
+  inset: 10% 6% 8%;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 45% 47%, rgb(211 28 132 / 11%), transparent 45%),
+    radial-gradient(ellipse at 60% 52%, rgb(116 11 78 / 10%), transparent 58%);
+  filter: blur(44px);
+  content: "";
+}
+
+.mount {
+  z-index: 1;
+  background: transparent;
+}
+
+.mount canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  outline: 0;
+}
+
+.fallback {
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  opacity: 1;
+  transition: opacity 360ms ease;
+}
+
+.fallback[data-hidden="true"] {
+  opacity: 0;
+}
+
+.fallback svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.fallbackMist {
+  fill: url("#rhia-fallback-mist");
+  filter: url("#rhia-fallback-blur");
+}
+
+.fallbackLines {
+  fill: none;
+  stroke: url("#rhia-fallback-line");
+  stroke-linecap: round;
+  stroke-width: 1.05;
+  opacity: 0.72;
+}
+
+.fallbackLines path:nth-child(3n) {
+  stroke-width: 0.65;
+  opacity: 0.48;
+}
+
+.fallbackNodes circle {
+  fill: #ff86bd;
+  filter: url("#rhia-fallback-glow");
+}
+
+.fallbackCore {
+  fill: url("#rhia-fallback-core");
+  filter: url("#rhia-fallback-core-glow");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fallback {
+    transition: none;
+  }
+}
