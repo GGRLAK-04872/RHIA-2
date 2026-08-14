@@ -4,396 +4,455 @@
   height: 100%;
   display: grid;
   place-items: center;
+  overflow: visible;
+  perspective: 1300px;
   transform-style: preserve-3d;
-  perspective: 1100px;
 }
 
 .presence::before,
 .presence::after,
-.farHalo,
-.depthMist,
-.web,
-.lensFlare {
+.farGlow,
+.mistBack,
+.mistFront,
+.orbitField,
+.brainStage,
+.brainAura,
+.brainImage,
+.brainLight,
+.floorProjection {
   position: absolute;
+  pointer-events: none;
 }
 
 .presence::before,
 .presence::after {
   content: "";
-  pointer-events: none;
   border-radius: 50%;
 }
 
 .presence::before {
-  inset: 7% 4% 9%;
+  inset: 7% 3% 14%;
   background:
-    radial-gradient(circle at 50% 50%, rgb(255 189 216 / 16%) 0 1%, transparent 7%),
-    radial-gradient(ellipse at 46% 48%, rgb(229 29 104 / 15%), transparent 36%),
-    radial-gradient(ellipse at 58% 53%, rgb(116 8 44 / 18%), transparent 61%);
-  filter: blur(18px);
-  transform: translateZ(-70px) scale(1.1);
-  animation: auraBreath 11s ease-in-out infinite;
+    radial-gradient(ellipse at 48% 48%, rgb(255 112 168 / 12%), transparent 36%),
+    radial-gradient(ellipse at 52% 57%, rgb(146 10 58 / 18%), transparent 62%);
+  filter: blur(28px);
+  transform: translateZ(-180px) scale(1.08);
+  animation: auraBreathe 11s ease-in-out infinite;
 }
 
 .presence::after {
-  inset: 17% 12% 21% 16%;
-  border-radius: 62% 38% 56% 44% / 43% 61% 39% 57%;
-  background:
-    radial-gradient(ellipse at 34% 62%, rgb(242 35 111 / 14%), transparent 28%),
-    radial-gradient(ellipse at 69% 37%, rgb(142 12 58 / 12%), transparent 33%);
-  filter: blur(16px);
-  transform: translateZ(36px) rotate(-9deg);
-  animation: shellDrift 15s ease-in-out infinite;
+  right: 13%;
+  bottom: 8%;
+  left: 13%;
+  height: 15%;
+  background: radial-gradient(ellipse, rgb(255 65 132 / 18%), transparent 69%);
+  filter: blur(22px);
+  transform: translateZ(-35px) rotateX(68deg);
+  animation: projectionGlow 9s ease-in-out infinite;
 }
 
-.farHalo {
-  inset: 4%;
-  border-radius: 48% 52% 44% 56% / 56% 45% 55% 44%;
+.farGlow {
+  inset: 2% 0 11%;
+  border-radius: 52% 48% 49% 51%;
   background:
-    radial-gradient(ellipse at 22% 58%, rgb(194 19 78 / 11%), transparent 32%),
-    radial-gradient(ellipse at 71% 27%, rgb(246 48 119 / 9%), transparent 26%),
-    radial-gradient(ellipse at 62% 74%, rgb(126 10 47 / 13%), transparent 34%);
-  filter: blur(10px);
-  transform: translateZ(-120px) scale(1.16);
-  animation: haloDrift 21s ease-in-out infinite;
+    radial-gradient(circle at 48% 45%, rgb(255 192 216 / 9%) 0 2%, transparent 16%),
+    radial-gradient(ellipse at 51% 49%, rgb(218 28 101 / 13%), transparent 42%),
+    radial-gradient(ellipse at 38% 60%, rgb(94 5 39 / 18%), transparent 58%);
+  filter: blur(18px);
+  transform: translateZ(-240px) scale(1.14);
+  animation: farGlowDrift 17s ease-in-out infinite;
 }
 
-.depthMist {
-  inset: 18% 11%;
-  border-radius: 52% 48% 57% 43%;
+.mistBack {
+  inset: 15% 4% 25%;
+  border-radius: 50%;
   background:
-    radial-gradient(circle at 32% 34%, rgb(255 63 133 / 24%), transparent 18%),
-    radial-gradient(circle at 68% 67%, rgb(203 23 91 / 18%), transparent 22%),
-    radial-gradient(circle at 54% 42%, rgb(105 7 41 / 30%), transparent 58%);
+    radial-gradient(circle at 28% 42%, rgb(229 37 108 / 13%), transparent 25%),
+    radial-gradient(circle at 73% 62%, rgb(123 11 54 / 16%), transparent 31%),
+    radial-gradient(ellipse at 50% 56%, rgb(38 2 17 / 42%), transparent 65%);
+  filter: blur(25px);
+  transform: translateZ(-110px) scale(1.05);
+  animation: mistBackDrift 19s ease-in-out infinite;
+}
+
+.mistFront {
+  z-index: 5;
+  right: 10%;
+  bottom: 14%;
+  left: 15%;
+  height: 19%;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 42% 52%, rgb(248 55 126 / 11%), transparent 44%),
+    radial-gradient(ellipse at 62% 50%, rgb(118 8 50 / 15%), transparent 57%);
   filter: blur(24px);
-  transform: translateZ(-30px);
-  animation: mistBreath 13s ease-in-out infinite;
+  transform: translateZ(105px) rotate(-4deg);
+  animation: mistFrontDrift 14s ease-in-out infinite;
 }
 
-.web {
-  inset: -2%;
-  width: 104%;
-  height: 104%;
+.orbitField {
+  z-index: 1;
+  inset: -3% -4% 5%;
+  width: 108%;
+  height: 98%;
   overflow: visible;
-  transform: translateZ(18px);
-  filter: drop-shadow(0 18px 42px rgb(0 0 0 / 56%));
+  filter: drop-shadow(0 0 8px rgb(237 45 116 / 18%));
+  transform: translateZ(-62px) rotateX(2deg) rotateZ(-3deg);
 }
 
-.orbits path,
-.ribbons path,
-.bloom path,
-.filaments path,
-.links path {
+.rearOrbits,
+.frontOrbits {
+  transform-origin: 450px 400px;
+}
+
+.rearOrbits {
+  animation: rearOrbitDrift 22s ease-in-out infinite;
+}
+
+.frontOrbits {
+  animation: frontOrbitDrift 18s ease-in-out infinite;
+}
+
+.rearOrbits path,
+.frontOrbits path {
   fill: none;
+  stroke: url("#rhia-orbit-light");
   stroke-linecap: round;
 }
 
-.orbits {
-  transform-origin: 400px 400px;
-  animation: orbitDrift 18s ease-in-out infinite;
-}
-
-.orbits path {
-  stroke: url("#rhia-orbit-gradient");
-  stroke-width: 1.1;
-  stroke-dasharray: 2 9 22 16;
+.rearOrbits path {
+  stroke-width: 1;
+  stroke-dasharray: 2 14 34 28;
   opacity: 0.34;
 }
 
-.orbits path:nth-child(2) {
-  stroke-width: 0.75;
-  opacity: 0.26;
+.rearOrbits path:nth-child(2) {
+  stroke-width: 0.62;
+  stroke-dasharray: 48 33 2 22;
+  opacity: 0.22;
 }
 
-.orbits path:nth-child(3) {
-  stroke-dasharray: 40 22 3 16;
+.rearOrbits path:nth-child(3) {
+  stroke-width: 1.2;
+  stroke-dasharray: 3 25 52 34;
+  opacity: 0.27;
+}
+
+.rearOrbits path:nth-child(4) {
+  stroke-width: 0.75;
   opacity: 0.2;
 }
 
-.farParticles {
-  filter: url("#rhia-soft-glow");
-  animation: particleBreath 12s ease-in-out infinite;
+.frontOrbits path {
+  stroke-width: 0.9;
+  stroke-dasharray: 62 46 3 25;
+  opacity: 0.32;
 }
 
-.farParticles circle {
-  fill: #f52f78;
-  opacity: 0.34;
+.particles {
+  filter: url("#rhia-particle-glow");
+  transform-origin: 450px 382px;
+  animation: particleFieldDrift 16s ease-in-out infinite;
 }
 
-.farParticles circle[data-depth="1"] {
-  fill: #ff91b9;
-  opacity: 0.56;
-}
-
-.farParticles circle[data-depth="2"] {
-  fill: #a81049;
-  opacity: 0.23;
-}
-
-.ribbons {
-  transform-origin: 400px 400px;
-  animation: ribbonBreath 16s ease-in-out infinite;
-}
-
-.ribbons path {
-  stroke: url("#rhia-filament-gradient");
-  stroke-width: 1.15;
+.particles circle {
+  fill: url("#rhia-particle-light");
   opacity: 0.42;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: particlePulse 7.5s ease-in-out infinite;
 }
 
-.ribbons path:nth-child(3n) {
-  stroke-width: 2.2;
+.particles circle[data-depth="1"] {
+  opacity: 0.62;
+  animation-duration: 9s;
+}
+
+.particles circle[data-depth="2"] {
   opacity: 0.28;
-  filter: url("#rhia-near-glow");
+  animation-duration: 11s;
 }
 
-.bloom {
-  transform-origin: 400px 400px;
-  animation: bloomBreath 12s ease-in-out infinite;
-}
-
-.bloom path {
-  stroke: url("#rhia-filament-gradient");
-  stroke-width: 0.82;
-  opacity: 0.58;
-  filter: url("#rhia-near-glow");
-}
-
-.bloom path[data-depth="1"] {
-  stroke-width: 1.35;
-  opacity: 0.78;
-}
-
-.bloom path[data-depth="2"] {
-  stroke-width: 0.56;
-  opacity: 0.38;
-}
-
-.bloom path[data-depth="3"] {
-  stroke: #ff6fa4;
-  stroke-width: 1.8;
-  opacity: 0.5;
-}
-
-.filaments {
-  transform-origin: 400px 400px;
-  animation: filamentBreath 10s ease-in-out infinite;
-}
-
-.filaments path {
-  stroke: url("#rhia-filament-gradient");
-  stroke-width: 1.25;
-  opacity: 0.48;
-  filter: url("#rhia-near-glow");
-}
-
-.links path {
-  stroke: url("#rhia-filament-gradient");
-  stroke-width: 0.72;
-  stroke-dasharray: 1 6 14 9;
-  opacity: 0.42;
-}
-
-.filaments path:nth-child(3n) {
-  stroke-width: 0.7;
-  opacity: 0.48;
-}
-
-.filaments path:nth-child(4n) {
-  stroke-width: 2;
-  opacity: 0.66;
-}
-
-.nodes circle {
-  fill: #ff80ad;
-  opacity: 0.82;
-  filter: url("#rhia-near-glow");
-}
-
-.nodes circle:first-child {
-  fill: #fff;
-  stroke: #ff91bb;
-  stroke-width: 4;
-}
-
-.coreAura {
-  fill: rgb(241 40 116 / 17%);
-  filter: url("#rhia-soft-glow");
-  transform-origin: 400px 400px;
-  animation: coreBreath 6s ease-in-out infinite;
-}
-
-.coreRing {
-  fill: rgb(97 8 39 / 66%);
-  stroke: rgb(255 132 179 / 75%);
-  stroke-width: 1.4;
-  filter: url("#rhia-near-glow");
-  transform-origin: 400px 400px;
-  animation: coreBreath 6s ease-in-out infinite reverse;
-}
-
-.coreLight {
-  fill: #fff8fb;
-  stroke: #ffb6d1;
-  stroke-width: 3;
-  filter: url("#rhia-near-glow");
-}
-
-.lensFlare {
+.brainStage {
   z-index: 3;
-  top: 48.9%;
+  inset: 4% 3% 14%;
+  display: grid;
+  place-items: center;
+  transform-style: preserve-3d;
+  animation: brainFloat 12s ease-in-out infinite;
+}
+
+.brainAura {
+  inset: 10% 8% 8%;
+  border-radius: 48% 52% 50% 50%;
+  background:
+    radial-gradient(circle at 49% 50%, rgb(255 244 249 / 19%) 0 1%, transparent 13%),
+    radial-gradient(ellipse at 51% 50%, rgb(255 48 122 / 17%), transparent 43%),
+    radial-gradient(ellipse at 52% 55%, rgb(106 5 43 / 22%), transparent 68%);
+  filter: blur(22px);
+  transform: translateZ(-20px) scale(0.94);
+  animation: brainAuraPulse 8s ease-in-out infinite;
+}
+
+.brainImage {
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  opacity: 0.94;
+  filter: saturate(1.08) contrast(1.04) drop-shadow(0 18px 28px rgb(0 0 0 / 72%))
+    drop-shadow(0 0 20px rgb(236 37 112 / 22%));
+  mask-image: radial-gradient(
+    ellipse at 50% 49%,
+    #000 0 61%,
+    rgb(0 0 0 / 94%) 72%,
+    transparent 93%
+  );
+  transform: translateZ(42px) scale(1.045);
+  animation: brainLightPulse 7.5s ease-in-out infinite;
+}
+
+.brainLight {
+  z-index: 4;
+  top: 45%;
   left: 49%;
-  width: 2%;
+  width: 3.3%;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: #fff;
+  background: #fff8fb;
   box-shadow:
-    0 0 8px #fff,
-    0 0 24px #ff98bf,
-    0 0 68px rgb(240 39 114 / 72%);
-  transform: translateZ(70px);
-  animation: lensBreath 6s ease-in-out infinite;
+    0 0 9px #fff,
+    0 0 30px rgb(255 135 183 / 82%),
+    0 0 84px rgb(237 34 109 / 42%);
+  transform: translate3d(-50%, -50%, 92px);
+  animation: corePulse 7.5s ease-in-out infinite;
 }
 
-@keyframes auraBreath {
-  0%,
-  100% {
-    opacity: 0.72;
-    transform: translateZ(-70px) scale(1.06);
-  }
-  50% {
-    opacity: 1;
-    transform: translateZ(-70px) scale(1.14);
-  }
+.floorProjection {
+  z-index: 2;
+  right: 21%;
+  bottom: 7%;
+  left: 21%;
+  height: 13%;
+  border: 1px solid rgb(250 72 140 / 17%);
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse, rgb(255 233 242 / 16%) 0 2%, transparent 8%),
+    radial-gradient(ellipse, rgb(243 44 117 / 16%), transparent 54%),
+    radial-gradient(ellipse, rgb(99 7 41 / 23%), transparent 72%);
+  box-shadow:
+    0 0 26px rgb(237 37 111 / 14%),
+    inset 0 0 18px rgb(248 51 125 / 10%);
+  transform: translateZ(-20px) rotateX(70deg);
+  animation: floorPulse 10s ease-in-out infinite;
 }
 
-@keyframes shellDrift {
-  0%,
-  100% {
-    transform: translate3d(-1%, 1%, 36px) rotate(-9deg) scale(0.98);
-  }
-  50% {
-    transform: translate3d(1.5%, -1%, 36px) rotate(-6deg) scale(1.04);
-  }
+.floorProjection i {
+  position: absolute;
+  inset: 16%;
+  border: 1px solid rgb(244 56 126 / 20%);
+  border-radius: 50%;
 }
 
-@keyframes haloDrift {
-  0%,
-  100% {
-    transform: translate3d(-1%, 0, -120px) scale(1.14) rotate(-2deg);
-  }
-  50% {
-    transform: translate3d(1%, -1.5%, -120px) scale(1.2) rotate(2deg);
-  }
+.floorProjection i:nth-child(2) {
+  inset: 31%;
+  border-color: rgb(255 126 171 / 25%);
 }
 
-@keyframes mistBreath {
+.floorProjection i:nth-child(3) {
+  inset: 43%;
+  border-color: rgb(255 232 242 / 23%);
+  box-shadow: 0 0 12px rgb(244 52 123 / 21%);
+}
+
+@keyframes auraBreathe {
   0%,
   100% {
     opacity: 0.62;
-    transform: translate3d(-1.5%, 1%, -30px) scale(0.96);
+    transform: translateZ(-180px) scale(1.04);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateZ(-180px) scale(1.12);
+  }
+}
+
+@keyframes projectionGlow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translateZ(-35px) rotateX(68deg) scale(0.94);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translateZ(-35px) rotateX(68deg) scale(1.05);
+  }
+}
+
+@keyframes farGlowDrift {
+  0%,
+  100% {
+    opacity: 0.68;
+    transform: translate3d(-1%, 1%, -240px) scale(1.1);
+  }
+  50% {
+    opacity: 0.92;
+    transform: translate3d(1.5%, -1%, -240px) scale(1.17);
+  }
+}
+
+@keyframes mistBackDrift {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: translate3d(-2%, 1%, -110px) scale(1.02);
+  }
+  50% {
+    opacity: 0.86;
+    transform: translate3d(2%, -1.5%, -110px) scale(1.08);
+  }
+}
+
+@keyframes mistFrontDrift {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translate3d(-2%, 1%, 105px) rotate(-4deg) scale(0.95);
+  }
+  50% {
+    opacity: 0.78;
+    transform: translate3d(2%, -1%, 105px) rotate(-1deg) scale(1.06);
+  }
+}
+
+@keyframes rearOrbitDrift {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: translate(-0.8%, 0.5%) rotate(-0.7deg);
+    stroke-dashoffset: 0;
+  }
+  50% {
+    opacity: 0.92;
+    transform: translate(0.8%, -0.7%) rotate(0.7deg);
+    stroke-dashoffset: -14;
+  }
+}
+
+@keyframes frontOrbitDrift {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: translate(-0.5%, 0.6%) rotate(0.5deg);
+    stroke-dashoffset: 0;
   }
   50% {
     opacity: 0.88;
-    transform: translate3d(1.5%, -1%, -30px) scale(1.05);
+    transform: translate(0.7%, -0.5%) rotate(-0.6deg);
+    stroke-dashoffset: 12;
   }
 }
 
-@keyframes orbitDrift {
+@keyframes particleFieldDrift {
   0%,
   100% {
-    opacity: 0.52;
-    transform: rotate(-1.5deg) scale(0.99);
+    transform: translate(-1.2%, 0.8%) rotate(-0.45deg);
   }
   50% {
-    opacity: 0.76;
-    transform: rotate(1.5deg) scale(1.02);
+    transform: translate(1.4%, -1.1%) rotate(0.55deg);
   }
 }
 
-@keyframes particleBreath {
+@keyframes particlePulse {
+  0%,
+  100% {
+    opacity: 0.28;
+    transform: scale(0.72);
+  }
+  50% {
+    opacity: 0.82;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes brainFloat {
+  0%,
+  100% {
+    transform: translate3d(-0.8%, 1.2%, 34px) rotateX(1.3deg) rotateY(-2.4deg);
+  }
+  50% {
+    transform: translate3d(0.8%, -1.4%, 54px) rotateX(-0.8deg) rotateY(2.2deg);
+  }
+}
+
+@keyframes brainAuraPulse {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: translateZ(-20px) scale(0.91);
+  }
+  50% {
+    opacity: 0.96;
+    transform: translateZ(-20px) scale(1.02);
+  }
+}
+
+@keyframes brainLightPulse {
+  0%,
+  100% {
+    opacity: 0.88;
+    filter: saturate(1.03) contrast(1.03) drop-shadow(0 18px 28px rgb(0 0 0 / 72%))
+      drop-shadow(0 0 17px rgb(236 37 112 / 18%));
+  }
+  50% {
+    opacity: 0.98;
+    filter: saturate(1.12) contrast(1.06) drop-shadow(0 21px 33px rgb(0 0 0 / 74%))
+      drop-shadow(0 0 27px rgb(248 49 124 / 29%));
+  }
+}
+
+@keyframes corePulse {
   0%,
   100% {
     opacity: 0.7;
+    transform: translate3d(-50%, -50%, 92px) scale(0.82);
   }
   50% {
     opacity: 1;
+    transform: translate3d(-50%, -50%, 92px) scale(1.16);
   }
 }
 
-@keyframes ribbonBreath {
+@keyframes floorPulse {
   0%,
   100% {
-    opacity: 0.72;
-    transform: scale(0.98) rotate(-0.7deg);
+    opacity: 0.55;
+    transform: translateZ(-20px) rotateX(70deg) scale(0.94);
   }
   50% {
-    opacity: 1;
-    transform: scale(1.025) rotate(0.7deg);
-  }
-}
-
-@keyframes filamentBreath {
-  0%,
-  100% {
-    opacity: 0.82;
-    transform: scale(0.99);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.015);
-  }
-}
-
-@keyframes bloomBreath {
-  0%,
-  100% {
-    opacity: 0.82;
-    transform: scale(0.985) rotate(-0.45deg);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.018) rotate(0.45deg);
-  }
-}
-
-@keyframes coreBreath {
-  0%,
-  100% {
-    opacity: 0.78;
-    transform: scale(0.9);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.12);
-  }
-}
-
-@keyframes lensBreath {
-  0%,
-  100% {
-    opacity: 0.86;
-    transform: translateZ(70px) scale(0.9);
-  }
-  50% {
-    opacity: 1;
-    transform: translateZ(70px) scale(1.14);
+    opacity: 0.88;
+    transform: translateZ(-20px) rotateX(70deg) scale(1.04);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .presence::before,
   .presence::after,
-  .farHalo,
-  .depthMist,
-  .orbits,
-  .farParticles,
-  .ribbons,
-  .bloom,
-  .filaments,
-  .coreAura,
-  .coreRing,
-  .lensFlare {
+  .farGlow,
+  .mistBack,
+  .mistFront,
+  .rearOrbits,
+  .frontOrbits,
+  .particles,
+  .particles circle,
+  .brainStage,
+  .brainAura,
+  .brainImage,
+  .brainLight,
+  .floorProjection {
     animation: none;
   }
 }
