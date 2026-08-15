@@ -60,8 +60,9 @@ Vor einer Freigabe werden mindestens geprüft:
    Reduced-Motion-Modus, damit softwaregerendertes WebGL die unveränderten Cockpit-Abläufe in CI
    nicht blockiert;
 3. Tablet-Querformat bei 1280 × 800 Pixeln ohne horizontale Überbreite;
-4. animierte WebGL-Integration einmal gezielt im Tablet-Querformat sowie transparente Einbettung
-   ohne schwarzen oder rechteckigen Rahmen;
+4. WebGL-Integration als statischer Einzelframe einmal gezielt im Tablet-Querformat sowie
+   transparente Einbettung ohne schwarzen oder rechteckigen Rahmen; laufende Animation und
+   Performance werden auf der veröffentlichten Preview und realer Tablet-Hardware geprüft;
 5. Bedienbarkeit von Mikrofontaste, Aufgabeingabe, Modulen und Navigation;
 6. sichtbare Abstufung von Nebel, Filamenten, Knoten, Tiefenpartikeln und Energiekern;
 7. optische und funktionale Abnahme der veröffentlichten Preview durch Sir.

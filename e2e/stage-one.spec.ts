@@ -38,9 +38,8 @@ test("RHIA presence stays embedded and controls remain usable in tablet landscap
 }, testInfo) => {
   test.skip(
     testInfo.project.name !== "tablet-chromium",
-    "The animated WebGL integration is verified once in the tablet project.",
+    "The WebGL integration is verified once in the tablet project.",
   );
-  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");
   await dismissStartGreeting(page);
