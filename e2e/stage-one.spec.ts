@@ -1,5 +1,9 @@
 import { expect, type Page, test } from "@playwright/test";
 
+test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+});
+
 async function dismissStartGreeting(page: Page): Promise<void> {
   const startButton = page.getByRole("button", { name: "RHIA starten" });
   if (await startButton.isVisible().catch(() => false)) {
@@ -27,6 +31,72 @@ test("stage 4 starts locally without old cloud dependencies", async ({ page }) =
   });
 
   expect(foreignTargets).toEqual([]);
+});
+
+test("RHIA presence stays embedded and controls remain usable in tablet landscape", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "tablet-chromium",
+    "The WebGL integration is verified once in the tablet project.",
+  );
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await dismissStartGreeting(page);
+
+  const presence = page.locator('[data-rhia-presence-stage="startcockpit"]');
+  await expect(presence).toBeVisible();
+  await expect(page.getByRole("heading", { name: "RHIA" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Mikrofontaste/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Was ist jetzt wichtig?" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Aufgabe" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Übersicht" })).toBeVisible();
+
+  const presenceState = await presence.evaluate((element) => {
+    const canvas = element.querySelector("canvas");
+    const fallback = element.querySelector('[data-rhia-presence="fallback"]');
+    const style = window.getComputedStyle(element);
+    return {
+      backgroundColor: style.backgroundColor,
+      canvasPixelRatio: canvas && canvas.clientWidth > 0 ? canvas.width / canvas.clientWidth : null,
+      canvasOrFallback: Boolean(canvas || fallback),
+      pointerEvents: style.pointerEvents,
+    };
+  });
+
+  expect(presenceState).toMatchObject({
+    backgroundColor: "rgba(0, 0, 0, 0)",
+    canvasOrFallback: true,
+    pointerEvents: "none",
+  });
+  if (presenceState.canvasPixelRatio !== null) {
+    expect(presenceState.canvasPixelRatio).toBeLessThanOrEqual(1.51);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(
+    false,
+  );
+
+  await page.getByRole("button", { name: /Mikrofontaste/ }).click();
+  await expect(page.getByRole("dialog", { name: "Sprachfreigabe" })).toBeVisible();
+  await page.getByRole("button", { name: "Abbrechen" }).click();
+  await page.getByRole("textbox", { name: "Aufgabe" }).fill("Künstlicher Tablet-Test");
+  await expect(page.getByRole("textbox", { name: "Aufgabe" })).toHaveValue(
+    "Künstlicher Tablet-Test",
+  );
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.reload();
+  await dismissStartGreeting(page);
+  await expect(presence).toBeVisible();
+  const hasStaticReducedMotionPresence = await presence.evaluate((element) => {
+    const webGL = element.querySelector<HTMLElement>('[data-rhia-presence="webgl"]');
+    const fallback = element.querySelector<HTMLElement>('[data-rhia-presence="fallback"]');
+    return (
+      webGL?.dataset.reducedMotion === "true" ||
+      (fallback !== null && window.getComputedStyle(fallback).opacity === "1")
+    );
+  });
+  expect(hasStaticReducedMotionPresence).toBe(true);
 });
 
 test("compact shell exposes all modules and preserves unfinished form input", async ({ page }) => {
