@@ -1,15 +1,17 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import styles from "./RhiaWebGLPresence.module.css";
 import { RhiaPresenceFallback } from "./RhiaPresenceFallback";
+import styles from "./RhiaWebGLPresence.module.css";
 
 const RhiaWebGLPresence = lazy(() => import("./RhiaWebGLPresence"));
 
 function browserSupportsWebGL(): boolean {
   try {
     const canvas = document.createElement("canvas");
-    return Boolean(
-      window.WebGLRenderingContext && (canvas.getContext("webgl2") || canvas.getContext("webgl")),
-    );
+    const context =
+      window.WebGLRenderingContext && (canvas.getContext("webgl2") || canvas.getContext("webgl"));
+    const supported = Boolean(context);
+    context?.getExtension("WEBGL_lose_context")?.loseContext();
+    return supported;
   } catch {
     return false;
   }

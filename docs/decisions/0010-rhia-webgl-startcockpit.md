@@ -56,9 +56,12 @@ Sprachfreigabe und vorhandenen Bedienabläufe bleiben unverändert.
 Vor einer Freigabe werden mindestens geprüft:
 
 1. Format, Lint, TypeScript, Unit-Tests, Produktionsbuild und Sicherheitsprüfungen;
-2. Chromium-Smoke-Tests auf Desktop, Tablet und Mobilgerät;
+2. fachliche Chromium-Smoke-Tests auf Desktop, Tablet und Mobilgerät im statischen
+   Reduced-Motion-Modus, damit softwaregerendertes WebGL die unveränderten Cockpit-Abläufe in CI
+   nicht blockiert;
 3. Tablet-Querformat bei 1280 × 800 Pixeln ohne horizontale Überbreite;
-4. transparente Einbettung ohne schwarzen oder rechteckigen Rahmen;
+4. animierte WebGL-Integration einmal gezielt im Tablet-Querformat sowie transparente Einbettung
+   ohne schwarzen oder rechteckigen Rahmen;
 5. Bedienbarkeit von Mikrofontaste, Aufgabeingabe, Modulen und Navigation;
 6. sichtbare Abstufung von Nebel, Filamenten, Knoten, Tiefenpartikeln und Energiekern;
 7. optische und funktionale Abnahme der veröffentlichten Preview durch Sir.

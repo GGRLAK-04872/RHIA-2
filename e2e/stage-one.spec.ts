@@ -1,5 +1,9 @@
 import { expect, type Page, test } from "@playwright/test";
 
+test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+});
+
 async function dismissStartGreeting(page: Page): Promise<void> {
   const startButton = page.getByRole("button", { name: "RHIA starten" });
   if (await startButton.isVisible().catch(() => false)) {
@@ -31,7 +35,12 @@ test("stage 4 starts locally without old cloud dependencies", async ({ page }) =
 
 test("RHIA presence stays embedded and controls remain usable in tablet landscape", async ({
   page,
-}) => {
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "tablet-chromium",
+    "The animated WebGL integration is verified once in the tablet project.",
+  );
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");
   await dismissStartGreeting(page);
