@@ -3,7 +3,13 @@ import path from "node:path";
 
 const root = process.cwd();
 const distDirectory = path.join(root, "apps", "web", "dist");
-const requiredFiles = ["index.html", "manifest.webmanifest", "rhia-icon.svg", "sw.js"];
+const requiredFiles = [
+  "index.html",
+  "manifest.webmanifest",
+  "rhia-icon.svg",
+  "rhia-start-status.json",
+  "sw.js",
+];
 const forbiddenExtensions = new Set([".map", ".md", ".ts", ".tsx"]);
 const forbiddenNames = new Set([".env", ".env.local"]);
 const forbiddenContent = [

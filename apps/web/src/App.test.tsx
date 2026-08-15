@@ -1,12 +1,22 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+import { validRhiaStartStatus } from "./application/rhiaStartStatus.test";
 import { App } from "./App";
+import { RhiaStartStatusProvider } from "./components/RhiaStartStatusContext";
+
+function renderApp() {
+  return render(
+    <RhiaStartStatusProvider status={validRhiaStartStatus}>
+      <App />
+    </RhiaStartStatusProvider>,
+  );
+}
 
 describe("RHIA stage 4 shell", () => {
   it("stores, edits, deletes and restores a note through the local data view", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    renderApp();
 
     const startButton = screen.queryByRole("button", { name: "RHIA starten" });
     if (startButton) {
@@ -14,6 +24,8 @@ describe("RHIA stage 4 shell", () => {
     }
 
     expect(screen.getByRole("heading", { name: "RHIA" })).toBeInTheDocument();
+    expect(screen.getByText("Startstatus geladen")).toBeVisible();
+    expect(screen.getByText("Arbeitsmodus", { exact: true })).toBeVisible();
     await user.click(screen.getByRole("tab", { name: "Übersicht" }));
     await screen.findByRole("heading", { name: "Was ist jetzt wichtig?" });
     expect(screen.getByText("Local-first")).toBeInTheDocument();
@@ -55,7 +67,7 @@ describe("RHIA stage 4 shell", () => {
 
   it("keeps unfinished form input while navigating through the compact shell", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    renderApp();
 
     const startButton = screen.queryByRole("button", { name: "RHIA starten" });
     if (startButton) {
@@ -86,7 +98,7 @@ describe("RHIA stage 4 shell", () => {
 
   it("takes over a confirmed quick task into the local company cockpit", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    renderApp();
 
     const startButton = screen.queryByRole("button", { name: "RHIA starten" });
     if (startButton) {
@@ -111,4 +123,24 @@ describe("RHIA stage 4 shell", () => {
     expect(screen.getByRole("heading", { name: "Blockiert" })).toBeVisible();
     expect(screen.getByText("Blockiert: Lieferantenpreise fehlen")).toBeVisible();
   }, 20_000);
+
+  it("respects capabilities blocked by the loaded start status", () => {
+    render(
+      <RhiaStartStatusProvider
+        status={{
+          ...validRhiaStartStatus,
+          capabilities: {
+            ...validRhiaStartStatus.capabilities,
+            planning: "blocked",
+            oneShotBrowserSpeech: "blocked",
+          },
+        }}
+      >
+        <App />
+      </RhiaStartStatusProvider>,
+    );
+
+    expect(screen.queryByRole("tab", { name: "Planung" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Mikrofontaste/ })).toBeDisabled();
+  });
 });

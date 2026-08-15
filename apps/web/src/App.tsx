@@ -2,6 +2,7 @@ import { RHIA_STAGE } from "@rhia/domain";
 import { RHIA_SECURITY_POLICY } from "@rhia/security";
 import { useEffect, useState } from "react";
 import styles from "./App.module.css";
+import type { RhiaCapabilityName } from "./application/rhiaStartStatus";
 import {
   ensureRhProduktionStartReminder,
   isRhProduktionAnniversary,
@@ -18,17 +19,43 @@ import { BusinessCockpitPanel } from "./components/BusinessCockpitPanel";
 import { LocalPlanningPanel } from "./components/LocalPlanningPanel";
 import { LocalWorkHubPanel } from "./components/LocalWorkHubPanel";
 import { MemoryPanel } from "./components/MemoryPanel";
+import { useRhiaStartStatus } from "./components/RhiaStartStatusContext";
 import { StageOneDataPanel } from "./components/StageOneDataPanel";
 
 type ModuleId = RhiaVoiceTarget;
 
 const modules = [
-  { id: "overview", label: "Übersicht", eyebrow: "Firmen-Cockpit" },
-  { id: "memory", label: "Gedächtnis", eyebrow: "Bestätigtes Wissen" },
-  { id: "tasks", label: "Aufgaben", eyebrow: "Arbeitszentrale" },
-  { id: "planning", label: "Planung", eyebrow: "Tages- und Wochenvorschläge" },
-  { id: "data", label: "Daten & Sicherung", eyebrow: "Lokale Kontrolle" },
-] as const satisfies ReadonlyArray<{ id: ModuleId; label: string; eyebrow: string }>;
+  {
+    id: "overview",
+    label: "Übersicht",
+    eyebrow: "Firmen-Cockpit",
+    capability: "companyCockpit",
+  },
+  {
+    id: "memory",
+    label: "Gedächtnis",
+    eyebrow: "Bestätigtes Wissen",
+    capability: "memory",
+  },
+  { id: "tasks", label: "Aufgaben", eyebrow: "Arbeitszentrale", capability: "tasks" },
+  {
+    id: "planning",
+    label: "Planung",
+    eyebrow: "Tages- und Wochenvorschläge",
+    capability: "planning",
+  },
+  {
+    id: "data",
+    label: "Daten & Sicherung",
+    eyebrow: "Lokale Kontrolle",
+    capability: "dataBackup",
+  },
+] as const satisfies ReadonlyArray<{
+  id: ModuleId;
+  label: string;
+  eyebrow: string;
+  capability: RhiaCapabilityName;
+}>;
 
 const neuralPaths = [
   "M400 400 C334 332 258 342 190 252 C132 176 94 196 58 118",
@@ -153,14 +180,22 @@ function ModuleIcon({ module }: { module: ModuleId }) {
 }
 
 export function App() {
+  const startStatus = useRhiaStartStatus();
+  const availableModules = modules.filter(
+    (module) => startStatus.capabilities[module.capability] === "allowed",
+  );
+  const voiceAllowed = startStatus.capabilities.oneShotBrowserSpeech === "allowed";
   const [activeModule, setActiveModule] = useState<ModuleId>("overview");
   const [voiceTaskDraft, setVoiceTaskDraft] = useState<string | null>(null);
-  const [voiceStatus, setVoiceStatus] = useState("Mikrofontaste – bereit");
+  const [voiceStatus, setVoiceStatus] = useState(
+    voiceAllowed ? "Mikrofontaste – bereit" : "Mikrofontaste – gesperrt",
+  );
   const [voiceListening, setVoiceListening] = useState(false);
   const [voiceConsentOpen, setVoiceConsentOpen] = useState(false);
   const [greetingOpen, setGreetingOpen] = useState(() => isRhProduktionAnniversary());
   const [greetingError, setGreetingError] = useState<string | null>(null);
-  const activeModuleDetails = modules.find((module) => module.id === activeModule) ?? modules[0];
+  const activeModuleDetails =
+    availableModules.find((module) => module.id === activeModule) ?? modules[0];
 
   useEffect(() => {
     let active = true;
@@ -185,6 +220,10 @@ export function App() {
   };
 
   const startVoiceControl = () => {
+    if (!voiceAllowed) {
+      setVoiceStatus("Mikrofontaste ist laut Startstatus gesperrt.");
+      return;
+    }
     if (!browserSpeechRecognitionAvailable()) {
       setVoiceStatus("Browser-Spracherkennung ist auf diesem Gerät nicht verfügbar.");
       return;
@@ -195,7 +234,7 @@ export function App() {
       onResult: (transcript) => {
         const command = parseRhiaVoiceCommand(transcript);
         setVoiceStatus(`Erkannt: ${transcript}`);
-        if (command.target) {
+        if (command.target && availableModules.some((module) => module.id === command.target)) {
           setActiveModule(command.target);
         }
         if (command.taskDraft) {
@@ -216,7 +255,12 @@ export function App() {
   };
 
   return (
-    <main className={styles.page}>
+    <main
+      className={styles.page}
+      data-rhia-start-status="loaded"
+      data-rhia-role={startStatus.identity.role}
+      data-rhia-mode={startStatus.runtime.mode}
+    >
       <div className={styles.ambient} aria-hidden="true" />
 
       <header className={styles.topbar}>
@@ -227,9 +271,12 @@ export function App() {
           <span>RHIA 2.0</span>
         </div>
         <div className={styles.topActions}>
-          <span className={styles.readyBadge}>
+          <span
+            className={styles.readyBadge}
+            title={`${startStatus.identity.roleLabel} · ${startStatus.runtime.modeLabel}`}
+          >
             <span className={styles.readyDot} aria-hidden="true" />
-            Bereit
+            Startstatus geladen
           </span>
           <span className={styles.settingsGlyph} title="Einstellungen noch nicht aktiv">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -238,8 +285,8 @@ export function App() {
             </svg>
           </span>
           <span className={styles.userBadge}>
-            <span aria-hidden="true">S</span>
-            Sir
+            <span aria-hidden="true">{startStatus.identity.ownerSalutation.slice(0, 1)}</span>
+            {startStatus.identity.ownerSalutation}
             <svg viewBox="0 0 16 16" aria-hidden="true">
               <path d="m4 6 4 4 4-4" />
             </svg>
@@ -323,6 +370,14 @@ export function App() {
             </div>
             <dl className={styles.railChecks}>
               <div>
+                <dt>Start</dt>
+                <dd>geladen</dd>
+              </div>
+              <div>
+                <dt>Modus</dt>
+                <dd>{startStatus.runtime.modeLabel}</dd>
+              </div>
+              <div>
                 <dt>API</dt>
                 <dd>aus</dd>
               </div>
@@ -348,7 +403,7 @@ export function App() {
           <div className={styles.heroCopy}>
             <p className={styles.eyebrow}>RH Produktion · Stufe {RHIA_STAGE}</p>
             <h1 id="rhia-title">RHIA</h1>
-            <p className={styles.salutation}>Ja, Sir?</p>
+            <p className={styles.salutation}>Ja, {startStatus.identity.ownerSalutation}?</p>
           </div>
 
           <div className={styles.organism} aria-hidden="true">
@@ -395,8 +450,12 @@ export function App() {
             type="button"
             className={styles.composer}
             data-listening={voiceListening || undefined}
-            disabled={voiceListening}
-            onClick={() => setVoiceConsentOpen(true)}
+            disabled={voiceListening || !voiceAllowed}
+            onClick={() => {
+              if (voiceAllowed) {
+                setVoiceConsentOpen(true);
+              }
+            }}
             title="Mikrofon ist nur während dieser Spracheingabe aktiv"
           >
             <span className={styles.composerIcon} aria-hidden="true">
@@ -499,7 +558,7 @@ export function App() {
       </div>
 
       <div className={styles.bottomNav} aria-label="RHIA Hauptbereiche" role="tablist">
-        {modules.map((module) => (
+        {availableModules.map((module) => (
           <button
             key={module.id}
             id={`nav-${module.id}`}

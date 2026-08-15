@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "document": "RHIA_ONE_START_CURRENT.md",
+    "documentVersion": "1.1",
+    "lastVerified": "2026-08-15"
+  },
+  "identity": {
+    "name": "RHIA",
+    "role": "personal-controlled-assistant",
+    "roleLabel": "Persönliche, kontrollierbare Assistentin für Sir",
+    "ownerSalutation": "Sir"
+  },
+  "runtime": {
+    "mode": "work",
+    "modeLabel": "Arbeitsmodus",
+    "productVersion": "0.4.1",
+    "stage": 4,
+    "dataSource": "indexeddb",
+    "apiBudgetEuro": 0
+  },
+  "capabilities": {
+    "companyCockpit": "allowed",
+    "memory": "allowed",
+    "tasks": "allowed",
+    "planning": "allowed",
+    "dataBackup": "allowed",
+    "oneShotBrowserSpeech": "allowed",
+    "externalAi": "blocked",
+    "cloudSync": "blocked",
+    "externalIntegrations": "blocked",
+    "externalWriteActions": "blocked",
+    "wakeWord": "blocked"
+  }
+}
