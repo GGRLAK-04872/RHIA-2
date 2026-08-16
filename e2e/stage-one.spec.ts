@@ -15,6 +15,11 @@ test("stage 4 starts locally without old cloud dependencies", async ({ page }) =
   await dismissStartGreeting(page);
 
   await expect(page.getByRole("heading", { name: "RHIA" })).toBeVisible();
+  await expect(page.getByText("Startstatus geladen")).toBeVisible();
+  await expect(page.locator("main[data-rhia-start-status='loaded']")).toHaveAttribute(
+    "data-rhia-mode",
+    "work",
+  );
   await page.getByRole("tab", { name: "Übersicht" }).click();
   await expect(
     page.getByRole("tabpanel", { name: "Übersicht" }).getByText("IndexedDB"),
@@ -27,6 +32,17 @@ test("stage 4 starts locally without old cloud dependencies", async ({ page }) =
   });
 
   expect(foreignTargets).toEqual([]);
+});
+
+test("startup stops visibly when the central start file is unavailable", async ({ page }) => {
+  await page.route("**/rhia-start-status.json", (route) => route.fulfill({ status: 404 }));
+  await page.goto("/");
+
+  await expect(page.getByRole("alert")).toContainText("RHIA konnte nicht starten.");
+  await expect(page.getByRole("alert")).toContainText(
+    "Die zentrale Startdatei ist nicht verfügbar.",
+  );
+  await expect(page.getByRole("heading", { name: "Was ist jetzt wichtig?" })).not.toBeVisible();
 });
 
 test("compact shell exposes all modules and preserves unfinished form input", async ({ page }) => {
