@@ -1,21 +1,28 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { validRhiaStartStatus } from "../application/rhiaStartStatus.test";
 import { RhiaStartStatusError } from "../application/rhiaStartStatus";
 import { RhiaStartGate } from "./RhiaStartGate";
 
 describe("RHIA start gate", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("shows the app only after the start status was loaded", async () => {
-    const loader = vi.fn(async () => validRhiaStartStatus);
+    const fetchStartStatus = vi.fn(async () => Response.json(validRhiaStartStatus));
+    vi.stubGlobal("fetch", fetchStartStatus);
+
     render(
-      <RhiaStartGate loader={loader}>
+      <RhiaStartGate>
         <p>RHIA Arbeitsoberfläche</p>
       </RhiaStartGate>,
     );
 
     expect(screen.getByRole("status")).toHaveTextContent("Startstatus wird geladen");
     expect(await screen.findByText("RHIA Arbeitsoberfläche")).toBeVisible();
+    expect(fetchStartStatus).toHaveBeenCalledTimes(1);
   });
 
   it("shows a visible error and retries without a fallback", async () => {

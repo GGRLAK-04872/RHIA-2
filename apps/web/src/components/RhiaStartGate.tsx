@@ -12,9 +12,11 @@ type StartState =
   | { status: "ready"; value: RhiaStartStatus }
   | { status: "error"; message: string };
 
+const defaultLoader = () => loadRhiaStartStatus();
+
 export function RhiaStartGate({
   children,
-  loader = () => loadRhiaStartStatus(),
+  loader = defaultLoader,
 }: {
   children: ReactNode;
   loader?: (attempt: number) => Promise<RhiaStartStatus>;
