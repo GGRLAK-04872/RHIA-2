@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
       injectRegister: "script-defer",
       includeAssets: ["rhia-icon.svg"],
       manifest: {
@@ -32,10 +32,12 @@ export default defineConfig({
         ],
       },
       workbox: {
+        clientsClaim: true,
         cleanupOutdatedCaches: true,
         navigateFallback: "index.html",
         globPatterns: ["**/*.{js,css,html,json,svg,webmanifest}"],
         runtimeCaching: [],
+        skipWaiting: true,
       },
       devOptions: {
         enabled: false,
